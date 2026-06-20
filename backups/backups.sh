@@ -1,6 +1,9 @@
 #!/bin/bash
 
-echo "Backup started"
+NAME=$1
+
+
+echo "Backup started for $NAME"
 date
 echo "Backup completed"
 
