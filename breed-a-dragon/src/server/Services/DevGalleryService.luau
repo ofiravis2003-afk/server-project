@@ -14,8 +14,8 @@ local Ground = require(script.Parent.Parent.Util.Ground)
 
 local COLUMNS = 5
 local ROWS = 4
-local SPACING = 16
-local DISTANCE = 45 -- studs in front of the spawn point where the gallery starts
+local SPACING = 22
+local DISTANCE = 50 -- studs in front of the spawn point where the gallery starts
 
 local DevGalleryService = {}
 

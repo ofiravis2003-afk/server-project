@@ -1,30 +1,43 @@
 --!strict
 -- Builds a dragon Model from its genes, using plain parts (no imported meshes).
 --
--- Layout (Normal size, in studs): the dragon faces -Z (its LookVector), feet on y = 0.
+-- Layout (Normal size, in studs): the dragon faces -Z (its LookVector), feet on y = 0,
+-- snout at about z = -5, tail tip at about z = +7.5.
 -- The model's pivot is the point on the ground under its body, so
 --   model:PivotTo(CFrame.new(groundPosition))
 -- puts it standing on the ground. Lives in Shared so the UI can show previews later too.
+--
+-- Wing membranes are real triangles, each made from two WedgeParts (see `triangle`).
 
 local Genes = require(script.Parent.Genes)
 local Rarity = require(script.Parent.Rarity)
 
 type GeneOption = Genes.GeneOption
-type PartKind = "Ellipsoid" | "Ball" | "Block" | "Wedge"
+type PartKind = "Ellipsoid" | "Ball" | "Block" | "Wedge" | "Cylinder"
 
-local BODY_Y = 2.6 -- height of the body's centre at Normal size
+local CHEST = Vector3.new(0, 2.9, -0.7) -- centre of the chest, the model's main part
 local WHITE = Color3.new(1, 1, 1)
-local BLACK = Color3.fromRGB(20, 20, 25)
+local BLACK = Color3.fromRGB(15, 15, 20)
+local BONE = Color3.fromRGB(235, 225, 205)
+local EYE = Color3.fromRGB(255, 190, 40)
 local FLAME = Color3.fromRGB(255, 120, 30)
 local STARLIGHT = Color3.fromRGB(200, 230, 255)
+local MEMBRANE_THICKNESS = 0.08
 
 local DragonBuilder = {}
 
-local function solid(color: Color3): GeneOption
-	return { Id = "_", Rarity = "Common", Color = color }
+local function look(color: Color3, material: Enum.Material?, transparency: number?): GeneOption
+	return { Id = "_", Rarity = "Common", Color = color, Material = material, Transparency = transparency }
 end
 
-local function newPart(model: Model, name: string, kind: PartKind, size: Vector3, cframe: CFrame, look: GeneOption)
+local function applyLook(part: BasePart, option: GeneOption)
+	part.Color = option.Color or WHITE
+	part.Material = option.Material or Enum.Material.SmoothPlastic
+	part.Transparency = option.Transparency or 0
+	part.Reflectance = option.Reflectance or 0
+end
+
+local function newPart(model: Model, name: string, kind: PartKind, size: Vector3, cframe: CFrame, option: GeneOption)
 	local part: BasePart
 	if kind == "Wedge" then
 		part = Instance.new("WedgePart")
@@ -32,6 +45,8 @@ local function newPart(model: Model, name: string, kind: PartKind, size: Vector3
 		local basic = Instance.new("Part")
 		if kind == "Ball" then
 			basic.Shape = Enum.PartType.Ball
+		elseif kind == "Cylinder" then
+			basic.Shape = Enum.PartType.Cylinder
 		end
 		part = basic
 	end
@@ -50,12 +65,56 @@ local function newPart(model: Model, name: string, kind: PartKind, size: Vector3
 	part.Massless = true
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
-	part.Color = look.Color or WHITE
-	part.Material = look.Material or Enum.Material.SmoothPlastic
-	part.Transparency = look.Transparency or 0
-	part.Reflectance = look.Reflectance or 0
+	applyLook(part, option)
 	part.Parent = model
 	return part
+end
+
+local function ellipsoid(model: Model, name: string, size: Vector3, position: Vector3, option: GeneOption)
+	return newPart(model, name, "Ellipsoid", size, CFrame.new(position), option)
+end
+
+-- A round rod from p1 to p2 (wing bones).
+local function bone(model: Model, name: string, p1: Vector3, p2: Vector3, radius: number, option: GeneOption)
+	local length = (p2 - p1).Magnitude
+	local cframe = CFrame.lookAt((p1 + p2) / 2, p2) * CFrame.Angles(0, math.rad(90), 0)
+	return newPart(model, name, "Cylinder", Vector3.new(length, radius * 2, radius * 2), cframe, option)
+end
+
+-- A flat triangle with corners a, b, c, made from two WedgePart halves.
+local function triangle(model: Model, name: string, a: Vector3, b: Vector3, c: Vector3, option: GeneOption): BasePart
+	-- Put the longest side between b and c, so `a` is the corner opposite it.
+	local ab, ac, bc = b - a, c - a, c - b
+	local abLength, acLength, bcLength = ab:Dot(ab), ac:Dot(ac), bc:Dot(bc)
+	if abLength > acLength and abLength > bcLength then
+		c, a = a, c
+	elseif acLength > bcLength and acLength > abLength then
+		a, b = b, a
+	end
+	ab, ac, bc = b - a, c - a, c - b
+
+	local right = ac:Cross(ab).Unit
+	local up = bc:Cross(right).Unit
+	local back = bc.Unit
+	local height = math.abs(ab:Dot(up))
+
+	local first = newPart(
+		model,
+		name,
+		"Wedge",
+		Vector3.new(MEMBRANE_THICKNESS, height, math.abs(ab:Dot(back))),
+		CFrame.fromMatrix((a + b) / 2, right, up, back),
+		option
+	)
+	newPart(
+		model,
+		name,
+		"Wedge",
+		Vector3.new(MEMBRANE_THICKNESS, height, math.abs(ac:Dot(back))),
+		CFrame.fromMatrix((a + c) / 2, -right, up, -back),
+		option
+	)
+	return first
 end
 
 local function glow(part: BasePart, color: Color3, transparency: number?)
@@ -91,66 +150,155 @@ local function addParticles(
 	emitter.Parent = parent
 end
 
+local function addSparkles(parent: BasePart, color: Color3)
+	local sparkles = Instance.new("Sparkles")
+	sparkles.SparkleColor = color
+	sparkles.Parent = parent
+end
+
 local function buildWing(model: Model, side: number, wings: string, body: GeneOption, accent: GeneOption)
-	-- Wings start at the shoulder, sweep back a little and lift up.
-	local root = CFrame.new(side * 1.2, 3.4, -0.5)
-		* CFrame.Angles(0, -side * math.rad(15), 0)
-		* CFrame.Angles(0, 0, side * math.rad(25))
-	local function at(x: number, y: number, z: number, yaw: number?): CFrame
-		return root * CFrame.new(side * x, y, z) * CFrame.Angles(0, side * (yaw or 0), 0)
+	-- Wing space: x points away from the body, y up, z towards the tail.
+	-- The wing starts on top of the shoulder, lifts up a little and sweeps back.
+	local root = CFrame.new(side * 1, 3.75, -0.9)
+		* CFrame.Angles(0, -side * math.rad(10), 0)
+		* CFrame.Angles(0, 0, side * math.rad(20))
+	local function P(x: number, y: number, z: number): Vector3
+		return root:PointToWorldSpace(Vector3.new(side * x, y, z))
 	end
 
-	local arm = newPart(model, "WingArm", "Block", Vector3.new(3.4, 0.3, 0.3), at(1.7, 0, 0), body)
+	local shoulder, elbow, wrist = P(0, 0, 0), P(2.4, 0.8, -0.5), P(4.8, 1.6, 0)
 
-	if wings == "Bat" then
-		newPart(model, "WingMembrane", "Block", Vector3.new(3.2, 0.1, 2.4), at(1.6, -0.05, 1.2), accent)
-		newPart(model, "WingFinger", "Block", Vector3.new(0.2, 0.2, 2.4), at(1.2, 0, 1.2), body)
-		newPart(model, "WingFinger", "Block", Vector3.new(0.2, 0.2, 2.4), at(2.7, 0, 1.2), body)
-	elseif wings == "Feathered" then
-		local lengths = { 2.6, 2.5, 2.2, 1.8 }
-		for i, length in lengths do
-			local x = 0.4 + i * 0.65
-			newPart(
+	if wings == "Feathered" then
+		bone(model, "WingBone", shoulder, elbow, 0.2, body)
+		bone(model, "WingBone", elbow, wrist, 0.16, body)
+		local light = look((accent.Color or WHITE):Lerp(WHITE, 0.25))
+		local count = 8
+		for i = count, 1, -1 do
+			local t = i / count
+			local base = if t < 0.5 then shoulder:Lerp(elbow, t * 2) else elbow:Lerp(wrist, (t - 0.5) * 2)
+			local along = if t < 0.5 then (elbow - shoulder).Unit else (wrist - elbow).Unit
+			-- Feathers near the body point back; feathers near the wingtip fan outwards and get longer.
+			local angle = math.rad(5 + 60 * t)
+			local length = 2.6 + 1.8 * t
+			local direction = (P(math.sin(angle), -0.08, math.cos(angle)) - shoulder).Unit
+			triangle(
 				model,
 				"Feather",
-				"Block",
-				Vector3.new(0.6, 0.12, length),
-				at(x, -0.05, length / 2, 0.08 * i),
-				accent
+				base - along * 0.35,
+				base + along * 0.35,
+				base + direction * length,
+				if i % 2 == 0 then accent else light
 			)
 		end
-	elseif wings == "Crystal" then
-		for i = 1, 3 do
-			local shard = newPart(
-				model,
-				"WingShard",
-				"Block",
-				Vector3.new(0.55, 0.15, 2.8 - i * 0.3),
-				at(0.2 + i * 0.9, 0, 1.3, 0.1 * i),
-				accent
-			)
-			shard.Material = Enum.Material.Glass
-			shard.Transparency = 0.3
-		end
+		return
+	end
+
+	-- Bat-style wing: arm bones, fingers fanning out from the wrist, and skin between them.
+	local tips = { P(6.6, 0.6, 1.4), P(5.2, 0, 3.2), P(3.4, -0.3, 3.8) }
+	local inner, back = P(1.6, -0.4, 3), P(0.1, -0.3, 1.9)
+
+	local boneLook, skinLook = body, accent
+	if wings == "Crystal" then
+		boneLook = look(accent.Color or WHITE, Enum.Material.Glass, 0.1)
+		skinLook = look(accent.Color or WHITE, Enum.Material.Glass, 0.35)
+	elseif wings == "Flame" then
+		skinLook = look(FLAME, Enum.Material.Neon, 0.25)
+	elseif wings == "Starlight" then
+		boneLook = look(STARLIGHT, Enum.Material.Neon)
+		skinLook = look(STARLIGHT, Enum.Material.Glass, 0.45)
+	end
+
+	local arm = bone(model, "WingBone", shoulder, elbow, 0.2, boneLook)
+	bone(model, "WingBone", elbow, wrist, 0.16, boneLook)
+	for _, tip in tips do
+		bone(model, "WingFinger", wrist, tip, 0.08, boneLook)
+	end
+	bone(model, "WingFinger", elbow, inner, 0.07, boneLook)
+	newPart(
+		model,
+		"WingClaw",
+		"Ellipsoid",
+		Vector3.new(0.18, 0.18, 0.4),
+		CFrame.lookAt(wrist, wrist + (wrist - elbow)),
+		look(BONE)
+	)
+
+	local skin = triangle(model, "WingSkin", wrist, tips[1], tips[2], skinLook)
+	triangle(model, "WingSkin", wrist, tips[2], tips[3], skinLook)
+	triangle(model, "WingSkin", wrist, tips[3], elbow, skinLook)
+	triangle(model, "WingSkin", elbow, tips[3], inner, skinLook)
+	triangle(model, "WingSkin", elbow, inner, back, skinLook)
+	triangle(model, "WingSkin", elbow, back, shoulder, skinLook)
+
+	if wings == "Crystal" then
 		addLight(arm, accent.Color or WHITE, 8)
 	elseif wings == "Flame" then
-		local membrane = newPart(model, "WingFlame", "Block", Vector3.new(3.2, 0.1, 2.2), at(1.6, -0.05, 1.1), accent)
-		glow(membrane, FLAME, 0.2)
-		addParticles(
-			membrane,
-			Color3.fromRGB(255, 220, 80),
-			FLAME,
-			{ Rate = 12, Lifetime = 0.8, Speed = 2, Size = 0.5 }
-		)
+		addParticles(skin, Color3.fromRGB(255, 220, 80), FLAME, { Rate = 12, Lifetime = 0.8, Speed = 2, Size = 0.5 })
 	elseif wings == "Starlight" then
-		glow(arm, STARLIGHT)
-		local membrane = newPart(model, "WingStar", "Block", Vector3.new(3.2, 0.1, 2.4), at(1.6, -0.05, 1.2), accent)
-		membrane.Material = Enum.Material.Glass
-		membrane.Color = STARLIGHT
-		membrane.Transparency = 0.4
-		local sparkles = Instance.new("Sparkles")
-		sparkles.SparkleColor = STARLIGHT
-		sparkles.Parent = membrane
+		addSparkles(arm, STARLIGHT)
+	end
+end
+
+local function buildHead(model: Model, body: GeneOption, accent: GeneOption): BasePart
+	-- Neck: three segments curving up and forward.
+	ellipsoid(model, "Neck", Vector3.new(1.5, 1.6, 1.6), Vector3.new(0, 3.75, -1.95), body)
+	ellipsoid(model, "Neck", Vector3.new(1.25, 1.35, 1.35), Vector3.new(0, 4.45, -2.55), body)
+	ellipsoid(model, "Neck", Vector3.new(1.05, 1.15, 1.15), Vector3.new(0, 5.1, -2.95), body)
+
+	local head = ellipsoid(model, "Head", Vector3.new(1.5, 1.3, 1.8), Vector3.new(0, 5.6, -3.35), body)
+	ellipsoid(model, "Snout", Vector3.new(1, 0.75, 1.7), Vector3.new(0, 5.35, -4.35), body)
+	ellipsoid(model, "Jaw", Vector3.new(0.85, 0.4, 1.5), Vector3.new(0, 5, -4.15), accent)
+
+	for _, side in { -1, 1 } do
+		newPart(model, "Nostril", "Ball", Vector3.one * 0.14, CFrame.new(side * 0.22, 5.58, -4.9), look(BLACK))
+		ellipsoid(model, "Brow", Vector3.new(0.45, 0.22, 0.75), Vector3.new(side * 0.55, 6.02, -3.8), body)
+		local eye = newPart(model, "Eye", "Ball", Vector3.one * 0.38, CFrame.new(side * 0.62, 5.8, -3.85), look(EYE))
+		glow(eye, EYE)
+		-- Slit pupil, like a reptile.
+		newPart(model, "Pupil", "Block", Vector3.new(0.05, 0.28, 0.09), CFrame.new(side * 0.8, 5.8, -3.85), look(BLACK))
+	end
+	return head
+end
+
+local function buildLegs(model: Model, body: GeneOption)
+	local claw = look(BONE)
+	for _, side in { -1, 1 } do
+		-- Front leg
+		ellipsoid(model, "Shoulder", Vector3.new(0.85, 1.5, 0.95), Vector3.new(side * 1.05, 2.25, -1.2), body)
+		newPart(model, "Forearm", "Block", Vector3.new(0.55, 1.3, 0.55), CFrame.new(side * 1.1, 0.95, -1.3), body)
+		ellipsoid(model, "Paw", Vector3.new(0.8, 0.4, 1), Vector3.new(side * 1.1, 0.2, -1.5), body)
+		-- Back leg
+		ellipsoid(model, "Thigh", Vector3.new(1, 1.8, 1.5), Vector3.new(side * 1.1, 2.2, 1.1), body)
+		newPart(model, "Shin", "Block", Vector3.new(0.6, 1.2, 0.6), CFrame.new(side * 1.15, 0.85, 1.45), body)
+		ellipsoid(model, "Paw", Vector3.new(0.85, 0.4, 1.1), Vector3.new(side * 1.15, 0.2, 1.2), body)
+
+		for _, offset in { -0.22, 0, 0.22 } do
+			ellipsoid(model, "Claw", Vector3.new(0.12, 0.15, 0.35), Vector3.new(side * 1.1 + offset, 0.12, -2.05), claw)
+			ellipsoid(model, "Claw", Vector3.new(0.12, 0.15, 0.35), Vector3.new(side * 1.15 + offset, 0.12, 0.6), claw)
+		end
+	end
+end
+
+-- Spikes along the back, from the neck to the hips.
+local function buildSpine(model: Model, accent: GeneOption)
+	local spikes = {
+		{ Position = Vector3.new(0, 5.6, -2.95), Height = 0.4 },
+		{ Position = Vector3.new(0, 5.05, -2.55), Height = 0.45 },
+		{ Position = Vector3.new(0, 4.3, -1.6), Height = 0.6 },
+		{ Position = Vector3.new(0, 4.25, -0.8), Height = 0.65 },
+		{ Position = Vector3.new(0, 4.15, 0), Height = 0.6 },
+		{ Position = Vector3.new(0, 3.9, 0.8), Height = 0.55 },
+		{ Position = Vector3.new(0, 3.75, 1.5), Height = 0.45 },
+	}
+	for _, spike in spikes do
+		newPart(
+			model,
+			"Spike",
+			"Wedge",
+			Vector3.new(0.14, spike.Height, spike.Height * 0.9),
+			CFrame.new(spike.Position),
+			accent
+		)
 	end
 end
 
@@ -158,12 +306,12 @@ local function buildHorns(model: Model, horns: string, accent: GeneOption, head:
 	if horns == "Crown" then
 		for i = 0, 4 do
 			local angle = math.rad(-60 + i * 30)
-			local position = Vector3.new(math.sin(angle) * 0.6, 5.35, -2.4 - math.cos(angle) * 0.6)
-			newPart(model, "CrownSpike", "Wedge", Vector3.new(0.2, 0.6, 0.35), CFrame.new(position), accent)
+			local position = Vector3.new(math.sin(angle) * 0.55, 6.25, -3.2 - math.cos(angle) * 0.55)
+			newPart(model, "CrownSpike", "Wedge", Vector3.new(0.18, 0.6, 0.35), CFrame.new(position), accent)
 		end
 		return
 	elseif horns == "Halo" then
-		local center = Vector3.new(0, 6.1, -2.4)
+		local center = Vector3.new(0, 6.95, -3.2)
 		for i = 1, 10 do
 			local angle = i / 10 * math.pi * 2
 			local bead = newPart(
@@ -171,7 +319,7 @@ local function buildHorns(model: Model, horns: string, accent: GeneOption, head:
 				"Halo",
 				"Ball",
 				Vector3.one * 0.3,
-				CFrame.new(center + Vector3.new(math.cos(angle) * 0.8, 0, math.sin(angle) * 0.8)),
+				CFrame.new(center + Vector3.new(math.cos(angle) * 0.75, 0, math.sin(angle) * 0.75)),
 				accent
 			)
 			glow(bead, Color3.fromRGB(255, 240, 170))
@@ -181,18 +329,19 @@ local function buildHorns(model: Model, horns: string, accent: GeneOption, head:
 	end
 
 	for _, side in { -1, 1 } do
-		local base = CFrame.new(side * 0.45, 5.3, -2.3)
+		-- Horns grow from the back of the head and point up and back.
+		local base = CFrame.new(side * 0.42, 6.1, -3)
 		if horns == "Nubs" then
-			newPart(model, "Horn", "Ball", Vector3.one * 0.4, base, accent)
+			newPart(model, "Horn", "Ball", Vector3.one * 0.35, base, accent)
 		elseif horns == "Short" then
-			newPart(model, "Horn", "Wedge", Vector3.new(0.3, 0.8, 0.5), base * CFrame.new(0, 0.3, 0), accent)
+			newPart(model, "Horn", "Wedge", Vector3.new(0.28, 0.8, 0.55), base * CFrame.new(0, 0.3, 0.1), accent)
 		elseif horns == "Curved" then
 			newPart(
 				model,
 				"Horn",
 				"Wedge",
 				Vector3.new(0.3, 0.7, 0.5),
-				base * CFrame.new(0, 0.3, 0) * CFrame.Angles(math.rad(20), 0, 0),
+				base * CFrame.new(0, 0.3, 0.1) * CFrame.Angles(math.rad(20), 0, 0),
 				accent
 			)
 			newPart(
@@ -200,7 +349,7 @@ local function buildHorns(model: Model, horns: string, accent: GeneOption, head:
 				"HornTip",
 				"Wedge",
 				Vector3.new(0.22, 0.6, 0.4),
-				base * CFrame.new(0, 0.75, 0.35) * CFrame.Angles(math.rad(55), 0, 0),
+				base * CFrame.new(0, 0.75, 0.45) * CFrame.Angles(math.rad(55), 0, 0),
 				accent
 			)
 		elseif horns == "Crystal" then
@@ -209,7 +358,7 @@ local function buildHorns(model: Model, horns: string, accent: GeneOption, head:
 				"Horn",
 				"Block",
 				Vector3.new(0.3, 1.2, 0.3),
-				base * CFrame.new(0, 0.5, 0.1) * CFrame.Angles(math.rad(15), 0, -side * math.rad(10)),
+				base * CFrame.new(0, 0.5, 0.15) * CFrame.Angles(math.rad(20), 0, -side * math.rad(10)),
 				accent
 			)
 			horn.Material = Enum.Material.Glass
@@ -220,21 +369,33 @@ local function buildHorns(model: Model, horns: string, accent: GeneOption, head:
 end
 
 local function buildTail(model: Model, tail: string, body: GeneOption, accent: GeneOption)
-	newPart(model, "Tail", "Ellipsoid", Vector3.new(1.4, 1.2, 1.8), CFrame.new(0, 2.5, 2.4), body)
-	newPart(model, "Tail", "Ellipsoid", Vector3.new(1, 0.9, 1.6), CFrame.new(0, 2.2, 3.6), body)
-	newPart(model, "Tail", "Ellipsoid", Vector3.new(0.7, 0.6, 1.4), CFrame.new(0, 2.1, 4.7), body)
+	local segments = {
+		{ Size = Vector3.new(1.6, 1.5, 1.9), Position = Vector3.new(0, 2.65, 2.4) },
+		{ Size = Vector3.new(1.25, 1.15, 1.8), Position = Vector3.new(0, 2.4, 3.6) },
+		{ Size = Vector3.new(0.95, 0.85, 1.7), Position = Vector3.new(0, 2.2, 4.75) },
+		{ Size = Vector3.new(0.7, 0.6, 1.6), Position = Vector3.new(0, 2.1, 5.8) },
+		{ Size = Vector3.new(0.45, 0.4, 1.4), Position = Vector3.new(0, 2.1, 6.75) },
+	}
+	for _, segment in segments do
+		ellipsoid(model, "Tail", segment.Size, segment.Position, body)
+	end
 
-	local tip = CFrame.new(0, 2.1, 5.55)
+	local tip = CFrame.new(0, 2.15, 7.5)
 	local diamond = CFrame.Angles(math.rad(45), 0, 0)
 
 	if tail == "Spiked" then
-		newPart(model, "TailTip", "Block", Vector3.new(0.15, 0.9, 0.9), tip * diamond, accent)
-		for i, z in { 2.4, 3.6, 4.7 } do
-			local height = 0.75 - i * 0.12
-			newPart(model, "Spine", "Wedge", Vector3.new(0.15, height, 0.6), CFrame.new(0, 3.05 - i * 0.25, z), accent)
+		newPart(model, "TailTip", "Block", Vector3.new(0.12, 0.9, 0.9), tip * diamond, accent)
+		for i = 1, 4 do
+			local segment = segments[i]
+			local height = 0.6 - i * 0.08
+			local top = segment.Position + Vector3.new(0, segment.Size.Y / 2 + height * 0.2, 0)
+			newPart(model, "TailSpike", "Wedge", Vector3.new(0.12, height, height * 0.9), CFrame.new(top), accent)
 		end
 	elseif tail == "Club" then
 		newPart(model, "TailTip", "Ball", Vector3.one * 1.1, tip, accent)
+		for _, offset in { Vector3.new(0.55, 0, 0), Vector3.new(-0.55, 0, 0), Vector3.new(0, 0.55, 0) } do
+			newPart(model, "ClubSpike", "Ball", Vector3.one * 0.3, tip + offset, look(BONE))
+		end
 	elseif tail == "Flame" then
 		local flame = newPart(model, "TailTip", "Ball", Vector3.one * 0.9, tip, accent)
 		glow(flame, FLAME)
@@ -250,7 +411,7 @@ local function buildTail(model: Model, tail: string, body: GeneOption, accent: G
 				model,
 				"TailTip",
 				"Block",
-				Vector3.new(0.15, 0.9, 0.9),
+				Vector3.new(0.12, 0.9, 0.9),
 				tip * CFrame.new(side * 0.35, 0, 0) * CFrame.Angles(0, side * math.rad(20), 0) * diamond,
 				accent
 			)
@@ -268,36 +429,34 @@ local function buildTail(model: Model, tail: string, body: GeneOption, accent: G
 	end
 end
 
-local function addAura(torso: BasePart, aura: string)
+local function addAura(chest: BasePart, aura: string)
 	if aura == "Ember" then
 		addParticles(
-			torso,
+			chest,
 			Color3.fromRGB(255, 200, 60),
 			Color3.fromRGB(255, 60, 20),
 			{ Rate = 10, Lifetime = 1.5, Speed = 2, Size = 0.35 }
 		)
 	elseif aura == "Frost" then
-		addParticles(torso, WHITE, Color3.fromRGB(140, 210, 255), { Rate = 12, Lifetime = 2, Speed = 0.6, Size = 0.3 })
+		addParticles(chest, WHITE, Color3.fromRGB(140, 210, 255), { Rate = 12, Lifetime = 2, Speed = 0.6, Size = 0.3 })
 	elseif aura == "Storm" then
 		addParticles(
-			torso,
+			chest,
 			Color3.fromRGB(255, 255, 150),
 			Color3.fromRGB(255, 230, 40),
 			{ Rate = 6, Lifetime = 0.25, Speed = 8, Size = 0.4 }
 		)
-		addLight(torso, Color3.fromRGB(255, 240, 120), 12)
+		addLight(chest, Color3.fromRGB(255, 240, 120), 12)
 	elseif aura == "Starfall" then
-		local sparkles = Instance.new("Sparkles")
-		sparkles.SparkleColor = Color3.fromRGB(255, 215, 90)
-		sparkles.Parent = torso
+		addSparkles(chest, Color3.fromRGB(255, 215, 90))
 	elseif aura == "Cosmic" then
 		addParticles(
-			torso,
+			chest,
 			Color3.fromRGB(255, 120, 230),
 			Color3.fromRGB(110, 60, 255),
 			{ Rate = 20, Lifetime = 2, Speed = 1, Size = 0.5 }
 		)
-		addLight(torso, Color3.fromRGB(170, 90, 255), 14)
+		addLight(chest, Color3.fromRGB(170, 90, 255), 14)
 	end
 end
 
@@ -308,42 +467,24 @@ function DragonBuilder.Build(genes: Genes.DragonGenes): Model
 	local model = Instance.new("Model")
 	model.Name = "Dragon"
 
-	-- Body, belly and legs
-	local torso = newPart(model, "Body", "Ellipsoid", Vector3.new(3, 2.6, 4.2), CFrame.new(0, BODY_Y, 0), body)
-	newPart(model, "Belly", "Ellipsoid", Vector3.new(2.4, 2, 3.6), CFrame.new(0, 2.3, -0.4), accent)
-	for _, x in { -0.95, 0.95 } do
-		for _, z in { -1.2, 1.2 } do
-			newPart(model, "Leg", "Block", Vector3.new(0.7, 1.7, 0.7), CFrame.new(x, 0.85, z), body)
-			newPart(model, "Foot", "Ellipsoid", Vector3.new(0.9, 0.4, 1.1), CFrame.new(x, 0.2, z - 0.15), accent)
-		end
-	end
+	-- Body: chest, hips and a belly plate underneath.
+	local chest = ellipsoid(model, "Chest", Vector3.new(2.6, 2.4, 2.8), CHEST, body)
+	ellipsoid(model, "Hips", Vector3.new(2.4, 2.1, 2.5), Vector3.new(0, 2.65, 1), body)
+	ellipsoid(model, "Belly", Vector3.new(2, 1.5, 3.6), Vector3.new(0, 2.25, 0), accent)
 
-	-- Neck and head
-	newPart(
-		model,
-		"Neck",
-		"Ellipsoid",
-		Vector3.new(1.3, 2, 1.3),
-		CFrame.new(0, 3.7, -1.9) * CFrame.Angles(math.rad(-30), 0, 0),
-		body
-	)
-	local head = newPart(model, "Head", "Ellipsoid", Vector3.new(1.8, 1.6, 2), CFrame.new(0, 4.6, -2.5), body)
-	newPart(model, "Snout", "Ellipsoid", Vector3.new(1.2, 0.9, 1.4), CFrame.new(0, 4.3, -3.4), body)
-	for _, side in { -1, 1 } do
-		newPart(model, "Eye", "Ball", Vector3.one * 0.5, CFrame.new(side * 0.6, 4.85, -3.05), solid(WHITE))
-		newPart(model, "Pupil", "Ball", Vector3.one * 0.28, CFrame.new(side * 0.65, 4.87, -3.27), solid(BLACK))
-	end
-
+	local head = buildHead(model, body, accent)
+	buildLegs(model, body)
+	buildSpine(model, accent)
 	buildHorns(model, genes.Horns, accent, head)
 	for _, side in { -1, 1 } do
 		buildWing(model, side, genes.Wings, body, accent)
 	end
 	buildTail(model, genes.Tail, body, accent)
-	addAura(torso, genes.Aura)
+	addAura(chest, genes.Aura)
 
-	-- Pivot on the ground under the body, then grow/shrink to the dragon's size.
-	model.PrimaryPart = torso
-	torso.PivotOffset = CFrame.new(0, -BODY_Y, 0)
+	-- Pivot on the ground under the middle of the dragon, then grow/shrink to its size.
+	model.PrimaryPart = chest
+	chest.PivotOffset = CFrame.new(-CHEST)
 	local scale = Genes.Get("Size", genes.Size).Scale or 1
 	if scale ~= 1 then
 		model:ScaleTo(scale)
@@ -356,9 +497,10 @@ function DragonBuilder.Build(genes: Genes.DragonGenes): Model
 end
 
 -- Floating name + rarity label above a dragon built by DragonBuilder.Build.
+-- Only shows up close, so a crowd of dragons doesn't turn into a wall of text.
 function DragonBuilder.AddNameTag(model: Model, genes: Genes.DragonGenes)
-	local torso = model.PrimaryPart
-	if not torso then
+	local chest = model.PrimaryPart
+	if not chest then
 		return
 	end
 	local rarity: Rarity.Tier = Genes.GetRarity(genes)
@@ -366,10 +508,10 @@ function DragonBuilder.AddNameTag(model: Model, genes: Genes.DragonGenes)
 
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "NameTag"
-	billboard.Size = UDim2.fromOffset(220, 54)
-	billboard.StudsOffsetWorldSpace = Vector3.new(0, 4 * scale, 0)
-	billboard.MaxDistance = 90
-	billboard.Adornee = torso
+	billboard.Size = UDim2.fromOffset(180, 44)
+	billboard.StudsOffsetWorldSpace = Vector3.new(0, 4.6 * scale, 0)
+	billboard.MaxDistance = 40 * math.max(scale, 1)
+	billboard.Adornee = chest
 
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.BackgroundTransparency = 1
@@ -392,7 +534,7 @@ function DragonBuilder.AddNameTag(model: Model, genes: Genes.DragonGenes)
 	rarityLabel.Text = rarity.Name
 	rarityLabel.Parent = billboard
 
-	billboard.Parent = torso
+	billboard.Parent = chest
 end
 
 return DragonBuilder
