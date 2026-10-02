@@ -17,6 +17,15 @@ Config.Crystal = {
 	MaxClickDistance = 32,
 }
 
+Config.Nests = {
+	Base = 3, -- nests every player has (Game Passes can add more later)
+}
+
+Config.Dragons = {
+	MaxOwned = 60, -- dragons a player can keep at once
+	AnnounceFrom = "Legendary", -- hatching this rarity or better is announced to the whole server
+}
+
 Config.Dev = {
 	-- Studio only: show a gallery of random dragons in front of the spawn (never in the live game).
 	DragonGallery = true,

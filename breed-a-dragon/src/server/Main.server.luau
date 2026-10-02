@@ -11,10 +11,14 @@ local DataService = require(Services.DataService)
 local CurrencyService = require(Services.CurrencyService)
 local CrystalService = require(Services.CrystalService)
 local DevGalleryService = require(Services.DevGalleryService)
+local EggService = require(Services.EggService)
+local EggShopService = require(Services.EggShopService)
 
 CurrencyService.Start()
 CrystalService.Start()
 DevGalleryService.Start()
+EggService.Start()
+EggShopService.Start()
 
 -- Last: everything that reacts to a player's data loading has registered by now.
 DataService.Start()

@@ -244,4 +244,56 @@ function Genes.GetKey(genes: DragonGenes): string
 	return table.concat(parts, "-")
 end
 
+-- The exact chance of each overall rarity for a dragon rolled with these weights,
+-- e.g. { Common = 0.62, Rare = 0.27, ... }. Shown to players before they buy an egg.
+-- Works out every trait's points distribution (including the fall-back to a lower tier
+-- when a trait has no gene in the rolled tier) and combines them, so no guessing.
+function Genes.GetRarityOdds(weights: RarityWeights?): { [string]: number }
+	local tierWeights = weights or defaultWeights()
+	local total = 0
+	for _, tier in Rarity.Tiers do
+		total += tierWeights[tier.Name] or 0
+	end
+
+	local scoreChances: { [number]: number } = { [0] = 1 }
+	for _, trait in TRAITS do
+		-- Which tiers does this trait actually have genes in?
+		local hasTier: { [number]: boolean } = {}
+		for _, option in OPTIONS[trait] do
+			hasTier[Rarity.Get(option.Rarity).Order] = true
+		end
+
+		local pointChances: { [number]: number } = {}
+		for _, tier in Rarity.Tiers do
+			local chance = (tierWeights[tier.Name] or 0) / total
+			local landed = Rarity.Tiers[1]
+			for order = tier.Order, 1, -1 do
+				if hasTier[order] then
+					landed = Rarity.Tiers[order]
+					break
+				end
+			end
+			pointChances[landed.Points] = (pointChances[landed.Points] or 0) + chance
+		end
+
+		local combined: { [number]: number } = {}
+		for score, chance in scoreChances do
+			for points, pointChance in pointChances do
+				combined[score + points] = (combined[score + points] or 0) + chance * pointChance
+			end
+		end
+		scoreChances = combined
+	end
+
+	local odds: { [string]: number } = {}
+	for _, tier in Rarity.Tiers do
+		odds[tier.Name] = 0
+	end
+	for score, chance in scoreChances do
+		local tier = Rarity.FromScore(score)
+		odds[tier.Name] += chance
+	end
+	return odds
+end
+
 return Genes
