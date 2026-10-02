@@ -17,4 +17,9 @@ Config.Crystal = {
 	MaxClickDistance = 32,
 }
 
+Config.Dev = {
+	-- Studio only: show a gallery of random dragons in front of the spawn (never in the live game).
+	DragonGallery = true,
+}
+
 return Config

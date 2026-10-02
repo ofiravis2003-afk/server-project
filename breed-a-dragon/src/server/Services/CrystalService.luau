@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local CurrencyService = require(script.Parent.CurrencyService)
+local Ground = require(script.Parent.Parent.Util.Ground)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 
 local CRYSTAL_SIZE = Vector3.new(3, 6, 3)
@@ -63,14 +64,12 @@ function CrystalService.Start()
 	folder.Name = "EmberCrystals"
 	folder.Parent = workspace
 
-	local spawnLocation = workspace:FindFirstChildWhichIsA("SpawnLocation", true)
-	local center = if spawnLocation then spawnLocation.Position * Vector3.new(1, 0, 1) else Vector3.zero
-	local groundY = if spawnLocation then spawnLocation.Position.Y - spawnLocation.Size.Y / 2 else 0
+	local center = Ground.GetSpawnCenter()
 
 	for i = 1, Config.Crystal.Count do
 		local angle = (i / Config.Crystal.Count) * math.pi * 2
 		local offset = Vector3.new(math.cos(angle), 0, math.sin(angle)) * Config.Crystal.Radius
-		createCrystal(center + offset + Vector3.new(0, groundY, 0), folder)
+		createCrystal(center + offset, folder)
 	end
 end
 
