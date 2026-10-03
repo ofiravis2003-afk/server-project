@@ -1,5 +1,5 @@
 --!strict
--- Builds a dragon Model from its genes, using plain parts (no imported meshes).
+-- Builds a dragon Model from its genes.
 --
 -- Layout (Normal size, in studs): the dragon faces -Z (its LookVector), feet on y = 0,
 -- snout at about z = -5, tail tip at about z = +7.5.
@@ -7,7 +7,12 @@
 --   model:PivotTo(CFrame.new(groundPosition))
 -- puts it standing on the ground. Lives in Shared so the UI can show previews later too.
 --
--- Wing membranes are real triangles, each made from two WedgeParts (see `triangle`).
+-- Two ways to build one:
+--   * From the Tripo AI model, if ReplicatedStorage has "TripoDragon" (MeshParts named Body,
+--     HeadNeck, LeftWing, RightWing, Leg1-4): the meshes are coloured by the genes and rare
+--     genes add extras on top.
+--   * Otherwise from plain parts. Wing membranes are then real triangles, each made from
+--     two WedgeParts (see `triangle`).
 
 local Genes = require(script.Parent.Genes)
 local Rarity = require(script.Parent.Rarity)
@@ -28,6 +33,8 @@ local DragonBuilder = {}
 
 -- While a wing or the tail is being built, every new part is tagged with it (see buildRigged).
 local currentRig: string? = nil
+-- While set, every new part is also added to this list (see collectParts).
+local collecting: { BasePart }? = nil
 
 local function look(color: Color3, material: Enum.Material?, transparency: number?): GeneOption
 	return { Id = "_", Rarity = "Common", Color = color, Material = material, Transparency = transparency }
@@ -71,6 +78,9 @@ local function newPart(model: Model, name: string, kind: PartKind, size: Vector3
 	applyLook(part, option)
 	if currentRig then
 		part:SetAttribute("Rig", currentRig)
+	end
+	if collecting then
+		table.insert(collecting, part)
 	end
 	part.Parent = model
 	return part
@@ -435,6 +445,15 @@ local function buildTail(model: Model, tail: string, body: GeneOption, accent: G
 	end
 end
 
+-- Runs `build` and returns every part it made.
+local function collectParts(build: () -> ()): { BasePart }
+	collecting = {}
+	build()
+	local made = collecting or {}
+	collecting = nil
+	return made
+end
+
 -- Runs `build` with every part it makes tagged Rig = `tag`, then adds an invisible
 -- joint part named `tag .. "Joint"` at `joint` for the animator to rotate around.
 local function buildRigged(model: Model, tag: string, joint: Vector3, build: () -> ())
@@ -476,7 +495,7 @@ local function addAura(chest: BasePart, aura: string)
 	end
 end
 
-function DragonBuilder.Build(genes: Genes.DragonGenes): Model
+local function buildFromParts(genes: Genes.DragonGenes): Model
 	local body = Genes.Get("Body", genes.Body)
 	local accent = Genes.Get("Accent", genes.Accent)
 
@@ -512,6 +531,156 @@ function DragonBuilder.Build(genes: Genes.DragonGenes): Model
 	if scale ~= 1 then
 		model:ScaleTo(scale)
 	end
+	return model
+end
+
+-- ===== Dragons from the Tripo model =====
+
+local MESH_DRAGON_LENGTH = 11 -- studs: longest side of a Normal-size mesh dragon (like the part dragon)
+local ACCENT_MESHES = { LeftWing = true, RightWing = true }
+
+-- World-space box around a part (works for rotated parts).
+local function boundsOf(part: BasePart): (Vector3, Vector3)
+	local half = part.Size / 2
+	local low, high = Vector3.one * math.huge, -Vector3.one * math.huge
+	for _, x in { -1, 1 } do
+		for _, y in { -1, 1 } do
+			for _, z in { -1, 1 } do
+				local corner = part.CFrame:PointToWorldSpace(half * Vector3.new(x, y, z))
+				low = low:Min(corner)
+				high = high:Max(corner)
+			end
+		end
+	end
+	return low, high
+end
+
+local function findTripoTemplate(): Model?
+	-- Shared code also runs in tests outside Roblox, where there is no `game`.
+	local ok, storage = pcall(function()
+		return game:GetService("ReplicatedStorage")
+	end)
+	if not ok or not storage then
+		return nil
+	end
+	local template = storage:FindFirstChild("TripoDragon")
+	if template and template:IsA("Model") and template:FindFirstChild("Body") then
+		return template
+	end
+	return nil
+end
+
+local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
+	local bodyLook = Genes.Get("Body", genes.Body)
+	local accent = Genes.Get("Accent", genes.Accent)
+
+	local model = template:Clone()
+	model.Name = "Dragon"
+	local bodyMesh = model:FindFirstChild("Body") :: BasePart
+	local headMesh = model:FindFirstChild("HeadNeck") :: BasePart?
+
+	-- Colour every mesh by the genes, and make them pure decoration (no physics).
+	for _, part in model:GetDescendants() do
+		if part:IsA("SurfaceAppearance") then
+			part:Destroy() -- a texture would hide the gene colours
+		elseif part:IsA("BasePart") then
+			if part:IsA("MeshPart") then
+				part.TextureID = ""
+			end
+			part.Anchored = true
+			part.CanCollide = false
+			part.CanTouch = false
+			part.Massless = true
+			applyLook(part, if ACCENT_MESHES[part.Name] then accent else bodyLook)
+		end
+	end
+
+	-- 1. Turn it to face -Z (the way the head points), stand it on y = 0, centre the body.
+	local boxFrame, boxSize = model:GetBoundingBox()
+	local groundY = boxFrame.Position.Y - boxSize.Y / 2
+	local bodyCenter = bodyMesh.CFrame.Position
+	local forward = if headMesh then (headMesh.CFrame.Position - bodyCenter) * Vector3.new(1, 0, 1) else Vector3.zero
+	if forward.Magnitude < 0.01 then
+		forward = Vector3.new(0, 0, -1)
+	end
+	local ground = Vector3.new(bodyCenter.X, groundY, bodyCenter.Z)
+	if model.PrimaryPart then
+		model.PrimaryPart = nil -- so WorldPivot below is used as the pivot
+	end
+	model.WorldPivot = CFrame.lookAt(ground, ground + forward.Unit)
+	model:PivotTo(CFrame.new())
+	model.PrimaryPart = bodyMesh
+	bodyMesh.PivotOffset = bodyMesh.CFrame:Inverse()
+
+	-- 2. Same size as every other Normal dragon.
+	local _, size = model:GetBoundingBox()
+	local normalize = MESH_DRAGON_LENGTH / math.max(size.X, size.Y, size.Z)
+	model:ScaleTo(normalize)
+
+	-- 3. Wings: tag them for the animator and put a shoulder joint at their inner edge.
+	--    Which side a wing is on is worked out from where it is, not from its name.
+	for _, name in { "LeftWing", "RightWing" } do
+		local wing = model:FindFirstChild(name)
+		if wing and wing:IsA("BasePart") then
+			local low, high = boundsOf(wing)
+			local onRight = (low.X + high.X) / 2 > 0
+			local tag = if onRight then "RightWing" else "LeftWing"
+			wing:SetAttribute("Rig", tag)
+			local joint = Vector3.new(
+				if onRight then low.X + (high.X - low.X) * 0.08 else high.X - (high.X - low.X) * 0.08,
+				low.Y + (high.Y - low.Y) * 0.3,
+				(low.Z + high.Z) / 2
+			)
+			local jointPart = newPart(model, tag .. "Joint", "Block", Vector3.one * 0.2, CFrame.new(joint), look(WHITE))
+			jointPart.Transparency = 1
+		end
+	end
+
+	-- 4. Extras for rare genes, placed relative to the head and the back of the body.
+	if headMesh and (genes.Horns == "Halo" or genes.Horns == "Crown" or genes.Horns == "Crystal") then
+		local low, high = boundsOf(headMesh)
+		local headTop = Vector3.new(0, high.Y, low.Z + (high.Z - low.Z) * 0.35)
+		-- buildHorns draws around the part-dragon's head; move what it makes onto this head.
+		local made = collectParts(function()
+			buildHorns(model, genes.Horns, accent, headMesh)
+		end)
+		local shift = headTop - Vector3.new(0, 6.25, -3.2)
+		for _, part in made do
+			part.CFrame = part.CFrame + shift
+		end
+	end
+	if genes.Tail == "Flame" or genes.Tail == "Comet" then
+		local low, high = boundsOf(bodyMesh)
+		local tip = Vector3.new(0, low.Y + (high.Y - low.Y) * 0.35, high.Z - 0.2)
+		local tipPart = newPart(model, "TailTip", "Ball", Vector3.one * 0.7, CFrame.new(tip), accent)
+		glow(tipPart, if genes.Tail == "Flame" then FLAME else accent.Color or WHITE)
+		if genes.Tail == "Flame" then
+			local fire = Instance.new("Fire")
+			fire.Size = 3
+			fire.Heat = 4
+			fire.Color = FLAME
+			fire.SecondaryColor = Color3.fromRGB(255, 220, 80)
+			fire.Parent = tipPart
+		else
+			addParticles(
+				tipPart,
+				WHITE,
+				accent.Color or WHITE,
+				{ Rate = 25, Lifetime = 1.2, Speed = 1, Size = 0.6, Spread = 15 }
+			)
+		end
+	end
+	addAura(bodyMesh, genes.Aura)
+
+	-- 5. The dragon's own size gene.
+	local scale = Genes.Get("Size", genes.Size).Scale or 1
+	model:ScaleTo(normalize * scale)
+	return model
+end
+
+function DragonBuilder.Build(genes: Genes.DragonGenes): Model
+	local template = findTripoTemplate()
+	local model = if template then buildFromMesh(template, genes) else buildFromParts(genes)
 
 	local rarity = Genes.GetRarity(genes)
 	model:SetAttribute("DragonName", Genes.GetName(genes))
@@ -532,7 +701,10 @@ function DragonBuilder.AddNameTag(model: Model, genes: Genes.DragonGenes)
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "NameTag"
 	billboard.Size = UDim2.fromOffset(180, 44)
-	billboard.StudsOffsetWorldSpace = Vector3.new(0, 4.6 * scale, 0)
+	-- Just above the top of the dragon, whichever way it was built.
+	local _, size = model:GetBoundingBox()
+	local chestHeight = chest.CFrame.Position.Y - model:GetPivot().Position.Y
+	billboard.StudsOffsetWorldSpace = Vector3.new(0, size.Y - chestHeight + scale, 0)
 	billboard.MaxDistance = 40 * math.max(scale, 1)
 	billboard.Adornee = chest
 
