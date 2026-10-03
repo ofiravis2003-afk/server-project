@@ -538,6 +538,10 @@ end
 
 local MESH_DRAGON_LENGTH = 11 -- studs: longest side of a Normal-size mesh dragon (like the part dragon)
 local ACCENT_MESHES = { LeftWing = true, RightWing = true }
+-- Tripo's pieces don't quite meet; growing each body piece a little closes the slits between them.
+local SEAM_OVERLAP = 1.03
+-- Name of a small part placed in the template on one eye socket (the other eye is mirrored).
+local EYE_MARKERS = { "Eye", "RightEye", "LeftEye" }
 
 -- World-space box around a part (works for rotated parts).
 local function boundsOf(part: BasePart): (Vector3, Vector3)
@@ -578,6 +582,14 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 	model.Name = "Dragon"
 	local bodyMesh = model:FindFirstChild("Body") :: BasePart
 	local headMesh = model:FindFirstChild("HeadNeck") :: BasePart?
+	local eyeMarker: BasePart?
+	for _, name in EYE_MARKERS do
+		local found = model:FindFirstChild(name)
+		if found and found:IsA("BasePart") then
+			eyeMarker = found
+			break
+		end
+	end
 
 	-- Colour every mesh by the genes, and make them pure decoration (no physics).
 	for _, part in model:GetDescendants() do
@@ -592,6 +604,9 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			part.CanTouch = false
 			part.Massless = true
 			applyLook(part, if ACCENT_MESHES[part.Name] then accent else bodyLook)
+			if part ~= eyeMarker and not ACCENT_MESHES[part.Name] then
+				part.Size *= SEAM_OVERLAP
+			end
 		end
 	end
 
@@ -633,6 +648,29 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			)
 			local jointPart = newPart(model, tag .. "Joint", "Block", Vector3.one * 0.2, CFrame.new(joint), look(WHITE))
 			jointPart.Transparency = 1
+		end
+	end
+
+	-- 3b. Eyes: glowing, with a slit pupil, on the marked eye socket and its mirror image.
+	if eyeMarker then
+		local marked = eyeMarker.CFrame.Position
+		local diameter = math.max(eyeMarker.Size.X, eyeMarker.Size.Y, eyeMarker.Size.Z)
+		eyeMarker:Destroy()
+		for _, side in { 1, -1 } do
+			local position = Vector3.new(math.abs(marked.X) * side, marked.Y, marked.Z)
+			local eye = newPart(model, "Eye", "Ball", Vector3.one * diameter, CFrame.new(position), look(EYE))
+			glow(eye, EYE)
+			-- The pupil sits on the outside of the eye, facing sideways and a little forward.
+			local outward = Vector3.new(side, 0, -0.35).Unit
+			local pupilAt = position + outward * diameter * 0.45
+			newPart(
+				model,
+				"Pupil",
+				"Block",
+				Vector3.new(diameter * 0.18, diameter * 0.75, diameter * 0.12),
+				CFrame.lookAt(pupilAt, pupilAt + outward),
+				look(BLACK)
+			)
 		end
 	end
 
