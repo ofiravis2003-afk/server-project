@@ -16,13 +16,31 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local CurrencyService = require(script.Parent.CurrencyService)
 local DataService = require(script.Parent.DataService)
 local DragonService = require(script.Parent.DragonService)
+local WorldFirstService = require(script.Parent.WorldFirstService)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 
 -- Clocks on different machines can be a moment apart; don't refuse an egg that is ready "now".
 local CLOCK_TOLERANCE = 1
 
-export type NestEgg = { Nest: number, Egg: string, HatchAt: number }
-export type HatchResult = { Ok: boolean, Message: string?, DragonId: string?, Genes: Genes.DragonGenes?, Egg: string? }
+-- Genes/Generation/Mutated are only set on Bred Eggs: the baby is decided when the egg is laid.
+export type NestEgg = {
+	Nest: number,
+	Egg: string,
+	HatchAt: number,
+	Genes: Genes.DragonGenes?,
+	Generation: number?,
+	Mutated: { string }?,
+}
+export type HatchResult = {
+	Ok: boolean,
+	Message: string?,
+	DragonId: string?,
+	Genes: Genes.DragonGenes?,
+	Egg: string?,
+	NewGenes: { string }?, -- genes that were new to the player's Dragon Index
+	Mutated: { string }?, -- traits that mutated while breeding
+	WorldFirst: boolean?,
+}
 
 local EggService = {}
 
@@ -39,7 +57,12 @@ end
 local function sendNests(player: Player)
 	local data = DataService.GetData(player)
 	if data then
-		nestsRemote:FireClient(player, { NestCount = EggService.GetNestCount(player), Eggs = data.Nests })
+		-- Only what the nests bar needs: a Bred Egg's genes stay a surprise until it hatches.
+		local eggs = {}
+		for _, entry in data.Nests do
+			table.insert(eggs, { Nest = entry.Nest, Egg = entry.Egg, HatchAt = entry.HatchAt })
+		end
+		nestsRemote:FireClient(player, { NestCount = EggService.GetNestCount(player), Eggs = eggs })
 	end
 end
 
@@ -56,11 +79,39 @@ local function findFreeNest(player: Player, nests: { NestEgg }): number?
 	return nil
 end
 
+function EggService.HasFreeNest(player: Player): boolean
+	local data = DataService.GetData(player)
+	return data ~= nil and findFreeNest(player, data.Nests) ~= nil
+end
+
+-- Puts an egg in the first free nest, hatching in `hatchTime` seconds. Returns the nest, or nil if all are full.
+function EggService.PlaceEgg(
+	player: Player,
+	eggId: string,
+	hatchTime: number,
+	bred: { Genes: Genes.DragonGenes, Generation: number, Mutated: { string } }?
+): number?
+	local data = DataService.GetData(player)
+	local nest = data and findFreeNest(player, data.Nests)
+	if not data or not nest then
+		return nil
+	end
+	local entry: NestEgg = { Nest = nest, Egg = eggId, HatchAt = os.time() + hatchTime }
+	if bred then
+		entry.Genes = bred.Genes
+		entry.Generation = bred.Generation
+		entry.Mutated = bred.Mutated
+	end
+	table.insert(data.Nests, entry)
+	sendNests(player)
+	return nest
+end
+
 -- Buys an egg and puts it in the first free nest. Returns whether it worked and a message for the player.
 function EggService.Buy(player: Player, eggId: string): (boolean, string)
 	local egg = Eggs.Get(eggId)
 	local data = DataService.GetData(player)
-	if not egg or not data then
+	if not egg or egg.Hidden or not data then
 		return false, "Please wait a moment and try again."
 	end
 
@@ -73,9 +124,7 @@ function EggService.Buy(player: Player, eggId: string): (boolean, string)
 		return false, `You need {missing} more {Config.Currency.Name} for a {egg.Name}.`
 	end
 
-	local entry: NestEgg = { Nest = nest, Egg = egg.Id, HatchAt = os.time() + egg.HatchTime }
-	table.insert(data.Nests, entry)
-	sendNests(player)
+	EggService.PlaceEgg(player, egg.Id, egg.HatchTime)
 	return true, `{egg.Name} placed in nest {nest}!`
 end
 
@@ -122,15 +171,37 @@ function EggService.Hatch(player: Player, nest: any): HatchResult
 		return { Ok = false }
 	end
 
-	local genes = Genes.Roll(rng, egg.Weights)
-	local dragonId = DragonService.Add(player, genes, "Egg:" .. egg.Id)
+	-- A Bred Egg already knows its baby; shop eggs roll one now.
+	local genes = if entry.Genes and Genes.IsValid(entry.Genes) then entry.Genes else Genes.Roll(rng, egg.Weights)
+	local dragonId, newGenes = DragonService.Add(player, genes, "Egg:" .. egg.Id, entry.Generation)
 	if not dragonId then
 		return { Ok = false, Message = "Something went wrong, please try again." }
 	end
 	table.remove(data.Nests, index)
 	sendNests(player)
-	announce(player, genes)
-	return { Ok = true, DragonId = dragonId, Genes = genes, Egg = egg.Id }
+
+	-- Waits for the shared World First record, so do it after the egg is safely hatched.
+	local worldFirst = WorldFirstService.TryClaim(player, genes)
+	local dragon = data.Dragons[dragonId]
+	if worldFirst and dragon then
+		dragon.WorldFirst = true
+		data.WorldFirsts = data.WorldFirsts or {}
+		table.insert(data.WorldFirsts, Genes.GetName(genes))
+		DragonService.Publish(player)
+		WorldFirstService.Announce(player, genes)
+	else
+		announce(player, genes)
+	end
+
+	return {
+		Ok = true,
+		DragonId = dragonId,
+		Genes = genes,
+		Egg = egg.Id,
+		NewGenes = newGenes,
+		Mutated = entry.Mutated,
+		WorldFirst = worldFirst,
+	}
 end
 
 function EggService.Start()

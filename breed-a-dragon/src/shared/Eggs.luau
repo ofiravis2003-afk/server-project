@@ -18,6 +18,7 @@ export type Egg = {
 	Color: Color3,
 	SpotColor: Color3,
 	Glow: boolean?,
+	Hidden: boolean?, -- not sold in the shop (e.g. eggs that come from breeding)
 }
 
 local LIST: { Egg } = {
@@ -48,6 +49,18 @@ local LIST: { Egg } = {
 		Color = Color3.fromRGB(230, 90, 40),
 		SpotColor = Color3.fromRGB(255, 200, 70),
 		Glow = true,
+	},
+	{
+		-- Made by breeding two dragons. Its genes are decided when it is laid, not when it hatches.
+		Id = "Bred",
+		Name = "Bred Egg",
+		Price = 0,
+		HatchTime = 60,
+		Weights = { Common = 1 },
+		Color = Color3.fromRGB(255, 150, 195),
+		SpotColor = Color3.fromRGB(255, 235, 140),
+		Glow = true,
+		Hidden = true,
 	},
 }
 

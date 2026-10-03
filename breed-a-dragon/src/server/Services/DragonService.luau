@@ -18,7 +18,10 @@ export type Dragon = {
 	Genes: Genes.DragonGenes,
 	Born: number,
 	Source: string,
+	Generation: number?, -- 1 for dragons from shop eggs, +1 for every bred generation
 	Locked: boolean?,
+	RestUntil: number?, -- can't breed again until this time
+	WorldFirst: boolean?, -- this player was the first in the world to get a dragon with this name
 }
 
 export type ActionResult = { Ok: boolean, Message: string? }
@@ -91,6 +94,9 @@ function DragonService.Publish(player: Player)
 		Active = data.Active,
 		Slots = Config.Dragons.ActiveSlots,
 		Max = Config.Dragons.MaxOwned,
+		Index = data.Index,
+		WorldFirsts = data.WorldFirsts,
+		Now = os.time(),
 	})
 
 	local following = {}
@@ -101,22 +107,41 @@ function DragonService.Publish(player: Player)
 	player:SetAttribute("Income", DragonService.GetIncome(player))
 end
 
+-- Marks a dragon's genes in the player's Dragon Index. Returns the ones that were new.
+local function discover(data: { [string]: any }, genes: Genes.DragonGenes): { string }
+	data.Index = data.Index or {}
+	local found = {}
+	for _, key in Genes.GetIndexKeys(genes) do
+		if not data.Index[key] then
+			data.Index[key] = true
+			table.insert(found, key)
+		end
+	end
+	return found
+end
+
 -- Adds a dragon to the collection (and makes it active if there's a free slot).
--- Returns its new id, or nil if it couldn't.
-function DragonService.Add(player: Player, genes: Genes.DragonGenes, source: string): string?
+-- Returns its new id (nil if it couldn't) and the genes it added to the Dragon Index.
+function DragonService.Add(
+	player: Player,
+	genes: Genes.DragonGenes,
+	source: string,
+	generation: number?
+): (string?, { string })
 	local data = DataService.GetData(player)
 	if not data or not Genes.IsValid(genes) or not DragonService.HasRoom(player) then
-		return nil
+		return nil, {}
 	end
 	local id = HttpService:GenerateGUID(false)
-	local dragon: Dragon = { Genes = genes, Born = os.time(), Source = source }
+	local dragon: Dragon = { Genes = genes, Born = os.time(), Source = source, Generation = generation or 1 }
 	data.Dragons[id] = dragon
+	local newGenes = discover(data, genes)
 	cleanActive(data)
 	if #data.Active < Config.Dragons.ActiveSlots then
 		table.insert(data.Active, id)
 	end
 	DragonService.Publish(player)
-	return id
+	return id, newGenes
 end
 
 function DragonService.Activate(player: Player, id: string): ActionResult
@@ -187,7 +212,13 @@ local ACTIONS: { [string]: (Player, string) -> ActionResult } = {
 }
 
 function DragonService.Start()
-	DataService.OnLoaded(function(player)
+	DataService.OnLoaded(function(player, data)
+		-- Dragons from before the Index existed still count as discovered.
+		for _, dragon in data.Dragons do
+			if Genes.IsValid(dragon.Genes) then
+				discover(data, dragon.Genes)
+			end
+		end
 		DragonService.Publish(player)
 	end)
 

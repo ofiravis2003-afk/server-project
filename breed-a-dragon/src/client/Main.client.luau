@@ -27,7 +27,11 @@ local hatchRemote = Remotes.Function("HatchEgg")
 NestPanel.OnHatch(function(nest)
 	local ok, result = pcall(hatchRemote.InvokeServer, hatchRemote, nest)
 	if ok and type(result) == "table" and result.Ok and result.Genes and result.Egg then
-		HatchReveal.Play(result.Egg, result.Genes)
+		HatchReveal.Play(result.Egg, result.Genes, {
+			WorldFirst = result.WorldFirst,
+			Mutated = result.Mutated,
+			NewGenes = result.NewGenes,
+		})
 		return
 	end
 	NestPanel.Shake(nest)

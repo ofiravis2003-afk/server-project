@@ -15,6 +15,7 @@ local EVENT_NAMES = {
 local FUNCTION_NAMES = {
 	"HatchEgg", -- client -> server: hatch the egg in nest N, returns the new dragon
 	"DragonAction", -- client -> server: Activate / Deactivate / Lock / Unlock / Sell a dragon
+	"BreedDragons", -- client -> server: breed two dragons into a Bred Egg
 }
 
 local folder: Folder

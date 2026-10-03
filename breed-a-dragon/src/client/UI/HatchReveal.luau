@@ -46,8 +46,27 @@ local function frameModel(camera: Camera, model: Model)
 	camera.CFrame = CFrame.lookAt(center + direction * distance, center)
 end
 
+export type Extras = {
+	WorldFirst: boolean?, -- first in the whole world to get this dragon
+	Mutated: { string }?, -- traits that mutated while breeding
+	NewGenes: { string }?, -- "Trait.Id" keys that are new in the player's Dragon Index
+}
+
+-- "Wings.Feathered" -> "Feathered wings"
+local function describeGene(key: string): string
+	local trait, id = string.match(key, "^(%a+)%.(.+)$")
+	if not trait or not id then
+		return key
+	end
+	if trait == "Body" or trait == "Accent" then
+		return `{id} {string.lower(trait)} colour`
+	end
+	return `{id} {string.lower(trait)}`
+end
+
 -- Shows the hatch animation for a dragon from `eggId`. Closes when the player presses the button.
-function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes)
+function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes, extras: Extras?)
+	local info: Extras = extras or {}
 	local rarity: Rarity.Tier = Genes.GetRarity(genes)
 
 	local screenGui = Instance.new("ScreenGui")
@@ -117,9 +136,37 @@ function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes)
 		DragonAnimator.Apply(rig, CFrame.Angles(0, t * SPIN_SPEED, 0), t * DragonAnimator.FlapSpeed(0.4), 0.4)
 	end)
 
-	newLabel(backdrop, "NEW DRAGON!", -240, 40, Color3.fromRGB(255, 200, 90))
+	if info.WorldFirst then
+		local banner = newLabel(backdrop, "🏆 WORLD FIRST! 🏆", -250, 50, Color3.fromRGB(255, 215, 60))
+		TweenService:Create(banner, TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+			Rotation = 2,
+			TextStrokeTransparency = 0.8,
+		}):Play()
+	else
+		newLabel(backdrop, "NEW DRAGON!", -240, 40, Color3.fromRGB(255, 200, 90))
+	end
 	newLabel(backdrop, Genes.GetName(genes), 125, 44, Color3.new(1, 1, 1))
 	local rarityLabel = newLabel(backdrop, rarity.Name, 172, 34, rarity.Color)
+
+	-- Mutation and new Index entries, one short line under the rarity.
+	local notes = {}
+	if info.Mutated and #info.Mutated > 0 then
+		table.insert(notes, `🧬 Mutation: {table.concat(info.Mutated, ", ")}`)
+	end
+	if info.NewGenes and #info.NewGenes > 0 then
+		local described = {}
+		for i, key in info.NewGenes do
+			if i > 3 then
+				table.insert(described, `+{#info.NewGenes - 3} more`)
+				break
+			end
+			table.insert(described, describeGene(key))
+		end
+		table.insert(notes, `📖 New: {table.concat(described, ", ")}`)
+	end
+	if #notes > 0 then
+		newLabel(backdrop, table.concat(notes, "   "), 210, 26, Color3.fromRGB(200, 230, 255))
+	end
 
 	-- Epic and rarer: make the rarity pulse.
 	if rarity.Order >= Rarity.Get("Epic").Order then
@@ -132,7 +179,7 @@ function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes)
 
 	local button = Instance.new("TextButton")
 	button.AnchorPoint = Vector2.new(0.5, 0)
-	button.Position = UDim2.new(0.5, 0, 0.5, 220)
+	button.Position = UDim2.new(0.5, 0, 0.5, 245)
 	button.Size = UDim2.fromOffset(200, 50)
 	button.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
 	button.Font = Enum.Font.FredokaOne

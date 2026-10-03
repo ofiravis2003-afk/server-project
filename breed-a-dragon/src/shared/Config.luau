@@ -42,6 +42,23 @@ Config.Sell = {
 	Price = { Common = 10, Rare = 40, Epic = 150, Legendary = 600, Mythic = 2500 },
 }
 
+Config.Breeding = {
+	-- Fee = the baby's expected sell price times this (at least MinFee), so breeding
+	-- and then selling the baby never makes a profit on its own. A bit over 1 covers mutations.
+	FeeMultiplier = 1.1,
+	MinFee = 25,
+	ParentRest = 120, -- seconds a dragon must rest after breeding
+	MutationChance = 0.06, -- chance per trait that the baby gets a new gene neither parent has
+	MutationWeights = { Common = 40, Rare = 35, Epic = 17, Legendary = 6, Mythic = 2 }, -- mutations lean rare
+	-- Seconds until the bred egg hatches, by the rarer parent's rarity.
+	HatchTime = { Common = 60, Rare = 120, Epic = 300, Legendary = 600, Mythic = 900 },
+}
+
+Config.WorldFirst = {
+	MinRarity = "Epic", -- dragons this rare or better can be a World First
+	AnnounceEverywhereFrom = "Legendary", -- these are announced on every server; rarer-than-MinRarity ones only to the finder
+}
+
 Config.Dev = {
 	-- Studio only: show a gallery of random dragons in front of the spawn (never in the live game).
 	DragonGallery = true,

@@ -244,47 +244,90 @@ function Genes.GetKey(genes: DragonGenes): string
 	return table.concat(parts, "-")
 end
 
--- The exact chance of each overall rarity for a dragon rolled with these weights,
--- e.g. { Common = 0.62, Rare = 0.27, ... }. Shown to players before they buy an egg.
--- Works out every trait's points distribution (including the fall-back to a lower tier
--- when a trait has no gene in the rolled tier) and combines them, so no guessing.
-function Genes.GetRarityOdds(weights: RarityWeights?): { [string]: number }
-	local tierWeights = weights or defaultWeights()
-	local total = 0
-	for _, tier in Rarity.Tiers do
-		total += tierWeights[tier.Name] or 0
-	end
-
-	local scoreChances: { [number]: number } = { [0] = 1 }
+-- A baby of two dragons: every trait comes from one parent or the other (50/50),
+-- except that each trait has `mutationChance` to become a gene neither parent has
+-- (rolled with `mutationWeights`). Returns the baby and the list of traits that mutated.
+function Genes.Breed(
+	a: DragonGenes,
+	b: DragonGenes,
+	rng: Random,
+	mutationChance: number,
+	mutationWeights: RarityWeights?
+): (DragonGenes, { string })
+	local baby = {}
+	local mutated = {}
 	for _, trait in TRAITS do
-		-- Which tiers does this trait actually have genes in?
-		local hasTier: { [number]: boolean } = {}
-		for _, option in OPTIONS[trait] do
-			hasTier[Rarity.Get(option.Rarity).Order] = true
-		end
-
-		local pointChances: { [number]: number } = {}
-		for _, tier in Rarity.Tiers do
-			local chance = (tierWeights[tier.Name] or 0) / total
-			local landed = Rarity.Tiers[1]
-			for order = tier.Order, 1, -1 do
-				if hasTier[order] then
-					landed = Rarity.Tiers[order]
+		local fromA, fromB = (a :: any)[trait], (b :: any)[trait]
+		if rng:NextNumber() < mutationChance then
+			-- Try a few times to land on something new; a mutation should feel new.
+			local gene = Genes.RollTrait(trait, rng, mutationWeights)
+			for _ = 1, 8 do
+				if gene ~= fromA and gene ~= fromB then
 					break
 				end
+				gene = Genes.RollTrait(trait, rng, mutationWeights)
 			end
-			pointChances[landed.Points] = (pointChances[landed.Points] or 0) + chance
+			baby[trait] = gene
+			if gene ~= fromA and gene ~= fromB then
+				table.insert(mutated, trait)
+			end
+		else
+			baby[trait] = if rng:NextNumber() < 0.5 then fromA else fromB
 		end
+	end
+	return baby :: any, mutated
+end
 
-		local combined: { [number]: number } = {}
-		for score, chance in scoreChances do
-			for points, pointChance in pointChances do
-				combined[score + points] = (combined[score + points] or 0) + chance * pointChance
-			end
-		end
-		scoreChances = combined
+-- Every gene id a dragon has, as "Trait.Id" (e.g. "Wings.Bat"). Used by the Dragon Index.
+function Genes.GetIndexKeys(genes: DragonGenes): { string }
+	local keys = {}
+	for _, trait in TRAITS do
+		table.insert(keys, trait .. "." .. (genes :: any)[trait])
+	end
+	return keys
+end
+
+type PointChances = { [number]: number }
+
+-- For one trait rolled with `weights`: the chance of each number of rarity points
+-- (including the fall-back to a lower tier when the trait has no gene in the rolled tier).
+local function rolledPointChances(trait: string, weights: RarityWeights): PointChances
+	local total = 0
+	for _, tier in Rarity.Tiers do
+		total += weights[tier.Name] or 0
+	end
+	local hasTier: { [number]: boolean } = {}
+	for _, option in OPTIONS[trait] do
+		hasTier[Rarity.Get(option.Rarity).Order] = true
 	end
 
+	local chances: PointChances = {}
+	for _, tier in Rarity.Tiers do
+		local chance = (weights[tier.Name] or 0) / total
+		local landed = Rarity.Tiers[1]
+		for order = tier.Order, 1, -1 do
+			if hasTier[order] then
+				landed = Rarity.Tiers[order]
+				break
+			end
+		end
+		chances[landed.Points] = (chances[landed.Points] or 0) + chance
+	end
+	return chances
+end
+
+-- Adds one trait's points to a running score distribution.
+local function addPoints(scoreChances: PointChances, pointChances: PointChances): PointChances
+	local combined: PointChances = {}
+	for score, chance in scoreChances do
+		for points, pointChance in pointChances do
+			combined[score + points] = (combined[score + points] or 0) + chance * pointChance
+		end
+	end
+	return combined
+end
+
+local function scoreToRarityOdds(scoreChances: PointChances): { [string]: number }
 	local odds: { [string]: number } = {}
 	for _, tier in Rarity.Tiers do
 		odds[tier.Name] = 0
@@ -294,6 +337,79 @@ function Genes.GetRarityOdds(weights: RarityWeights?): { [string]: number }
 		odds[tier.Name] += chance
 	end
 	return odds
+end
+
+-- The exact chance of each overall rarity for a dragon rolled with these weights,
+-- e.g. { Common = 0.62, Rare = 0.27, ... }. Shown to players before they buy an egg.
+function Genes.GetRarityOdds(weights: RarityWeights?): { [string]: number }
+	local tierWeights = weights or defaultWeights()
+	local scoreChances: PointChances = { [0] = 1 }
+	for _, trait in TRAITS do
+		scoreChances = addPoints(scoreChances, rolledPointChances(trait, tierWeights))
+	end
+	return scoreToRarityOdds(scoreChances)
+end
+
+-- The chance of rolling each gene of one trait with `weights` (see Genes.RollTrait).
+local function geneChances(trait: string, weights: RarityWeights): { [string]: number }
+	local byOrder: { [number]: { GeneOption } } = {}
+	for _, option in OPTIONS[trait] do
+		local order = Rarity.Get(option.Rarity).Order
+		byOrder[order] = byOrder[order] or {}
+		table.insert(byOrder[order], option)
+	end
+	local total = 0
+	for _, tier in Rarity.Tiers do
+		total += weights[tier.Name] or 0
+	end
+
+	local chances: { [string]: number } = {}
+	for _, tier in Rarity.Tiers do
+		local chance = (weights[tier.Name] or 0) / total
+		for order = tier.Order, 1, -1 do
+			local candidates = byOrder[order]
+			if candidates then
+				for _, option in candidates do
+					chances[option.Id] = (chances[option.Id] or 0) + chance / #candidates
+				end
+				break
+			end
+		end
+	end
+	return chances
+end
+
+-- The exact chance of each overall rarity for a baby of `a` and `b` (see Genes.Breed),
+-- mutations included. A mutation always lands on a gene neither parent has.
+function Genes.GetBabyRarityOdds(
+	a: DragonGenes,
+	b: DragonGenes,
+	mutationChance: number,
+	mutationWeights: RarityWeights?
+): { [string]: number }
+	local scoreChances: PointChances = { [0] = 1 }
+	for _, trait in TRAITS do
+		local geneA, geneB = (a :: any)[trait], (b :: any)[trait]
+		local function points(id: string): number
+			return Rarity.Get(Genes.Get(trait, id).Rarity).Points
+		end
+
+		local chances: PointChances = {}
+		local inherit = (1 - mutationChance) / 2
+		chances[points(geneA)] = (chances[points(geneA)] or 0) + inherit
+		chances[points(geneB)] = (chances[points(geneB)] or 0) + inherit
+
+		-- Mutation: a roll, re-rolled while it matches a parent.
+		local rolled = geneChances(trait, mutationWeights or defaultWeights())
+		local allowed = 1 - (rolled[geneA] or 0) - (if geneB ~= geneA then rolled[geneB] or 0 else 0)
+		for id, chance in rolled do
+			if id ~= geneA and id ~= geneB and allowed > 0 then
+				chances[points(id)] = (chances[points(id)] or 0) + mutationChance * chance / allowed
+			end
+		end
+		scoreChances = addPoints(scoreChances, chances)
+	end
+	return scoreToRarityOdds(scoreChances)
 end
 
 return Genes

@@ -93,8 +93,14 @@ function EggShopService.Start()
 	folder.Parent = workspace
 
 	local center = Ground.GetSpawnCenter() + Vector3.new(0, 0, SHOP_DISTANCE)
-	for i, egg in Eggs.List do
-		local x = (i - (#Eggs.List + 1) / 2) * PEDESTAL_SPACING
+	local forSale = {}
+	for _, egg in Eggs.List do
+		if not egg.Hidden then
+			table.insert(forSale, egg)
+		end
+	end
+	for i, egg in forSale do
+		local x = (i - (#forSale + 1) / 2) * PEDESTAL_SPACING
 		createPedestal(egg, center + Vector3.new(x, 0, 0), folder)
 	end
 end
