@@ -9,10 +9,12 @@ local RunService = game:GetService("RunService")
 local EVENT_NAMES = {
 	"Notify", -- server -> client: show a message on screen
 	"NestsUpdated", -- server -> client: the eggs in the player's nests changed
+	"DragonsUpdated", -- server -> client: the player's dragon collection changed
 }
 
 local FUNCTION_NAMES = {
 	"HatchEgg", -- client -> server: hatch the egg in nest N, returns the new dragon
+	"DragonAction", -- client -> server: Activate / Deactivate / Lock / Unlock / Sell a dragon
 }
 
 local folder: Folder

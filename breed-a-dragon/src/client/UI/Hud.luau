@@ -16,6 +16,7 @@ local Hud = {}
 local screenGui: ScreenGui
 local counterFrame: Frame
 local counterLabel: TextLabel
+local incomeLabel: TextLabel
 local messageLabel: TextLabel
 local messageToken = 0
 
@@ -60,10 +61,24 @@ local function build()
 	padding.PaddingBottom = UDim.new(0, 8)
 	padding.Parent = counterLabel
 
+	-- "+12/s" under the counter: what the active dragons earn.
+	incomeLabel = Instance.new("TextLabel")
+	incomeLabel.Name = "Income"
+	incomeLabel.AnchorPoint = Vector2.new(0.5, 0)
+	incomeLabel.Position = UDim2.new(0.5, 0, 0, 62)
+	incomeLabel.Size = UDim2.fromOffset(180, 20)
+	incomeLabel.BackgroundTransparency = 1
+	incomeLabel.Font = Enum.Font.FredokaOne
+	incomeLabel.TextScaled = true
+	incomeLabel.TextColor3 = ORANGE
+	incomeLabel.TextStrokeTransparency = 0.4
+	incomeLabel.Text = ""
+	incomeLabel.Parent = screenGui
+
 	messageLabel = Instance.new("TextLabel")
 	messageLabel.Name = "Message"
 	messageLabel.AnchorPoint = Vector2.new(0.5, 0)
-	messageLabel.Position = UDim2.new(0.5, 0, 0, 70)
+	messageLabel.Position = UDim2.new(0.5, 0, 0, 88)
 	messageLabel.Size = UDim2.new(0.9, 0, 0, 36)
 	messageLabel.BackgroundColor3 = DARK
 	messageLabel.BackgroundTransparency = 0.2
@@ -120,6 +135,16 @@ end
 
 function Hud.Start()
 	build()
+
+	local player = Players.LocalPlayer
+	local function showIncome()
+		local income = player:GetAttribute("Income")
+		incomeLabel.Text = if type(income) == "number" and income > 0
+			then `+{NumberFormat.Abbreviate(income)}/s from dragons`
+			else ""
+	end
+	player:GetAttributeChangedSignal("Income"):Connect(showIncome)
+	showIncome()
 
 	task.spawn(function()
 		local leaderstats = Players.LocalPlayer:WaitForChild("leaderstats")

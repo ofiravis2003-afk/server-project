@@ -5,7 +5,8 @@
 return {
 	Embers = 0,
 	TotalEmbersEarned = 0,
-	Dragons = {}, -- [dragonId] = { Genes = {...}, Born = time, Source = "Egg:Common" }
+	Dragons = {}, -- [dragonId] = { Genes = {...}, Born = time, Source = "Egg:Common", Locked = true? }
+	Active = {}, -- ids of the dragons that earn Embers and follow the player
 	Nests = {}, -- eggs incubating: { { Nest = 1, Egg = "Common", HatchAt = time }, ... }
 	UnlockedIslands = { "EmberIsle" },
 	Rebirths = 0,
@@ -13,4 +14,5 @@ return {
 	JoinCount = 0,
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
+	LastSeen = 0, -- last time income was paid; used for offline earnings
 }
