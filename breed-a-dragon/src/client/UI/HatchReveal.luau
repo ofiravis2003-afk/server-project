@@ -1,12 +1,13 @@
 --!strict
 -- The hatch moment: the egg wobbles, cracks in a white flash, and the new dragon
--- spins in front of the player with its name and rarity.
+-- turns in front of the player, flapping its wings, with its name and rarity.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
+local DragonAnimator = require(ReplicatedStorage.Shared.DragonAnimator)
 local DragonBuilder = require(ReplicatedStorage.Shared.DragonBuilder)
 local EggBuilder = require(ReplicatedStorage.Shared.EggBuilder)
 local Genes = require(ReplicatedStorage.Shared.Genes)
@@ -39,7 +40,7 @@ end
 local function frameModel(camera: Camera, model: Model)
 	local box, size = model:GetBoundingBox()
 	local reach = math.sqrt(math.max(size.X, size.Z) ^ 2 + size.Y ^ 2) / 2
-	local distance = reach / math.tan(math.rad(camera.FieldOfView / 2)) * 1.1
+	local distance = reach / math.tan(math.rad(camera.FieldOfView / 2)) * 1.2
 	local center = box.Position
 	local direction = Vector3.new(-0.55, 0.35, -1).Unit
 	camera.CFrame = CFrame.lookAt(center + direction * distance, center)
@@ -109,9 +110,11 @@ function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes)
 	frameModel(camera, dragon)
 	TweenService:Create(flash, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
 
+	local rig = DragonAnimator.Rig(dragon)
 	local spinStart = os.clock()
 	local spin = RunService.RenderStepped:Connect(function()
-		dragon:PivotTo(CFrame.Angles(0, (os.clock() - spinStart) * SPIN_SPEED, 0))
+		local t = os.clock() - spinStart
+		DragonAnimator.Apply(rig, CFrame.Angles(0, t * SPIN_SPEED, 0), t * DragonAnimator.FlapSpeed(0.4), 0.4)
 	end)
 
 	newLabel(backdrop, "NEW DRAGON!", -240, 40, Color3.fromRGB(255, 200, 90))

@@ -26,6 +26,9 @@ local MEMBRANE_THICKNESS = 0.08
 
 local DragonBuilder = {}
 
+-- While a wing or the tail is being built, every new part is tagged with it (see buildRigged).
+local currentRig: string? = nil
+
 local function look(color: Color3, material: Enum.Material?, transparency: number?): GeneOption
 	return { Id = "_", Rarity = "Common", Color = color, Material = material, Transparency = transparency }
 end
@@ -66,6 +69,9 @@ local function newPart(model: Model, name: string, kind: PartKind, size: Vector3
 	part.TopSurface = Enum.SurfaceType.Smooth
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	applyLook(part, option)
+	if currentRig then
+		part:SetAttribute("Rig", currentRig)
+	end
 	part.Parent = model
 	return part
 end
@@ -429,6 +435,16 @@ local function buildTail(model: Model, tail: string, body: GeneOption, accent: G
 	end
 end
 
+-- Runs `build` with every part it makes tagged Rig = `tag`, then adds an invisible
+-- joint part named `tag .. "Joint"` at `joint` for the animator to rotate around.
+local function buildRigged(model: Model, tag: string, joint: Vector3, build: () -> ())
+	currentRig = tag
+	build()
+	currentRig = nil
+	local jointPart = newPart(model, tag .. "Joint", "Block", Vector3.one * 0.2, CFrame.new(joint), look(WHITE))
+	jointPart.Transparency = 1
+end
+
 local function addAura(chest: BasePart, aura: string)
 	if aura == "Ember" then
 		addParticles(
@@ -476,10 +492,17 @@ function DragonBuilder.Build(genes: Genes.DragonGenes): Model
 	buildLegs(model, body)
 	buildSpine(model, accent)
 	buildHorns(model, genes.Horns, accent, head)
+	-- Wings and tail are tagged (attribute "Rig") and get an invisible joint part,
+	-- so DragonAnimator can flap the wings at the shoulders and sway the tail at its base.
 	for _, side in { -1, 1 } do
-		buildWing(model, side, genes.Wings, body, accent)
+		local tag = if side == 1 then "RightWing" else "LeftWing"
+		buildRigged(model, tag, Vector3.new(side * 1, 3.75, -0.9), function()
+			buildWing(model, side, genes.Wings, body, accent)
+		end)
 	end
-	buildTail(model, genes.Tail, body, accent)
+	buildRigged(model, "Tail", Vector3.new(0, 2.65, 1.5), function()
+		buildTail(model, genes.Tail, body, accent)
+	end)
 	addAura(chest, genes.Aura)
 
 	-- Pivot on the ground under the middle of the dragon, then grow/shrink to its size.

@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local DragonAnimator = require(ReplicatedStorage.Shared.DragonAnimator)
 local DragonBuilder = require(ReplicatedStorage.Shared.DragonBuilder)
 local DragonStats = require(ReplicatedStorage.Shared.DragonStats)
 local Genes = require(ReplicatedStorage.Shared.Genes)
@@ -38,6 +39,7 @@ local grid: ScrollingFrame
 local viewport: ViewportFrame
 local viewportCamera: Camera
 local previewModel: Model?
+local previewRig: DragonAnimator.Rig?
 local detailName: TextLabel
 local detailRarity: TextLabel
 local detailStats: TextLabel
@@ -116,7 +118,7 @@ end
 local function frameModel(camera: Camera, model: Model)
 	local box, size = model:GetBoundingBox()
 	local reach = math.sqrt(math.max(size.X, size.Z) ^ 2 + size.Y ^ 2) / 2
-	local distance = reach / math.tan(math.rad(camera.FieldOfView / 2)) * 1.05
+	local distance = reach / math.tan(math.rad(camera.FieldOfView / 2)) * 1.2
 	camera.CFrame = CFrame.lookAt(box.Position + Vector3.new(-0.55, 0.35, -1).Unit * distance, box.Position)
 end
 
@@ -135,6 +137,7 @@ local function renderDetail()
 	if previewModel then
 		previewModel:Destroy()
 		previewModel = nil
+		previewRig = nil
 	end
 
 	local dragon = selectedId and state.Dragons[selectedId]
@@ -171,6 +174,7 @@ local function renderDetail()
 	model.Parent = viewport
 	frameModel(viewportCamera, model)
 	previewModel = model
+	previewRig = DragonAnimator.Rig(model)
 end
 
 local function renderGrid()
@@ -363,8 +367,9 @@ local function build()
 
 	-- Slowly turn the preview dragon.
 	RunService.RenderStepped:Connect(function()
-		if previewModel and window.Visible then
-			previewModel:PivotTo(CFrame.Angles(0, os.clock() * 0.6, 0))
+		if previewRig and window.Visible then
+			local t = os.clock()
+			DragonAnimator.Apply(previewRig, CFrame.Angles(0, t * 0.6, 0), t * DragonAnimator.FlapSpeed(0.2), 0.2)
 		end
 	end)
 end
