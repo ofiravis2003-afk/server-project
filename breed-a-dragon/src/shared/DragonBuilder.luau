@@ -575,30 +575,31 @@ local function findTripoTemplate(): Model?
 	return nil
 end
 
--- Finds where the eyes go on the Tripo head by "feeling" it with rays: first the tip of the snout
--- (the most forward point of the head), then a spot a bit behind and above it, then the side of
--- the head at that spot. Rays only hit things in the Workspace, so a temporary invisible copy of
--- the head is used. Returns the eye position relative to the HeadNeck mesh and the eye diameter.
-local autoEyeTried: { [Model]: boolean } = {}
-local autoEyeFound: { [Model]: { Offset: Vector3, Diameter: number } } = {}
+-- Scans the Tripo head by "feeling" it with rays, once per template:
+--   1. the tip of the snout (the most forward point of the head),
+--   2. the eye: a bit behind and above the tip, on the side of the head,
+--   3. the top of the skull right above the eyes (where a crown or halo should sit;
+--      the top of the mesh's box is the tip of its horns, which is far too high).
+-- Rays only hit things in the Workspace, so a temporary invisible copy of the head is used.
+-- Positions are returned relative to the HeadNeck mesh.
+type HeadScan = { Eye: Vector3?, EyeSize: number?, Top: Vector3? }
+local headScans: { [Model]: HeadScan } = {}
 
-local function findEyeAutomatically(template: Model): (Vector3?, number?)
-	if autoEyeTried[template] then
-		local found = autoEyeFound[template]
-		if found then
-			return found.Offset, found.Diameter
-		end
-		return nil, nil
+local function scanHead(template: Model): HeadScan
+	local cached = headScans[template]
+	if cached then
+		return cached
 	end
-	autoEyeTried[template] = true
+	local result: HeadScan = {}
+	headScans[template] = result
 
 	local head = template:FindFirstChild("HeadNeck")
 	local body = template:FindFirstChild("Body")
 	if not head or not body or not head:IsA("BasePart") or not body:IsA("BasePart") then
-		return nil, nil
+		return result
 	end
 
-	local ok, offset, diameter = pcall(function(): (Vector3?, number?)
+	pcall(function()
 		local probe = head:Clone()
 		probe.Anchored = true
 		probe.CanQuery = true
@@ -616,7 +617,7 @@ local function findEyeAutomatically(template: Model): (Vector3?, number?)
 		local height = high.Y - low.Y
 		local reach = (high - low).Magnitude + 1
 
-		-- 1. The snout tip: the most forward point in the top part of the head. If several heights
+		-- 1. The snout tip: the most forward point in the top half of the mesh. If several heights
 		--    are (almost) equally far forward, take the middle of them.
 		local hits: { { Y: number, Along: number } } = {}
 		local tipForward = -math.huge
@@ -630,7 +631,6 @@ local function findEyeAutomatically(template: Model): (Vector3?, number?)
 				tipForward = math.max(tipForward, along)
 			end
 		end
-		local tipY: number? = nil
 		local sum, count = 0, 0
 		for _, hit in hits do
 			if hit.Along >= tipForward - height * 0.03 then
@@ -639,36 +639,32 @@ local function findEyeAutomatically(template: Model): (Vector3?, number?)
 			end
 		end
 		if count > 0 then
-			tipY = sum / count
-		end
-
-		local eyeOffset: Vector3? = nil
-		local eyeSize: number? = nil
-		if tipY then
-			-- 2. Behind and above the tip, then 3. onto the side of the head there
-			--    (a little lower each try, in case the first spot misses the head).
+			local tipY = sum / count
 			local eyes = Config.Dragons.MeshEyes
+			local behind = forward * (tipForward - height * eyes.Back)
+
+			-- 2. The eye: onto the side of the head (a little lower each try, in case a spot misses).
 			for try = 0, 4 do
-				local spot = Vector3.new(headCenter.X, tipY + height * (eyes.Up - 0.04 * try), headCenter.Z)
-					+ forward * (tipForward - height * eyes.Back)
+				local spot = Vector3.new(headCenter.X, tipY + height * (eyes.Up - 0.04 * try), headCenter.Z) + behind
 				local side = workspace:Raycast(spot + right * reach, -right * reach * 2, params)
 				if side then
-					eyeSize = height * eyes.Size
-					local onSurface = side.Position - right * (eyeSize :: number) * 0.25
-					eyeOffset = head.CFrame:PointToObjectSpace(onSurface)
+					result.EyeSize = height * eyes.Size
+					local onSurface = side.Position - right * height * eyes.Size * 0.25
+					result.Eye = head.CFrame:PointToObjectSpace(onSurface)
 					break
 				end
 			end
+
+			-- 3. The top of the skull above the eyes, straight down from above, on the centre line.
+			local above = Vector3.new(headCenter.X, high.Y + 1, headCenter.Z) + behind
+			local top = workspace:Raycast(above, Vector3.new(0, -(height + 2), 0), params)
+			if top then
+				result.Top = head.CFrame:PointToObjectSpace(top.Position)
+			end
 		end
 		probe:Destroy()
-		return eyeOffset, eyeSize
 	end)
-
-	if ok and offset and diameter then
-		autoEyeFound[template] = { Offset = offset, Diameter = diameter }
-		return offset, diameter
-	end
-	return nil, nil
+	return result
 end
 
 local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
@@ -695,16 +691,28 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			eyeMarker = nil
 		end
 	end
-	-- No marker: find the eye on the head automatically and put a marker there.
-	if not eyeMarker and headMesh then
-		local offset, diameter = findEyeAutomatically(template)
-		if offset and diameter then
+	-- Scan the head: put an eye marker where the eye was found (unless one was placed by hand),
+	-- and an invisible marker on top of the skull for crowns and halos.
+	local topMarker: BasePart?
+	if headMesh then
+		local scan = scanHead(template)
+		if not eyeMarker and scan.Eye and scan.EyeSize then
 			eyeMarker = newPart(
 				model,
 				"Eye",
 				"Ball",
-				Vector3.one * diameter,
-				CFrame.new(headMesh.CFrame:PointToWorldSpace(offset)),
+				Vector3.one * scan.EyeSize,
+				CFrame.new(headMesh.CFrame:PointToWorldSpace(scan.Eye)),
+				look(WHITE)
+			)
+		end
+		if scan.Top then
+			topMarker = newPart(
+				model,
+				"HeadTop",
+				"Block",
+				Vector3.one * 0.1,
+				CFrame.new(headMesh.CFrame:PointToWorldSpace(scan.Top)),
 				look(WHITE)
 			)
 		end
@@ -723,7 +731,7 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			part.CanTouch = false
 			part.Massless = true
 			applyLook(part, if ACCENT_MESHES[part.Name] then accent else bodyLook)
-			if part ~= eyeMarker and not ACCENT_MESHES[part.Name] then
+			if part ~= eyeMarker and part ~= topMarker and not ACCENT_MESHES[part.Name] then
 				part.Size *= SEAM_OVERLAP
 			end
 		end
@@ -795,8 +803,14 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 
 	-- 4. Extras for rare genes, placed relative to the head and the back of the body.
 	if headMesh and (genes.Horns == "Halo" or genes.Horns == "Crown" or genes.Horns == "Crystal") then
-		local low, high = boundsOf(headMesh)
-		local headTop = Vector3.new(0, high.Y, low.Z + (high.Z - low.Z) * 0.35)
+		local headTop: Vector3
+		if topMarker then
+			headTop = topMarker.CFrame.Position
+		else
+			-- No scan (e.g. outside Roblox): a rough guess below the horn tips.
+			local low, high = boundsOf(headMesh)
+			headTop = Vector3.new(0, low.Y + (high.Y - low.Y) * 0.8, low.Z + (high.Z - low.Z) * 0.35)
+		end
 		-- buildHorns draws around the part-dragon's head; move what it makes onto this head.
 		local made = collectParts(function()
 			buildHorns(model, genes.Horns, accent, headMesh)
@@ -805,6 +819,9 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 		for _, part in made do
 			part.CFrame = part.CFrame + shift
 		end
+	end
+	if topMarker then
+		topMarker:Destroy()
 	end
 	if genes.Tail == "Flame" or genes.Tail == "Comet" then
 		local low, high = boundsOf(bodyMesh)
