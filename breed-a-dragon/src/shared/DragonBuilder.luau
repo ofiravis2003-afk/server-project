@@ -661,7 +661,7 @@ local function scanHead(template: Model): HeadScan
 				+ forward * (tipForward - height * eyes.TopBack)
 			local top = workspace:Raycast(above, Vector3.new(0, -(height + 2), 0), params)
 			if top then
-				result.Top = head.CFrame:PointToObjectSpace(top.Position)
+				result.Top = head.CFrame:PointToObjectSpace(top.Position + Vector3.new(0, height * eyes.TopUp, 0))
 			end
 		end
 		probe:Destroy()

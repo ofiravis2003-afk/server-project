@@ -29,10 +29,11 @@ Config.Dragons = {
 	-- Where the eyes go on the Tripo model, found automatically from the tip of the snout.
 	-- All three are fractions of the HeadNeck mesh's height; tweak them if the eyes sit wrong.
 	MeshEyes = {
-		Back = 0.2, -- how far behind the snout tip
-		Up = 0.07, -- how far above the snout tip
+		Back = 0.24, -- how far behind the snout tip
+		Up = 0.1, -- how far above the snout tip
 		Size = 0.07, -- eye diameter
-		TopBack = 0.32, -- crowns and halos sit on the skull this far behind the snout tip
+		TopBack = 0.38, -- crowns and halos sit on the skull this far behind the snout tip...
+		TopUp = 0.03, -- ...and this far above its surface
 	},
 }
 
