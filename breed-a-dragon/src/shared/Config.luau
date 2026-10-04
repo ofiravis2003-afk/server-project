@@ -81,8 +81,9 @@ Config.Tutorial = {
 }
 
 Config.Dev = {
-	-- Studio only: show a gallery of random dragons in front of the spawn (never in the live game).
-	DragonGallery = true,
+	-- Studio only: a test gallery of 20 random dragons north of the spawn (never in the live game).
+	-- Turn it on (true) only to check how varied the dragons look.
+	DragonGallery = false,
 }
 
 return Config
