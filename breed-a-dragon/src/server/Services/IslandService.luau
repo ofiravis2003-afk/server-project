@@ -7,8 +7,9 @@
 -- textures, with grass blades), not plastic parts.
 --
 -- Your own trees and rocks: put models from the Toolbox in a Folder called "IslandAssets"
--- in ServerStorage. Models with "Tree" in the name replace the terrain trees, "Rock" the
--- rocks and "Bush" the bushes; the island scatters copies of them (random turn and size).
+-- (ServerStorage is best; Workspace also works). Names with rock/stone/boulder are rocks,
+-- bush/shrub/plant/fern/flower are bushes, everything else is a tree. The island scatters
+-- copies of them (random turn and size). The Output window says what it found.
 --
 -- Layout, seen from above (the spawn point is the middle):
 --   crystals in a ring around the spawn, Egg Shop to the south (+Z), Elder Ember to the west (-X).
@@ -158,22 +159,67 @@ local function newPart(parent: Instance, name: string, shape: Enum.PartType, siz
 	return part
 end
 
--- Toolbox models the developer put in ServerStorage/IslandAssets, sorted by kind.
-local function findAssets(): Assets
-	local assets: Assets = { Tree = {}, Rock = {}, Bush = {} }
-	local folder = ServerStorage:FindFirstChild("IslandAssets")
-	if not folder then
-		return assets
-	end
-	for _, child in folder:GetChildren() do
-		if child:IsA("Model") or child:IsA("BasePart") then
-			for kind, list in assets :: any do
-				if child.Name:lower():find(kind:lower()) then
-					table.insert(list, child)
-					break
-				end
+-- Words in a model's name that say what it is. Anything else counts as a tree.
+local KIND_WORDS: { [string]: { string } } = {
+	Rock = { "rock", "stone", "boulder", "cliff", "pebble" },
+	Bush = { "bush", "shrub", "plant", "fern", "flower", "grass" },
+}
+
+local function kindOf(name: string): string
+	local lower = name:lower()
+	for kind, words in KIND_WORDS do
+		for _, word in words do
+			if lower:find(word, 1, true) then
+				return kind
 			end
 		end
+	end
+	return "Tree"
+end
+
+-- The IslandAssets folder, wherever the developer put it.
+local function findAssetFolder(): Instance?
+	for _, place in { ServerStorage, workspace, ReplicatedStorage } do
+		local folder = place:FindFirstChild("IslandAssets", true)
+		if folder then
+			return folder
+		end
+	end
+	return nil
+end
+
+-- Toolbox models the developer put in an "IslandAssets" folder, sorted by kind.
+local function findAssets(): Assets
+	local assets: Assets = { Tree = {}, Rock = {}, Bush = {} }
+	local folder = findAssetFolder()
+	if not folder then
+		print("[Island] No IslandAssets folder found, so the island has no trees. See README: Toolbox.")
+		return assets
+	end
+	-- The originals are only patterns to copy: keep them out of the world.
+	if folder:IsDescendantOf(workspace) then
+		folder.Parent = ServerStorage
+	end
+
+	local function collect(container: Instance)
+		for _, child in container:GetChildren() do
+			if child:IsA("Model") or child:IsA("BasePart") then
+				-- Toolbox models sometimes hide scripts (some are harmful): never copy them.
+				for _, item in child:GetDescendants() do
+					if item:IsA("BaseScript") or item:IsA("ModuleScript") then
+						item:Destroy()
+					end
+				end
+				table.insert((assets :: any)[kindOf(child.Name)], child)
+			elseif child:IsA("Folder") then
+				collect(child)
+			end
+		end
+	end
+	collect(folder)
+	print(`[Island] IslandAssets: {#assets.Tree} trees, {#assets.Rock} rocks, {#assets.Bush} bushes`)
+	if #assets.Tree + #assets.Rock + #assets.Bush == 0 then
+		warn("[Island] IslandAssets is empty: drag Models (not Packages or Scripts) into it.")
 	end
 	return assets
 end
