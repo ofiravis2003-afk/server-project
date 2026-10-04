@@ -578,7 +578,7 @@ end
 -- Scans the Tripo head by "feeling" it with rays, once per template:
 --   1. the tip of the snout (the most forward point of the head),
 --   2. the eye: a bit behind and above the tip, on the side of the head,
---   3. the top of the skull right above the eyes (where a crown or halo should sit;
+--   3. the top of the skull at the back of the head (where a crown or halo should sit;
 --      the top of the mesh's box is the tip of its horns, which is far too high).
 -- Rays only hit things in the Workspace, so a temporary invisible copy of the head is used.
 -- Positions are returned relative to the HeadNeck mesh.
@@ -655,8 +655,10 @@ local function scanHead(template: Model): HeadScan
 				end
 			end
 
-			-- 3. The top of the skull above the eyes, straight down from above, on the centre line.
-			local above = Vector3.new(headCenter.X, high.Y + 1, headCenter.Z) + behind
+			-- 3. The top of the skull at the back of the head (by the horns), straight down from
+			--    above, on the centre line.
+			local above = Vector3.new(headCenter.X, high.Y + 1, headCenter.Z)
+				+ forward * (tipForward - height * eyes.TopBack)
 			local top = workspace:Raycast(above, Vector3.new(0, -(height + 2), 0), params)
 			if top then
 				result.Top = head.CFrame:PointToObjectSpace(top.Position)
