@@ -780,26 +780,39 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 		end
 	end
 
-	-- 3b. Eyes: glowing, with a slit pupil, on the marked eye socket and its mirror image.
+	-- 3b. Eyes: glossy amber with a dark slit pupil and a tiny white shine, on the marked
+	-- eye socket and its mirror image. (Neon made them glow so much the pupil disappeared.)
 	if eyeMarker then
 		local marked = eyeMarker.CFrame.Position
 		local diameter = math.max(eyeMarker.Size.X, eyeMarker.Size.Y, eyeMarker.Size.Z)
 		eyeMarker:Destroy()
 		for _, side in { 1, -1 } do
 			local position = Vector3.new(math.abs(marked.X) * side, marked.Y, marked.Z)
-			local eye = newPart(model, "Eye", "Ball", Vector3.one * diameter, CFrame.new(position), look(EYE))
-			glow(eye, EYE)
+			newPart(model, "Eye", "Ball", Vector3.one * diameter, CFrame.new(position), look(EYE, Enum.Material.Glass))
 			-- The pupil sits on the outside of the eye, facing sideways and a little forward.
+			-- It is a thin slab that crosses the eye's surface, so it shows clearly but stays
+			-- inside the eye's outline.
 			local outward = Vector3.new(side, 0, -0.35).Unit
-			local pupilAt = position + outward * diameter * 0.42
+			local pupilAt = position + outward * diameter * 0.45
+			local facing = CFrame.lookAt(pupilAt, pupilAt + outward)
 			newPart(
 				model,
 				"Pupil",
 				"Block",
-				Vector3.new(diameter * 0.16, diameter * 0.55, diameter * 0.1),
-				CFrame.lookAt(pupilAt, pupilAt + outward),
+				Vector3.new(diameter * 0.2, diameter * 0.6, diameter * 0.14),
+				facing,
 				look(BLACK)
 			)
+			-- A small shine at the top front of the eye makes it look wet and alive.
+			local shine = newPart(
+				model,
+				"EyeShine",
+				"Ball",
+				Vector3.one * diameter * 0.18,
+				facing * CFrame.new(-side * diameter * 0.16, diameter * 0.16, -diameter * 0.04),
+				look(WHITE)
+			)
+			glow(shine, WHITE)
 		end
 	end
 
