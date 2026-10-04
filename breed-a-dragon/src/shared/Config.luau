@@ -68,6 +68,18 @@ Config.WorldFirst = {
 	AnnounceEverywhereFrom = "Legendary", -- these are announced on every server; rarer-than-MinRarity ones only to the finder
 }
 
+Config.Island = {
+	Radius = 100, -- Ember Isle, in studs around the spawn point
+	RemoveBaseplate = true, -- the grey Baseplate is removed while playing so the island floats in the sky
+	FallRescueDepth = 60, -- players who fall this far below the island are put back on the spawn
+	ElderOffset = Vector3.new(-42, 0, 6), -- where Elder Ember stands, from the spawn point
+}
+
+Config.Tutorial = {
+	StarterEgg = "Rare", -- the free egg every new player gets in their first nest
+	StarterHatchTime = 15, -- seconds: the first dragon should come within the first minute
+}
+
 Config.Dev = {
 	-- Studio only: show a gallery of random dragons in front of the spawn (never in the live game).
 	DragonGallery = true,

@@ -16,6 +16,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local CurrencyService = require(script.Parent.CurrencyService)
 local DataService = require(script.Parent.DataService)
 local DragonService = require(script.Parent.DragonService)
+local QuestService = require(script.Parent.QuestService)
 local WorldFirstService = require(script.Parent.WorldFirstService)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 
@@ -125,6 +126,7 @@ function EggService.Buy(player: Player, eggId: string): (boolean, string)
 	end
 
 	EggService.PlaceEgg(player, egg.Id, egg.HatchTime)
+	QuestService.Record(player, "BuyEgg")
 	return true, `{egg.Name} placed in nest {nest}!`
 end
 
@@ -179,6 +181,10 @@ function EggService.Hatch(player: Player, nest: any): HatchResult
 	end
 	table.remove(data.Nests, index)
 	sendNests(player)
+	QuestService.Record(player, "Hatch")
+	if egg.Id == "Bred" then
+		QuestService.Record(player, "HatchBred")
+	end
 
 	-- Waits for the shared World First record, so do it after the egg is safely hatched.
 	local worldFirst = WorldFirstService.TryClaim(player, genes)

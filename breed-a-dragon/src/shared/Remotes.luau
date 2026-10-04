@@ -10,6 +10,8 @@ local EVENT_NAMES = {
 	"Notify", -- server -> client: show a message on screen
 	"NestsUpdated", -- server -> client: the eggs in the player's nests changed
 	"DragonsUpdated", -- server -> client: the player's dragon collection changed
+	"QuestUpdated", -- server -> client: the current tutorial quest and its progress
+	"ShowDialog", -- server -> client: Elder Ember says some lines
 }
 
 local FUNCTION_NAMES = {

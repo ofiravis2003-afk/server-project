@@ -14,6 +14,7 @@ local CurrencyService = require(script.Parent.CurrencyService)
 local DataService = require(script.Parent.DataService)
 local DragonService = require(script.Parent.DragonService)
 local EggService = require(script.Parent.EggService)
+local QuestService = require(script.Parent.QuestService)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 
 export type BreedResult = { Ok: boolean, Message: string? }
@@ -77,6 +78,7 @@ function BreedingService.Breed(player: Player, idA: any, idB: any): BreedResult
 	a.RestUntil = now + Config.Breeding.ParentRest
 	b.RestUntil = now + Config.Breeding.ParentRest
 	DragonService.Publish(player)
+	QuestService.Record(player, "Breed")
 	return {
 		Ok = true,
 		Message = `💞 {Genes.GetName(a.Genes)} and {Genes.GetName(b.Genes)} laid a Bred Egg in nest {nest}!`,

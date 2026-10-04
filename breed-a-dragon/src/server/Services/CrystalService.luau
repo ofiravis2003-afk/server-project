@@ -1,7 +1,7 @@
 --!strict
 -- Ember Crystals: the first way to earn Embers. Click (or tap) a crystal to collect.
 -- In the story, Embers are the leftover magic of Skyreach that dragons feed on.
--- For now the crystals stand in a ring around the spawn point; Ember Isle replaces this in phase 6.
+-- They stand in a ring around the spawn point, in the middle of Ember Isle.
 --
 -- Each crystal is a cluster of glass shards with a glowing core, growing out of a rock.
 -- The click effects (burst + bounce) run on the clicking player's screen: see client/Effects/CrystalEffects.
@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local CurrencyService = require(script.Parent.CurrencyService)
+local QuestService = require(script.Parent.QuestService)
 local Ground = require(script.Parent.Parent.Util.Ground)
 local RateLimiter = require(script.Parent.Parent.Util.RateLimiter)
 
@@ -114,6 +115,7 @@ local function createCrystal(position: Vector3, rng: Random, parent: Instance): 
 			return
 		end
 		CurrencyService.Add(player, Config.Crystal.Reward)
+		QuestService.Record(player, "Collect", Config.Crystal.Reward)
 	end)
 
 	model.Parent = parent

@@ -2,7 +2,6 @@
 -- The Egg Shop: one pedestal per egg, behind the spawn point.
 -- Each pedestal shows the egg, its price and the exact odds of every rarity
 -- (Roblox requires showing odds before buying a random item). Hold E / tap to buy.
--- Ember Isle (phase 6) will move the shop onto the island.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

@@ -12,7 +12,8 @@ return {
 	Nests = {}, -- eggs incubating: { { Nest = 1, Egg = "Common", HatchAt = time, Genes = bred genes? }, ... }
 	UnlockedIslands = { "EmberIsle" },
 	Rebirths = 0,
-	Quests = {},
+	Quests = {}, -- tutorial progress: { Step = 1, Progress = 0, SawIntro = true? } (see QuestService)
+	StarterEgg = false, -- got the free first egg
 	JoinCount = 0,
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
