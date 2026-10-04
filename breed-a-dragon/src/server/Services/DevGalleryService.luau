@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DragonBuilder = require(ReplicatedStorage.Shared.DragonBuilder)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Genes = require(ReplicatedStorage.Shared.Genes)
 local Rarity = require(ReplicatedStorage.Shared.Rarity)
 local Ground = require(script.Parent.Parent.Util.Ground)
@@ -55,7 +56,7 @@ local function createRerollButton()
 	local text = Instance.new("TextLabel")
 	text.BackgroundTransparency = 1
 	text.Size = UDim2.fromScale(1, 1)
-	text.Font = Enum.Font.FredokaOne
+	text.FontFace = Fonts.Body
 	text.TextScaled = true
 	text.TextColor3 = Color3.new(1, 1, 1)
 	text.TextStrokeTransparency = 0.3

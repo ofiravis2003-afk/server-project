@@ -4,6 +4,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
@@ -18,13 +19,20 @@ local SPIN_SPEED = 0.6 -- radians per second
 
 local HatchReveal = {}
 
-local function newLabel(parent: Instance, text: string, y: number, height: number, color: Color3): TextLabel
+local function newLabel(
+	parent: Instance,
+	text: string,
+	y: number,
+	height: number,
+	color: Color3,
+	font: Font?
+): TextLabel
 	local label = Instance.new("TextLabel")
 	label.AnchorPoint = Vector2.new(0.5, 0)
 	label.Position = UDim2.new(0.5, 0, 0.5, y)
 	label.Size = UDim2.new(0.9, 0, 0, height)
 	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.FredokaOne
+	label.FontFace = font or Fonts.Body
 	label.TextScaled = true
 	label.TextColor3 = color
 	label.TextStrokeTransparency = 0.2
@@ -145,7 +153,7 @@ function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes, extras: Extra
 	else
 		newLabel(backdrop, "NEW DRAGON!", -240, 40, Color3.fromRGB(255, 200, 90))
 	end
-	newLabel(backdrop, Genes.GetName(genes), 125, 44, Color3.new(1, 1, 1))
+	newLabel(backdrop, Genes.GetName(genes), 125, 44, Color3.new(1, 1, 1), Fonts.Title)
 	local rarityLabel = newLabel(backdrop, rarity.Name, 172, 34, rarity.Color)
 
 	-- Mutation and new Index entries, one short line under the rarity.
@@ -182,7 +190,7 @@ function HatchReveal.Play(eggId: string, genes: Genes.DragonGenes, extras: Extra
 	button.Position = UDim2.new(0.5, 0, 0.5, 245)
 	button.Size = UDim2.fromOffset(200, 50)
 	button.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
-	button.Font = Enum.Font.FredokaOne
+	button.FontFace = Fonts.Body
 	button.TextScaled = true
 	button.TextColor3 = Color3.new(1, 1, 1)
 	button.Text = "Awesome!"

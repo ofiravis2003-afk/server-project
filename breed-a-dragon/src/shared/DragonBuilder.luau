@@ -16,6 +16,7 @@
 
 local Config = require(script.Parent.Config)
 local Genes = require(script.Parent.Genes)
+local Fonts = require(script.Parent.Fonts)
 local Rarity = require(script.Parent.Rarity)
 
 type GeneOption = Genes.GeneOption
@@ -900,7 +901,7 @@ function DragonBuilder.AddNameTag(model: Model, genes: Genes.DragonGenes)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Size = UDim2.fromScale(1, 0.55)
-	nameLabel.Font = Enum.Font.FredokaOne
+	nameLabel.FontFace = Fonts.Title
 	nameLabel.TextScaled = true
 	nameLabel.TextColor3 = WHITE
 	nameLabel.TextStrokeTransparency = 0.3
@@ -911,7 +912,7 @@ function DragonBuilder.AddNameTag(model: Model, genes: Genes.DragonGenes)
 	rarityLabel.BackgroundTransparency = 1
 	rarityLabel.Position = UDim2.fromScale(0, 0.55)
 	rarityLabel.Size = UDim2.fromScale(1, 0.45)
-	rarityLabel.Font = Enum.Font.FredokaOne
+	rarityLabel.FontFace = Fonts.Body
 	rarityLabel.TextScaled = true
 	rarityLabel.TextColor3 = rarity.Color
 	rarityLabel.TextStrokeTransparency = 0.3

@@ -4,6 +4,8 @@
 
 local Players = game:GetService("Players")
 
+local Fonts = require(game:GetService("ReplicatedStorage").Shared.Fonts)
+
 local ORANGE = Color3.fromRGB(255, 160, 60)
 local DARK = Color3.fromRGB(25, 20, 30)
 local LETTERS_PER_SECOND = 55
@@ -53,7 +55,7 @@ local function build()
 	name.BackgroundTransparency = 1
 	name.Position = UDim2.fromOffset(16, 8)
 	name.Size = UDim2.new(1, -32, 0, 24)
-	name.Font = Enum.Font.FredokaOne
+	name.FontFace = Fonts.Title
 	name.TextScaled = true
 	name.TextXAlignment = Enum.TextXAlignment.Left
 	name.TextColor3 = ORANGE
@@ -64,7 +66,7 @@ local function build()
 	textLabel.BackgroundTransparency = 1
 	textLabel.Position = UDim2.fromOffset(16, 36)
 	textLabel.Size = UDim2.new(1, -32, 1, -62)
-	textLabel.Font = Enum.Font.GothamMedium
+	textLabel.FontFace = Fonts.Text
 	textLabel.TextSize = 18
 	textLabel.TextWrapped = true
 	textLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -77,7 +79,7 @@ local function build()
 	nextLabel.AnchorPoint = Vector2.new(1, 1)
 	nextLabel.Position = UDim2.new(1, -14, 1, -6)
 	nextLabel.Size = UDim2.fromOffset(120, 22)
-	nextLabel.Font = Enum.Font.FredokaOne
+	nextLabel.FontFace = Fonts.Body
 	nextLabel.TextScaled = true
 	nextLabel.TextXAlignment = Enum.TextXAlignment.Right
 	nextLabel.TextColor3 = ORANGE

@@ -20,6 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Ground = require(script.Parent.Parent.Util.Ground)
 
 local TRUNK = Color3.fromRGB(80, 60, 45)
@@ -491,7 +492,7 @@ local function buildLockedIslands(assets: Assets)
 			label.BackgroundTransparency = 1
 			label.Position = UDim2.fromScale(0, (row - 1) * 0.55)
 			label.Size = UDim2.fromScale(1, if row == 1 then 0.55 else 0.45)
-			label.Font = Enum.Font.FredokaOne
+			label.FontFace = if row == 1 then Fonts.Title else Fonts.Body
 			label.TextScaled = true
 			label.TextColor3 = if row == 1 then Color3.new(1, 1, 1) else info.Barrier
 			label.TextStrokeTransparency = 0.2

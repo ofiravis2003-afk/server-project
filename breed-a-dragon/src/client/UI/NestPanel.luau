@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Eggs = require(ReplicatedStorage.Shared.Eggs)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local SLOT_SIZE = 96
@@ -46,7 +47,7 @@ local function newLabel(parent: Instance, position: UDim2, size: UDim2): TextLab
 	label.BackgroundTransparency = 1
 	label.Position = position
 	label.Size = size
-	label.Font = Enum.Font.FredokaOne
+	label.FontFace = Fonts.Body
 	label.TextScaled = true
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Parent = parent
@@ -84,7 +85,7 @@ local function createSlot(nest: number): Slot
 	button.Position = UDim2.new(0.5, 0, 1, -6)
 	button.Size = UDim2.new(1, -12, 0, 30)
 	button.BackgroundColor3 = READY
-	button.Font = Enum.Font.FredokaOne
+	button.FontFace = Fonts.Body
 	button.TextScaled = true
 	button.TextColor3 = Color3.new(1, 1, 1)
 	button.Text = "HATCH!"

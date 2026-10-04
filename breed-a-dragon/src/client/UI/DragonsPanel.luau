@@ -7,6 +7,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -96,7 +97,7 @@ local function label(parent: Instance, text: string, position: UDim2, size: UDim
 	l.BackgroundTransparency = 1
 	l.Position = position
 	l.Size = size
-	l.Font = Enum.Font.FredokaOne
+	l.FontFace = Fonts.Body
 	l.TextScaled = true
 	l.TextColor3 = color or Color3.new(1, 1, 1)
 	l.Text = text
@@ -109,7 +110,7 @@ local function button(parent: Instance, text: string, position: UDim2, size: UDi
 	b.Position = position
 	b.Size = size
 	b.BackgroundColor3 = color
-	b.Font = Enum.Font.FredokaOne
+	b.FontFace = Fonts.Body
 	b.TextScaled = true
 	b.TextColor3 = Color3.new(1, 1, 1)
 	b.Text = text

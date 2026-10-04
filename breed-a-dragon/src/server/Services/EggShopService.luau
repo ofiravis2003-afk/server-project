@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local EggBuilder = require(ReplicatedStorage.Shared.EggBuilder)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Eggs = require(ReplicatedStorage.Shared.Eggs)
 local Rarity = require(ReplicatedStorage.Shared.Rarity)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -21,11 +22,11 @@ local EggShopService = {}
 
 local notifyRemote = Remotes.Event("Notify")
 
-local function addText(parent: Instance, text: string, color: Color3, height: number, order: number)
+local function addText(parent: Instance, text: string, color: Color3, height: number, order: number, font: Font?)
 	local label = Instance.new("TextLabel")
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.new(1, 0, 0, height)
-	label.Font = Enum.Font.FredokaOne
+	label.FontFace = font or Fonts.Body
 	label.TextScaled = true
 	label.TextColor3 = color
 	label.TextStrokeTransparency = 0.3
@@ -46,7 +47,7 @@ local function createSign(egg: Eggs.Egg, parent: BasePart)
 	list.SortOrder = Enum.SortOrder.LayoutOrder
 	list.Parent = billboard
 
-	addText(billboard, egg.Name, Color3.new(1, 1, 1), 34, 1)
+	addText(billboard, egg.Name, Color3.new(1, 1, 1), 34, 1, Fonts.Title)
 	addText(billboard, `{Config.Currency.Icon} {egg.Price}`, Color3.fromRGB(255, 190, 80), 28, 2)
 	local odds = Eggs.GetOdds(egg.Id)
 	for _, tier in Rarity.Tiers do

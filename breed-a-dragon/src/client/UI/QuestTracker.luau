@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Quests = require(ReplicatedStorage.Shared.Quests)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
@@ -36,7 +37,7 @@ local function label(parent: Instance, position: UDim2, size: UDim2, color: Colo
 	text.BackgroundTransparency = 1
 	text.Position = position
 	text.Size = size
-	text.Font = Enum.Font.FredokaOne
+	text.FontFace = Fonts.Body
 	text.TextScaled = true
 	text.TextXAlignment = Enum.TextXAlignment.Left
 	text.TextColor3 = color
@@ -66,7 +67,9 @@ local function buildCard()
 	stroke.Thickness = 2
 	stroke.Parent = card
 
-	label(card, UDim2.fromOffset(12, 6), UDim2.new(1, -24, 0, 18), ORANGE).Text = "📜 QUEST"
+	local header = label(card, UDim2.fromOffset(12, 4), UDim2.new(1, -24, 0, 20), ORANGE)
+	header.FontFace = Fonts.Title
+	header.Text = "📜 Quest"
 	titleLabel = label(card, UDim2.fromOffset(12, 26), UDim2.new(1, -24, 0, 24), Color3.new(1, 1, 1))
 
 	local bar = Instance.new("Frame")
@@ -130,7 +133,7 @@ local function buildGuide()
 	local text = Instance.new("TextLabel")
 	text.BackgroundTransparency = 1
 	text.Size = UDim2.fromScale(1, 1)
-	text.Font = Enum.Font.FredokaOne
+	text.FontFace = Fonts.Body
 	text.TextScaled = true
 	text.TextColor3 = GUIDE_COLOR
 	text.TextStrokeTransparency = 0

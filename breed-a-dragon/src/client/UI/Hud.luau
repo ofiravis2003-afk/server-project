@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local NumberFormat = require(ReplicatedStorage.Shared.NumberFormat)
 
 local ORANGE = Color3.fromRGB(255, 140, 50)
@@ -50,7 +51,7 @@ local function build()
 	counterLabel = Instance.new("TextLabel")
 	counterLabel.BackgroundTransparency = 1
 	counterLabel.Size = UDim2.fromScale(1, 1)
-	counterLabel.Font = Enum.Font.FredokaOne
+	counterLabel.FontFace = Fonts.Number
 	counterLabel.TextScaled = true
 	counterLabel.TextColor3 = Color3.new(1, 1, 1)
 	counterLabel.Text = `{Config.Currency.Icon} 0`
@@ -68,7 +69,7 @@ local function build()
 	incomeLabel.Position = UDim2.new(0.5, 0, 0, 62)
 	incomeLabel.Size = UDim2.fromOffset(180, 20)
 	incomeLabel.BackgroundTransparency = 1
-	incomeLabel.Font = Enum.Font.FredokaOne
+	incomeLabel.FontFace = Fonts.Body
 	incomeLabel.TextScaled = true
 	incomeLabel.TextColor3 = ORANGE
 	incomeLabel.TextStrokeTransparency = 0.4
@@ -82,7 +83,7 @@ local function build()
 	messageLabel.Size = UDim2.new(0.9, 0, 0, 36)
 	messageLabel.BackgroundColor3 = DARK
 	messageLabel.BackgroundTransparency = 0.2
-	messageLabel.Font = Enum.Font.GothamBold
+	messageLabel.FontFace = Fonts.Body
 	messageLabel.TextScaled = true
 	messageLabel.TextColor3 = Color3.new(1, 1, 1)
 	messageLabel.Visible = false
@@ -102,7 +103,7 @@ local function showGain(amount: number)
 	popup.AnchorPoint = Vector2.new(0.5, 0)
 	popup.Position = UDim2.new(0.5, math.random(-40, 40), 1, 4)
 	popup.Size = UDim2.fromOffset(120, 28)
-	popup.Font = Enum.Font.FredokaOne
+	popup.FontFace = Fonts.Number
 	popup.TextScaled = true
 	popup.TextColor3 = ORANGE
 	popup.TextStrokeTransparency = 0.4

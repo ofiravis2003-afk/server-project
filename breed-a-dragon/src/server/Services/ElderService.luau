@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DragonBuilder = require(ReplicatedStorage.Shared.DragonBuilder)
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Genes = require(ReplicatedStorage.Shared.Genes)
 local QuestService = require(script.Parent.QuestService)
 local Ground = require(script.Parent.Parent.Util.Ground)
@@ -43,7 +44,7 @@ local function addTitle(model: Model, chest: BasePart)
 		label.BackgroundTransparency = 1
 		label.Position = UDim2.fromScale(0, (row - 1) * 0.6)
 		label.Size = UDim2.fromScale(1, if row == 1 then 0.6 else 0.4)
-		label.Font = Enum.Font.FredokaOne
+		label.FontFace = if row == 1 then Fonts.Title else Fonts.Body
 		label.TextScaled = true
 		label.TextColor3 = if row == 1 then ORANGE else Color3.new(1, 1, 1)
 		label.TextStrokeTransparency = 0.2
