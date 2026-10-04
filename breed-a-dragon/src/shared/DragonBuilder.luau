@@ -781,12 +781,12 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			glow(eye, EYE)
 			-- The pupil sits on the outside of the eye, facing sideways and a little forward.
 			local outward = Vector3.new(side, 0, -0.35).Unit
-			local pupilAt = position + outward * diameter * 0.45
+			local pupilAt = position + outward * diameter * 0.42
 			newPart(
 				model,
 				"Pupil",
 				"Block",
-				Vector3.new(diameter * 0.18, diameter * 0.75, diameter * 0.12),
+				Vector3.new(diameter * 0.16, diameter * 0.55, diameter * 0.1),
 				CFrame.lookAt(pupilAt, pupilAt + outward),
 				look(BLACK)
 			)
