@@ -69,7 +69,7 @@ Config.WorldFirst = {
 }
 
 Config.Island = {
-	Radius = 100, -- Ember Isle, in studs around the spawn point
+	Radius = 160, -- Ember Isle, in studs around the spawn point (trees and rocks grow with it)
 	RemoveBaseplate = true, -- the grey Baseplate is removed while playing so the island floats in the sky
 	FallRescueDepth = 60, -- players who fall this far below the island are put back on the spawn
 	ElderOffset = Vector3.new(-42, 0, 6), -- where Elder Ember stands, from the spawn point

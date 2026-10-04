@@ -45,22 +45,27 @@ type LockedIsland = {
 
 type Assets = { Tree: { Instance }, Rock: { Instance }, Bush: { Instance } }
 
+-- Trees, rocks and bushes per 100x100 studs of Ember Isle, so a bigger island isn't emptier.
+local function perArea(per10k: number): number
+	return math.floor(per10k * math.pi * Config.Island.Radius ^ 2 / 10000)
+end
+
 local EMBER_ISLE: IslandStyle = {
 	Top = Enum.Material.Grass,
 	Edge = Enum.Material.Ground,
 	Cliff = Enum.Material.Rock,
 	Rock = Enum.Material.Rock,
 	Leaves = Enum.Material.LeafyGrass,
-	Trees = 30,
-	Rocks = 16,
-	Bushes = 26,
+	Trees = perArea(7.5), -- about 60 on a 160-stud island: room to walk between them
+	Rocks = perArea(4),
+	Bushes = perArea(6),
 }
 
 -- Islands 2-5: seen from Ember Isle, not reachable yet.
 local LOCKED_ISLANDS: { LockedIsland } = {
 	{
 		Name = "Frostpeak Isle",
-		Offset = Vector3.new(300, 45, -170),
+		Offset = Vector3.new(430, 45, -250),
 		Radius = 55,
 		Barrier = Color3.fromRGB(170, 220, 255),
 		Style = {
@@ -76,7 +81,7 @@ local LOCKED_ISLANDS: { LockedIsland } = {
 	},
 	{
 		Name = "Verdant Hollow",
-		Offset = Vector3.new(-310, 10, -150),
+		Offset = Vector3.new(-450, 10, -220),
 		Radius = 60,
 		Barrier = Color3.fromRGB(120, 255, 150),
 		Style = {
@@ -92,7 +97,7 @@ local LOCKED_ISLANDS: { LockedIsland } = {
 	},
 	{
 		Name = "Storm Spire",
-		Offset = Vector3.new(-250, 80, 260),
+		Offset = Vector3.new(-360, 80, 380),
 		Radius = 45,
 		Barrier = Color3.fromRGB(150, 120, 255),
 		Style = {
@@ -108,7 +113,7 @@ local LOCKED_ISLANDS: { LockedIsland } = {
 	},
 	{
 		Name = "Starfall Reach",
-		Offset = Vector3.new(270, 120, 260),
+		Offset = Vector3.new(390, 120, 380),
 		Radius = 50,
 		Barrier = Color3.fromRGB(255, 120, 220),
 		Style = {
@@ -519,7 +524,7 @@ local function setSky()
 	Lighting.EnvironmentSpecularScale = 1
 	Lighting.OutdoorAmbient = Color3.fromRGB(128, 120, 118)
 	addEffect("Atmosphere", {
-		Density = 0.3,
+		Density = 0.24, -- low enough that the locked islands still show through
 		Offset = 0.2,
 		Color = Color3.fromRGB(230, 205, 185),
 		Decay = Color3.fromRGB(150, 120, 110),
