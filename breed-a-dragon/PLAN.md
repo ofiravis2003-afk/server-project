@@ -78,7 +78,7 @@ symmetrical, low poly game asset
 - ✅ שלבים 0 עד 5 עובדים ב-Studio: שמירה, Embers, קריסטלים, ביצים, קנים, בקיעה, דרקונים פעילים שעפים ומנפנפים, הכנסה, מכירה, הכלאה, Index ו-World First.
 - ✅ **הדרקונים בנויים עכשיו מהמודל של Tripo** (`ReplicatedStorage/TripoDragon`: Body, HeadNeck, LeftWing, RightWing, Leg1 עד Leg4), נצבעים לפי הגנים והכנפיים מנפנפות. השחקן אישר שזה נראה הרבה יותר טוב.
 - ✅ סגירת הסדקים בין החלקים.
-- ✅ **עיניים וכתר/הילה:** המיקום אושר כמושלם (`Config.luau` ← `MeshEyes`: Back=0.24, Up=0.1, TopBack=0.38, TopUp=0.03). אחר כך העין שונתה מ-Neon זוהר ל-Glass מבריק, עם אישון שחור בולט יותר ונקודת ברק לבנה קטנה. צריך לבדוק ב-Studio שזה נראה טוב.
+- ✅ **עיניים וכתר/הילה:** המיקום אושר כמושלם (`Config.luau` ← `MeshEyes`: Back=0.24, Up=0.1, TopBack=0.38, TopUp=0.03). אחר כך העין שונתה מ-Neon זוהר ל-Glass מבריק, עם אישון שחור בולט יותר ונקודת ברק לבנה קטנה. נבדק ב-Studio ונראה בסדר לעכשיו. אולי עוד שיפורים קטנים בהמשך.
 
 ### 👤 מה לעשות כשחוזרים
 1. `git pull` בטרמינל של VS Code, ואז Rojo ← `default.project.json` ← Connect ב-Studio.
