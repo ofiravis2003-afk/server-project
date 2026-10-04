@@ -81,7 +81,7 @@ symmetrical, low poly game asset
 
 ### 👤 מה לעשות כשחוזרים
 1. `git pull` בטרמינל של VS Code, ואז Rojo ← `default.project.json` ← Connect ב-Studio.
-2. **לסמן עין אחת:** להעביר את `TripoDragon` ל-Workspace, להוסיף **Part** בשם `Eye` בתוך `TripoDragon`, לקבוע Size של `0.4, 0.4, 0.4`, להזיז אותו לשקע של עין אחת (את השנייה הקוד יוצר כתמונת מראה), ולהחזיר את `TripoDragon` ל-ReplicatedStorage.
+2. **עיניים:** הקוד מוצא עכשיו את מקום העיניים לבד (סורק את הראש בקרניים בלתי נראות). צריך **רק למחוק** את ה-Part בשם `Eye` מתוך `TripoDragon`, אם הוא קיים. אם העיניים יוצאות במקום לא נכון, מכוונים 3 מספרים ב-`Config.luau` ← `MeshEyes` (Back, Up ו-Size).
 3. **אם עדיין רואים חורים:** לסמן **DoubleSided** ב-Properties לכל החלקים חוץ מהכנפיים.
 4. **Play** ולשלוח צילום מקרוב של דרקון.
 

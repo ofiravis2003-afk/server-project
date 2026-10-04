@@ -26,6 +26,13 @@ Config.Dragons = {
 	ActiveSlots = 4, -- dragons that can be active (earning + following you) at once
 	AnnounceFrom = "Legendary", -- hatching this rarity or better is announced to the whole server
 	PetScale = 0.35, -- size of active dragons following the player, compared to full size
+	-- Where the eyes go on the Tripo model, found automatically from the tip of the snout.
+	-- All three are fractions of the HeadNeck mesh's height; tweak them if the eyes sit wrong.
+	MeshEyes = {
+		Back = 0.16, -- how far behind the snout tip
+		Up = 0.05, -- how far above the snout tip
+		Size = 0.07, -- eye diameter
+	},
 }
 
 Config.Income = {
