@@ -167,10 +167,10 @@ local function addParticles(
 	emitter.Parent = parent
 end
 
+-- Small, slow glints of light. (Not Roblox's old "Sparkles" object: its big cartoon stars
+-- don't shrink with the dragon, so they swamped the small pets.)
 local function addSparkles(parent: BasePart, color: Color3)
-	local sparkles = Instance.new("Sparkles")
-	sparkles.SparkleColor = color
-	sparkles.Parent = parent
+	addParticles(parent, color, color, { Rate = 3, Lifetime = 1.2, Speed = 0.6, Size = 0.3 })
 end
 
 local function buildWing(model: Model, side: number, wings: string, body: GeneOption, accent: GeneOption)

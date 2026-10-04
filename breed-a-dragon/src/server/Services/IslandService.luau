@@ -318,7 +318,8 @@ local function island(
 		end
 	end
 	local leaves = style.Leaves
-	if leaves then
+	local codeTrees = Config.Island.CodeTrees
+	if leaves and (codeTrees or #assets.Tree > 0) then
 		scatter(style.Trees, radius * 0.25, assets.Tree, function(point)
 			tree(parent, point, rng, leaves)
 		end)
@@ -326,7 +327,7 @@ local function island(
 	scatter(style.Rocks, radius * 0.2, assets.Rock, function(point)
 		boulder(point, rng, style.Rock)
 	end)
-	scatter(style.Bushes, radius * 0.3, assets.Bush, function(point)
+	scatter(if codeTrees or #assets.Bush > 0 then style.Bushes else 0, radius * 0.3, assets.Bush, function(point)
 		terrain():FillBall(point + Vector3.new(0, 0.5, 0), rng:NextNumber(1.8, 3), Enum.Material.LeafyGrass)
 	end)
 
@@ -429,7 +430,8 @@ local function buildLockedIslands(assets: Assets)
 		sign.Transparency = 1
 		sign.CanCollide = false
 		local billboard = Instance.new("BillboardGui")
-		billboard.Size = UDim2.fromOffset(280, 80)
+		-- Sized in studs, so it looks like a sign far away instead of text stuck on the screen.
+		billboard.Size = UDim2.fromScale(info.Radius * 1.6, info.Radius * 0.45)
 		billboard.LightInfluence = 0
 		billboard.MaxDistance = 3000
 		billboard.Parent = sign

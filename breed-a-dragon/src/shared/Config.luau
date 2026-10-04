@@ -73,6 +73,9 @@ Config.Island = {
 	RemoveBaseplate = true, -- the grey Baseplate is removed while playing so the island floats in the sky
 	FallRescueDepth = 60, -- players who fall this far below the island are put back on the spawn
 	ElderOffset = Vector3.new(-42, 0, 6), -- where Elder Ember stands, from the spawn point
+	-- Trees and bushes made from code look like toys, so they are off: put real tree models from
+	-- the Toolbox in ServerStorage/IslandAssets instead (see README). true = use the code ones.
+	CodeTrees = false,
 }
 
 Config.Tutorial = {
