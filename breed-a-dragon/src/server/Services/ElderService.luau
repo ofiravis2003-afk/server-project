@@ -22,6 +22,7 @@ local ELDER_GENES: Genes.DragonGenes = {
 	Tail = "Flame",
 	Size = "Titan",
 	Aura = "Ember",
+	Pattern = "Veins",
 }
 local PERCH_HEIGHT = 3 -- matches the rock IslandService builds for him
 local ORANGE = Color3.fromRGB(255, 160, 60)

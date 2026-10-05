@@ -670,6 +670,312 @@ local function scanHead(template: Model): HeadScan
 	return result
 end
 
+-- The skin of the body and head, "felt" with rays once per template after the model is turned and
+-- sized (so in the same space every build uses): rays from above and from both sides.
+-- Pattern markings are stuck onto these points.
+type SkinPoint = { Position: Vector3, Normal: Vector3, Host: string, Top: boolean, Row: number, Column: number }
+local skinScans: { [Model]: { SkinPoint } } = {}
+local SKIN_ROWS = 28 -- along the body
+local SKIN_COLUMNS = 10 -- across the back (from above) or up the side
+
+local function scanSkin(template: Model, model: Model): { SkinPoint }
+	local cached = skinScans[template]
+	if cached then
+		return cached
+	end
+	local points: { SkinPoint } = {}
+	skinScans[template] = points
+
+	pcall(function()
+		local probes: { Instance } = {}
+		for _, name in { "Body", "HeadNeck" } do
+			local part = model:FindFirstChild(name)
+			if part and part:IsA("BasePart") then
+				local probe = part:Clone()
+				probe:ClearAllChildren()
+				probe.Name = name
+				probe.Anchored = true
+				probe.CanQuery = true
+				probe.Transparency = 1
+				probe.Parent = workspace
+				table.insert(probes, probe)
+			end
+		end
+		local body = model:FindFirstChild("Body")
+		if #probes == 0 or not body or not body:IsA("BasePart") then
+			return
+		end
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = probes
+
+		local low, high = boundsOf(body)
+		local size = high - low
+		local reach = size.Magnitude + 2
+		for row = 0, SKIN_ROWS - 1 do
+			local z = low.Z + size.Z * (row + 0.5) / SKIN_ROWS
+			for column = 0, SKIN_COLUMNS - 1 do
+				local t = (column + 0.5) / SKIN_COLUMNS
+				-- From above, across the middle 80% of the width.
+				local x = low.X + size.X * (0.1 + 0.8 * t)
+				local hit = workspace:Raycast(Vector3.new(x, high.Y + 1, z), Vector3.new(0, -reach, 0), params)
+				if hit and hit.Normal.Y > 0.25 then
+					table.insert(points, {
+						Position = hit.Position,
+						Normal = hit.Normal,
+						Host = hit.Instance.Name,
+						Top = true,
+						Row = row,
+						Column = column,
+					})
+				end
+				-- From each side, over the upper 70% of the height.
+				local y = low.Y + size.Y * (0.3 + 0.7 * t)
+				for _, side in { -1, 1 } do
+					local start = Vector3.new(side * reach, y, z)
+					local sideHit = workspace:Raycast(start, Vector3.new(-side * reach * 2, 0, 0), params)
+					if sideHit then
+						table.insert(points, {
+							Position = sideHit.Position,
+							Normal = sideHit.Normal,
+							Host = sideHit.Instance.Name,
+							Top = false,
+							Row = row,
+							Column = column * side,
+						})
+					end
+				end
+			end
+		end
+		for _, probe in probes do
+			probe:Destroy()
+		end
+	end)
+	return points
+end
+
+-- A stable number from a string, so a dragon's markings look the same every time it is built.
+local function seedFrom(text: string): number
+	local hash = 7
+	for i = 1, #text do
+		hash = (hash * 31 + string.byte(text, i)) % 2147483647
+	end
+	return hash
+end
+
+-- A flat marking lying on the skin at `point`, its length running along `along`.
+local function skinMark(
+	model: Model,
+	point: SkinPoint,
+	along: Vector3,
+	size: Vector3, -- x: width, y: thickness, z: length
+	kind: PartKind,
+	option: GeneOption
+): BasePart
+	local up = point.Normal
+	local length = (along - up * along:Dot(up))
+	if length.Magnitude < 0.01 then
+		length = Vector3.new(0, 0, -1) - up * -up.Z
+	end
+	local look = length.Unit
+	local right = look:Cross(up).Unit
+	-- Half sunk into the skin, so it hugs the curve instead of floating.
+	local frame = CFrame.fromMatrix(point.Position - up * size.Y * 0.35, right, up)
+	local part = newPart(model, "Pattern", kind, size, frame, option)
+	local host = model:FindFirstChild(point.Host)
+	local rig = host and host:GetAttribute("Rig")
+	if rig then
+		part:SetAttribute("Rig", rig)
+	end
+	return part
+end
+
+-- A thin glowing line on the skin from one point to another.
+local function skinLine(model: Model, a: SkinPoint, b: SkinPoint, width: number, color: Color3, transparency: number?)
+	local from = a.Position + a.Normal * width * 0.3
+	local to = b.Position + b.Normal * width * 0.3
+	local length = (to - from).Magnitude
+	if length < 0.02 then
+		return
+	end
+	local part = newPart(
+		model,
+		"Pattern",
+		"Block",
+		Vector3.new(width, width, length + width),
+		CFrame.lookAt((from + to) / 2, to),
+		look(color)
+	)
+	glow(part, color, transparency)
+end
+
+local function closest(points: { SkinPoint }, to: Vector3, skip: SkinPoint?): (SkinPoint?, number)
+	local best, bestDistance = nil, math.huge
+	for _, point in points do
+		local distance = (point.Position - to).Magnitude
+		if point ~= skip and distance < bestDistance then
+			best, bestDistance = point, distance
+		end
+	end
+	return best, bestDistance
+end
+
+-- Picks up to `count` random points that are at least `spacing` apart.
+local function spreadOut(points: { SkinPoint }, count: number, spacing: number, rng: Random): { SkinPoint }
+	local picked: { SkinPoint } = {}
+	for _ = 1, count * 8 do
+		if #picked >= count or #points == 0 then
+			break
+		end
+		local candidate = points[rng:NextInteger(1, #points)]
+		local _, distance = closest(picked, candidate.Position)
+		if distance >= spacing then
+			table.insert(picked, candidate)
+		end
+	end
+	return picked
+end
+
+-- Rune shapes: line segments in a 1x1 square (u across, v up), like old carved letters.
+local RUNES = {
+	{ { 0.5, 0, 0.5, 1 }, { 0.5, 1, 0.9, 0.7 }, { 0.5, 0.6, 0.9, 0.3 } },
+	{ { 0.2, 0, 0.2, 1 }, { 0.8, 0, 0.8, 1 }, { 0.2, 0.7, 0.8, 0.3 } },
+	{ { 0.5, 0, 0.5, 1 }, { 0.1, 0.8, 0.5, 0.5 }, { 0.9, 0.8, 0.5, 0.5 } },
+	{ { 0.2, 1, 0.8, 0.5 }, { 0.8, 0.5, 0.2, 0 }, { 0.2, 1, 0.2, 0 } },
+	{ { 0.5, 0, 0.5, 1 }, { 0.15, 0.25, 0.85, 0.75 }, { 0.85, 0.25, 0.15, 0.75 } },
+}
+
+-- The markings of the Pattern gene, drawn in the Accent colour (glowing for the rare ones).
+local function drawPattern(
+	model: Model,
+	template: Model,
+	genes: Genes.DragonGenes,
+	bodyLook: GeneOption,
+	accent: GeneOption
+)
+	local pattern = genes.Pattern
+	if pattern == nil or pattern == "Plain" then
+		return
+	end
+	local skin = scanSkin(template, model)
+	if #skin == 0 then
+		return
+	end
+	local rng = Random.new(seedFrom(Genes.GetKey(genes)))
+	-- The markings must stand out: if the accent is (almost) the body colour, darken it.
+	local markLook = accent
+	local bodyColor, accentColor = bodyLook.Color or WHITE, accent.Color or WHITE
+	local difference = math.abs(bodyColor.R - accentColor.R)
+		+ math.abs(bodyColor.G - accentColor.G)
+		+ math.abs(bodyColor.B - accentColor.B)
+	if difference < 0.25 then
+		markLook = look(bodyColor:Lerp(BLACK, 0.45), bodyLook.Material)
+	end
+	local glowColor = markLook.Color or WHITE
+	if glowColor.R + glowColor.G + glowColor.B < 0.6 then
+		glowColor = glowColor:Lerp(WHITE, 0.6) -- a dark accent wouldn't glow
+	end
+	local forward = Vector3.new(0, 0, -1)
+
+	local bodyPoints, topPoints = {}, {}
+	for _, point in skin do
+		if point.Host == "Body" then
+			table.insert(bodyPoints, point)
+			if point.Top then
+				table.insert(topPoints, point)
+			end
+		end
+	end
+
+	if pattern == "Spots" then
+		for _, point in spreadOut(skin, 24, 0.55, rng) do
+			local d = rng:NextNumber(0.25, 0.55)
+			skinMark(model, point, forward, Vector3.new(d, 0.14, d * rng:NextNumber(0.8, 1.3)), "Ellipsoid", markLook)
+		end
+	elseif pattern == "Stripes" then
+		-- Bands around the back, like a tiger: every fourth row along the body, made of short
+		-- pieces on every other column (the pieces are long enough to join up).
+		for _, point in bodyPoints do
+			local column = math.abs(point.Column)
+			local onBack = point.Top or column >= SKIN_COLUMNS * 0.6
+			if point.Row % 4 == 1 and column % 2 == 0 and onBack then
+				local around = point.Normal:Cross(forward)
+				if around.Magnitude > 0.1 then
+					local length = rng:NextNumber(0.6, 0.8)
+					skinMark(model, point, around, Vector3.new(0.26, 0.14, length), "Ellipsoid", markLook)
+				end
+			end
+		end
+	elseif pattern == "Scales" then
+		-- Rows of round plates over the back, each row shifted half a plate.
+		local count = 0
+		for _, point in topPoints do
+			if point.Row % 2 == 0 and (point.Column + point.Row // 2) % 2 == 0 and count < 60 then
+				skinMark(model, point, forward, Vector3.new(0.42, 0.12, 0.36), "Ellipsoid", markLook)
+				count += 1
+			end
+		end
+	elseif pattern == "Veins" then
+		-- Glowing cracks, like lava under the skin: short wandering lines.
+		local veinColor = Color3.fromRGB(255, 120, 30)
+		for _, start in spreadOut(bodyPoints, 6, 1.2, rng) do
+			local current = start
+			local heading = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1))
+			for _ = 1, 6 do
+				local goal = current.Position + heading.Unit * 0.5
+				local nextPoint = closest(bodyPoints, goal, current)
+				if not nextPoint or (nextPoint.Position - current.Position).Magnitude > 0.9 then
+					break
+				end
+				skinLine(model, current, nextPoint, 0.07, veinColor)
+				heading = (heading.Unit + Vector3.new(rng:NextNumber(-0.6, 0.6), rng:NextNumber(-0.6, 0.6), 0)).Unit
+				current = nextPoint
+			end
+		end
+	elseif pattern == "Runes" then
+		-- Old glowing letters on the flanks.
+		local flanks = {}
+		for _, point in bodyPoints do
+			if not point.Top and math.abs(point.Normal.X) > 0.6 then
+				table.insert(flanks, point)
+			end
+		end
+		for _, point in spreadOut(flanks, 6, 1.3, rng) do
+			local up = point.Normal
+			local u = Vector3.new(0, 0, -1)
+			u = (u - up * u:Dot(up)).Unit
+			local v = up:Cross(u).Unit
+			local size = 0.55
+			for _, bar in RUNES[rng:NextInteger(1, #RUNES)] do
+				local a = point.Position + (u * (bar[1] - 0.5) + v * (bar[2] - 0.5)) * size
+				local b = point.Position + (u * (bar[3] - 0.5) + v * (bar[4] - 0.5)) * size
+				local from = { Position = a, Normal = up, Host = point.Host, Top = false, Row = 0, Column = 0 }
+				local to = { Position = b, Normal = up, Host = point.Host, Top = false, Row = 0, Column = 0 }
+				skinLine(model, from, to, 0.06, glowColor)
+			end
+		end
+	elseif pattern == "Starmap" then
+		-- Tiny stars all over, and a few of them joined into constellations.
+		local stars = spreadOut(skin, 34, 0.35, rng)
+		for _, point in stars do
+			local d = rng:NextNumber(0.08, 0.16)
+			local star = skinMark(model, point, forward, Vector3.new(d, d, d), "Ball", look(WHITE))
+			glow(star, Color3.fromRGB(235, 240, 255))
+		end
+		for i = 1, math.min(3, #stars) do
+			local current = stars[i]
+			for _ = 1, 3 do
+				local nextStar = closest(stars, current.Position, current)
+				if not nextStar then
+					break
+				end
+				skinLine(model, current, nextStar, 0.03, glowColor, 0.35)
+				current = nextStar
+			end
+		end
+	end
+end
+
 local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 	local bodyLook = Genes.Get("Body", genes.Body)
 	local accent = Genes.Get("Accent", genes.Accent)
@@ -817,6 +1123,9 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 		end
 	end
 
+	-- 3c. Skin markings (the Pattern gene).
+	drawPattern(model, template, genes, bodyLook, accent)
+
 	-- 4. Extras for rare genes, placed relative to the head and the back of the body.
 	if headMesh and (genes.Horns == "Halo" or genes.Horns == "Crown" or genes.Horns == "Crystal") then
 		local headTop: Vector3
@@ -869,6 +1178,8 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 end
 
 function DragonBuilder.Build(genes: Genes.DragonGenes): Model
+	-- Genes saved before a trait existed (e.g. no Pattern) still build.
+	genes = Genes.Upgrade(table.clone(genes))
 	local template = findTripoTemplate()
 	local model = if template then buildFromMesh(template, genes) else buildFromParts(genes)
 

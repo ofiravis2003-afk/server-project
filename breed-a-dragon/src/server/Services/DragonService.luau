@@ -213,6 +213,13 @@ local ACTIONS: { [string]: (Player, string) -> ActionResult } = {
 
 function DragonService.Start()
 	DataService.OnLoaded(function(player, data)
+		-- Dragons (and bred eggs) saved before a trait existed get its default gene.
+		for _, dragon in data.Dragons do
+			Genes.Upgrade(dragon.Genes)
+		end
+		for _, entry in data.Nests do
+			Genes.Upgrade(entry.Genes)
+		end
 		-- Dragons from before the Index existed still count as discovered.
 		for _, dragon in data.Dragons do
 			if Genes.IsValid(dragon.Genes) then

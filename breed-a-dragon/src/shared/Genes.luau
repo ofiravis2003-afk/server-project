@@ -2,7 +2,8 @@
 -- The dragon gene catalogue.
 --
 -- A dragon is just a table of gene ids, one per trait:
---   { Body = "Ember", Accent = "Gold", Wings = "Bat", Horns = "Curved", Tail = "Spiked", Size = "Normal", Aura = "None" }
+--   { Body = "Ember", Accent = "Gold", Wings = "Bat", Horns = "Curved", Tail = "Spiked", Size = "Normal",
+--     Aura = "None", Pattern = "Stripes" }
 -- Everything else (its name, its rarity, how it looks) is worked out from those ids.
 -- To add a new gene, add a line to the right list below. Ids must never change once players own them.
 
@@ -28,6 +29,7 @@ export type DragonGenes = {
 	Tail: string,
 	Size: string,
 	Aura: string,
+	Pattern: string,
 }
 
 -- Body and Accent share one colour palette.
@@ -119,10 +121,23 @@ local OPTIONS: { [string]: { GeneOption } } = {
 		{ Id = "Starfall", Name = "Starfall", Rarity = "Legendary" },
 		{ Id = "Cosmic", Name = "Cosmic", Rarity = "Mythic" },
 	},
+
+	-- Markings on the skin, drawn in the Accent colour (see DragonBuilder).
+	Pattern = {
+		{ Id = "Plain", Rarity = "Common" },
+		{ Id = "Spots", Name = "Spotted", Rarity = "Common" },
+		{ Id = "Stripes", Name = "Striped", Rarity = "Rare" },
+		{ Id = "Scales", Name = "Scaled", Rarity = "Rare" },
+		{ Id = "Veins", Name = "Molten", Rarity = "Epic" },
+		{ Id = "Runes", Name = "Runic", Rarity = "Legendary" },
+		{ Id = "Starmap", Name = "Starmarked", Rarity = "Mythic" },
+	},
 }
 
 -- The order traits are rolled, shown and stored in.
-local TRAITS = { "Body", "Accent", "Wings", "Horns", "Tail", "Size", "Aura" }
+local TRAITS = { "Body", "Accent", "Wings", "Horns", "Tail", "Size", "Aura", "Pattern" }
+-- Traits added after launch, and the gene that older dragons get for them.
+local NEW_TRAIT_DEFAULTS = { Pattern = "Plain" }
 
 local lookup: { [string]: { [string]: GeneOption } } = {}
 for trait, options in OPTIONS do
@@ -165,6 +180,19 @@ function Genes.IsValid(genes: any): boolean
 		end
 	end
 	return true
+end
+
+-- Fills in traits that were added after this dragon was saved (e.g. Pattern = "Plain"),
+-- so old dragons stay valid and look the same. Changes `genes` in place; returns it.
+function Genes.Upgrade(genes: any): any
+	if type(genes) == "table" then
+		for trait, default in NEW_TRAIT_DEFAULTS do
+			if genes[trait] == nil then
+				genes[trait] = default
+			end
+		end
+	end
+	return genes
 end
 
 local function rollTier(rng: Random, weights: RarityWeights): string
@@ -223,10 +251,10 @@ function Genes.GetRarity(genes: DragonGenes): Rarity.Tier
 	return Rarity.FromScore(Genes.GetScore(genes))
 end
 
--- e.g. "Huge Frozen Violet Wyvern"
+-- e.g. "Huge Striped Frozen Violet Wyvern"
 function Genes.GetName(genes: DragonGenes): string
 	local words = {}
-	for _, trait in { "Size", "Aura", "Body", "Wings" } do
+	for _, trait in { "Size", "Pattern", "Aura", "Body", "Wings" } do
 		local word = Genes.Get(trait, (genes :: any)[trait]).Name
 		if word then
 			table.insert(words, word)

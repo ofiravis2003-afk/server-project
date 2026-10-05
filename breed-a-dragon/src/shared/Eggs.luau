@@ -3,9 +3,10 @@
 -- Weights are the chances of each gene tier (see Rarity) when a dragon hatches from this egg:
 -- better eggs roll rarer genes more often. Players see the resulting odds before buying.
 -- Weights were tuned so the overall odds come out at roughly:
---   Common Egg  80% Common | 16% Rare | 3.6% Epic | 0.34% Legendary | 0.02% Mythic
---   Rare Egg    48% Common | 35% Rare | 14% Epic  | 2.7% Legendary  | 0.3% Mythic
---   Ember Egg   26% Common | 36% Rare | 29% Epic  | 7.8% Legendary  | 1% Mythic
+--   Common Egg  81% Common | 15% Rare | 3.6% Epic | 0.34% Legendary | 0.02% Mythic
+--   Rare Egg    48% Common | 33% Rare | 15% Epic  | 3.0% Legendary  | 0.3% Mythic
+--   Ember Egg   26% Common | 34% Rare | 30% Epic  | 8.5% Legendary  | 1% Mythic
+-- (Re-tuned when the Pattern trait was added, to keep these odds.)
 
 local Genes = require(script.Parent.Genes)
 
@@ -27,7 +28,7 @@ local LIST: { Egg } = {
 		Name = "Common Egg",
 		Price = 25,
 		HatchTime = 30,
-		Weights = { Common = 100, Rare = 25, Epic = 16, Legendary = 1.25, Mythic = 0.5 },
+		Weights = { Common = 100, Rare = 32, Epic = 17, Legendary = 1, Mythic = 0.5 },
 		Color = Color3.fromRGB(235, 225, 200),
 		SpotColor = Color3.fromRGB(170, 150, 120),
 	},
@@ -36,7 +37,7 @@ local LIST: { Egg } = {
 		Name = "Rare Egg",
 		Price = 150,
 		HatchTime = 120,
-		Weights = { Common = 100, Rare = 40, Epic = 32, Legendary = 6.3, Mythic = 1.6 },
+		Weights = { Common = 100, Rare = 46, Epic = 33, Legendary = 5.6, Mythic = 1.6 },
 		Color = Color3.fromRGB(90, 160, 235),
 		SpotColor = Color3.fromRGB(220, 240, 255),
 	},
@@ -45,7 +46,7 @@ local LIST: { Egg } = {
 		Name = "Ember Egg",
 		Price = 600,
 		HatchTime = 300,
-		Weights = { Common = 100, Rare = 50, Epic = 32, Legendary = 25, Mythic = 1 },
+		Weights = { Common = 100, Rare = 62, Epic = 32, Legendary = 24, Mythic = 1.1 },
 		Color = Color3.fromRGB(230, 90, 40),
 		SpotColor = Color3.fromRGB(255, 200, 70),
 		Glow = true,

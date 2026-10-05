@@ -97,6 +97,8 @@ symmetrical, low poly game asset
    - **גלריית הדרקונים** (כלי בדיקה) כובתה (`Config.Dev.DragonGallery = false`).
    - **גופן חדש** (`shared/Fonts.luau`): Fondamento לכותרות ו-Gotham מודגש לשאר. "נראה יפה מאוד".
 
+- 🧪 **גן Pattern (דוגמאות על העור)** כתוב ונבדק בבדיקות, וצריך לראות אותו ב-Studio: Plain, Spots, Stripes, Scales, Veins, Runes, Starmap, בצבע ה-Accent. הקוד סורק את עור המודל בקרניים פעם אחת לכל מודל (`scanSkin` ב-`DragonBuilder`). ספי הנדירות עודכנו (8/13/20/28) ומשקלי הביצים כוילו מחדש. דרקונים ישנים מקבלים Plain.
+
 ### 👤 מה לעשות כשחוזרים
 1. `git pull` בטרמינל של VS Code, ואז Rojo ← `default.project.json` ← Connect ב-Studio.
 2. ✅ ~~**🪨 להוסיף אבנים:**~~ נוספו אבנים מה-Toolbox, והאי נראה טוב. ב-Toolbox מחפשים `realistic rock` או `boulder`, ומכניסים 2–3 מודלים ל-`ServerStorage/IslandAssets`. בשם צריך להופיע rock, stone או boulder, ואז הם יחליפו את סלעי ה-Terrain. אחר כך **Ctrl+S** לשמירה.
