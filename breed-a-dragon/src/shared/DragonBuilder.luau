@@ -750,6 +750,24 @@ local function scanSkin(template: Model, model: Model): { SkinPoint }
 		for _, probe in probes do
 			probe:Destroy()
 		end
+
+		-- The rays hit Roblox's collision shape, which is made of flat facets, so neighbouring
+		-- points can face quite different ways. Averaging each normal with its neighbours'
+		-- gives a smooth skin, and the markings all lie flat instead of sticking out at angles.
+		local smoothRadius = size.Magnitude * 0.06
+		local smoothed = {}
+		for i, point in points do
+			local sum = Vector3.zero
+			for _, other in points do
+				if other.Host == point.Host and (other.Position - point.Position).Magnitude <= smoothRadius then
+					sum += other.Normal
+				end
+			end
+			smoothed[i] = if sum.Magnitude > 0.01 then sum.Unit else point.Normal
+		end
+		for i, point in points do
+			point.Normal = smoothed[i]
+		end
 	end)
 	return points
 end
@@ -908,11 +926,14 @@ local function drawPattern(
 			end
 		end
 	elseif pattern == "Scales" then
-		-- Rows of round plates over the back, each row shifted half a plate.
+		-- Small overlapping plates over the back, each row shifted half a plate, in a colour
+		-- between the skin and the accent so they read as scales, not stickers.
+		local scaleColor = (bodyLook.Color or WHITE):Lerp(markLook.Color or WHITE, 0.5)
+		local scaleLook = look(scaleColor, bodyLook.Material)
 		local count = 0
 		for _, point in topPoints do
-			if point.Row % 2 == 0 and (point.Column + point.Row // 2) % 2 == 0 and count < 60 then
-				skinMark(model, point, forward, Vector3.new(0.42, 0.12, 0.36), "Ellipsoid", markLook)
+			if (point.Column + point.Row) % 2 == 0 and count < 90 then
+				skinMark(model, point, forward, Vector3.new(0.34, 0.07, 0.38), "Ellipsoid", scaleLook)
 				count += 1
 			end
 		end
