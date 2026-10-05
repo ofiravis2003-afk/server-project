@@ -99,7 +99,7 @@ symmetrical, low poly game asset
 
 ### 👤 מה לעשות כשחוזרים
 1. `git pull` בטרמינל של VS Code, ואז Rojo ← `default.project.json` ← Connect ב-Studio.
-2. **🪨 להוסיף אבנים:** ב-Toolbox מחפשים `realistic rock` או `boulder`, ומכניסים 2–3 מודלים ל-`ServerStorage/IslandAssets`. בשם צריך להופיע rock, stone או boulder, ואז הם יחליפו את סלעי ה-Terrain. אחר כך **Ctrl+S** לשמירה.
+2. ✅ ~~**🪨 להוסיף אבנים:**~~ נוספו אבנים מה-Toolbox, והאי נראה טוב. ב-Toolbox מחפשים `realistic rock` או `boulder`, ומכניסים 2–3 מודלים ל-`ServerStorage/IslandAssets`. בשם צריך להופיע rock, stone או boulder, ואז הם יחליפו את סלעי ה-Terrain. אחר כך **Ctrl+S** לשמירה.
 3. לבדוק את כל 7 המשימות מההתחלה (README ← "בדיקת שלב 6"). כדי להתחיל כשחקן חדש, משנים זמנית `PlayerData_v1` ל-`PlayerData_test1` ב-`DataService.luau`.
 
 ### 🤖 הבא בתור
