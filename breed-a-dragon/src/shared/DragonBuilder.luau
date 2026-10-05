@@ -1083,6 +1083,8 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			part.CanTouch = false
 			part.Massless = true
 			local isWing = ACCENT_MESHES[part.Name] == true
+			-- A skin left on the template by hand is ignored; the code decides (applySkin below).
+			part.MaterialVariant = ""
 			applyLook(part, if isWing then accent else bodyLook)
 			if part ~= eyeMarker and part ~= topMarker then
 				applySkin(part, if isWing then accent else bodyLook, if isWing then wingVariant else skinVariant)
