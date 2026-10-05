@@ -542,14 +542,22 @@ local MESH_DRAGON_LENGTH = 11 -- studs: longest side of a Normal-size mesh drago
 local ACCENT_MESHES = { LeftWing = true, RightWing = true }
 
 -- A MaterialVariant (skin texture) made in Studio's Material Manager, or nil if there isn't one.
+local reportedSkins: { [string]: boolean } = {}
 local function findSkinVariant(name: string): MaterialVariant?
 	local ok, variant = pcall(function()
 		return game:GetService("MaterialService"):FindFirstChild(name)
 	end)
-	if ok and variant and variant:IsA("MaterialVariant") then
-		return variant
+	local found = if ok and variant and variant:IsA("MaterialVariant") then variant else nil
+	-- Say once in the Output window whether the skin was found (helps when it doesn't show).
+	if ok and not reportedSkins[name] then
+		reportedSkins[name] = true
+		print(
+			if found
+				then `[Dragons] Skin "{name}" found: dragons wear it.`
+				else `[Dragons] No skin "{name}" in MaterialService.`
+		)
 	end
-	return nil
+	return found
 end
 
 -- Puts the skin texture on a part, unless its gene has a special material of its own.
