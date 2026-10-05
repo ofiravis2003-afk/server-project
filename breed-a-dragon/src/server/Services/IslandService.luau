@@ -17,6 +17,7 @@
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -420,6 +421,7 @@ local function buildEmberIsle(assets: Assets): Folder
 	local center = spawnCenter
 	local shop = center + Vector3.new(0, 0, 40)
 	local elder = center + Config.Island.ElderOffset
+	local galleryOn = Config.Dev.DragonGallery and RunService:IsStudio()
 
 	island(folder, center, Config.Island.Radius, EMBER_ISLE, 7, assets, function(point)
 		local offset = point - center
@@ -428,6 +430,8 @@ local function buildEmberIsle(assets: Assets): Folder
 			or (point - elder).Magnitude < 22
 			or distanceToSegment(point, center, shop) < 8
 			or distanceToSegment(point, center, elder) < 8
+			-- The Studio-only dragon gallery north of the spawn (see DevGalleryService).
+			or (galleryOn and offset.Z < -38 and offset.Z > -128 and math.abs(offset.X) < 58)
 	end)
 
 	-- Stone plaza around the spawn and crystals, and dirt paths to the shop and to Elder Ember.

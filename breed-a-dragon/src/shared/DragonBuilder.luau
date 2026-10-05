@@ -779,8 +779,9 @@ local function skinMark(
 	end
 	local look = length.Unit
 	local right = look:Cross(up).Unit
-	-- Half sunk into the skin, so it hugs the curve instead of floating.
-	local frame = CFrame.fromMatrix(point.Position - up * size.Y * 0.35, right, up)
+	-- Mostly sunk into the skin, so it hugs the curve instead of floating. (Rays hit the mesh's
+	-- collision shape, which is only close to what you see: see README, CollisionFidelity.)
+	local frame = CFrame.fromMatrix(point.Position - up * size.Y * 0.5, right, up)
 	local part = newPart(model, "Pattern", kind, size, frame, option)
 	local host = model:FindFirstChild(point.Host)
 	local rig = host and host:GetAttribute("Rig")
