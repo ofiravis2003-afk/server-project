@@ -540,6 +540,25 @@ end
 
 local MESH_DRAGON_LENGTH = 11 -- studs: longest side of a Normal-size mesh dragon (like the part dragon)
 local ACCENT_MESHES = { LeftWing = true, RightWing = true }
+
+-- A MaterialVariant (skin texture) made in Studio's Material Manager, or nil if there isn't one.
+local function findSkinVariant(name: string): MaterialVariant?
+	local ok, variant = pcall(function()
+		return game:GetService("MaterialService"):FindFirstChild(name)
+	end)
+	if ok and variant and variant:IsA("MaterialVariant") then
+		return variant
+	end
+	return nil
+end
+
+-- Puts the skin texture on a part, unless its gene has a special material of its own.
+local function applySkin(part: BasePart, option: GeneOption, variant: MaterialVariant?)
+	if variant and (option.Material == nil or option.Material == Enum.Material.SmoothPlastic) then
+		part.Material = variant.BaseMaterial
+		part.MaterialVariant = variant.Name
+	end
+end
 -- Tripo's pieces don't quite meet; growing each body piece a little closes the slits between them.
 local SEAM_OVERLAP = 1.03
 -- Name of a small part placed in the template on one eye socket (the other eye is mirrored).
@@ -1001,6 +1020,8 @@ end
 local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 	local bodyLook = Genes.Get("Body", genes.Body)
 	local accent = Genes.Get("Accent", genes.Accent)
+	local skinVariant = findSkinVariant(Config.Dragons.SkinVariant)
+	local wingVariant = findSkinVariant(Config.Dragons.WingVariant)
 
 	local model = template:Clone()
 	model.Name = "Dragon"
@@ -1061,7 +1082,11 @@ local function buildFromMesh(template: Model, genes: Genes.DragonGenes): Model
 			part.CanCollide = false
 			part.CanTouch = false
 			part.Massless = true
-			applyLook(part, if ACCENT_MESHES[part.Name] then accent else bodyLook)
+			local isWing = ACCENT_MESHES[part.Name] == true
+			applyLook(part, if isWing then accent else bodyLook)
+			if part ~= eyeMarker and part ~= topMarker then
+				applySkin(part, if isWing then accent else bodyLook, if isWing then wingVariant else skinVariant)
+			end
 			if part ~= eyeMarker and part ~= topMarker and not ACCENT_MESHES[part.Name] then
 				part.Size *= SEAM_OVERLAP
 			end

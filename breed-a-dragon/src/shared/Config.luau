@@ -26,6 +26,11 @@ Config.Dragons = {
 	ActiveSlots = 4, -- dragons that can be active (earning + following you) at once
 	AnnounceFrom = "Legendary", -- hatching this rarity or better is announced to the whole server
 	PetScale = 0.35, -- size of active dragons following the player, compared to full size
+	-- Skin textures: MaterialVariants in MaterialService with these names (made in Studio's
+	-- Material Manager). If one exists, the Tripo dragon's body (or wings) wears it, tinted by
+	-- the gene colour. Genes with their own special material (glass, neon...) keep that.
+	SkinVariant = "DragonScale",
+	WingVariant = "DragonWing",
 	-- Where the eyes go on the Tripo model, found automatically from the tip of the snout.
 	-- All three are fractions of the HeadNeck mesh's height; tweak them if the eyes sit wrong.
 	MeshEyes = {
