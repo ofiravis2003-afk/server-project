@@ -17,7 +17,7 @@ local FLOOR_COLOR = Color3.fromRGB(58, 58, 60)
 local WALL_COLOR = Color3.fromRGB(72, 76, 73)
 local CEILING_COLOR = Color3.fromRGB(38, 40, 40)
 local IRON = Color3.fromRGB(42, 40, 40)
-local BONE = Color3.fromRGB(205, 196, 172)
+local BONE = Color3.fromRGB(140, 132, 112)
 local SARCOPHAGUS = Color3.fromRGB(112, 108, 98)
 
 export type Gate = { Part: BasePart, Open: CFrame, Closed: CFrame }
@@ -104,8 +104,8 @@ function FloorBuilder.Torch(parent: Instance, position: Vector3, facing: Vector3
 	flame.CastShadow = false
 	local light = Instance.new("PointLight")
 	light.Color = Color3.fromRGB(255, 150, 70)
-	light.Range = 24
-	light.Brightness = 1.25
+	light.Range = 20
+	light.Brightness = 0.9
 	light.Shadows = shadows
 	light.Parent = flame
 	local fire = Instance.new("Fire")
@@ -251,7 +251,8 @@ local function buildRoom(
 		local inward = -flat(dir)
 		if not opening then
 			block(model, "Wall", Vector3.new(outer, WALL_HEIGHT, WALL), frame * CFrame.new(0, WALL_HEIGHT / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
-			for _, x in { -S / 4, S / 4 } do
+			-- Small rooms get one torch per wall, big rooms two.
+			for _, x in if S >= 40 then { -S / 4, S / 4 } else { 0 } do
 				FloorBuilder.Torch(model, (frame * CFrame.new(x, 9, -S / 2)).Position, inward, true)
 			end
 			table.insert(plainWalls, frame)
@@ -327,9 +328,9 @@ local function buildRoom(
 		rubble.CanCollide = false
 	end
 	if plan.Type ~= "Stairs" and rng:NextNumber() < 0.45 then
-		local puddle = block(model, "Puddle", Vector3.new(S * rng:NextNumber(0.3, 0.5), 0.12, S * rng:NextNumber(0.25, 0.4)), CFrame.new(center + Vector3.new(rng:NextNumber(-S / 6, S / 6), 0.06, rng:NextNumber(-S / 6, S / 6))), Color3.fromRGB(32, 52, 56), Enum.Material.Glass)
-		puddle.Transparency = 0.3
-		puddle.Reflectance = 0.2
+		-- A dark, wet patch of standing water.
+		local puddle = block(model, "Puddle", Vector3.new(S * rng:NextNumber(0.3, 0.5), 0.1, S * rng:NextNumber(0.25, 0.4)), CFrame.new(center + Vector3.new(rng:NextNumber(-S / 6, S / 6), 0.05, rng:NextNumber(-S / 6, S / 6))), Color3.fromRGB(16, 24, 26), Enum.Material.SmoothPlastic)
+		puddle.Reflectance = 0.12
 		puddle.CanCollide = false
 		puddle.CastShadow = false
 	end
