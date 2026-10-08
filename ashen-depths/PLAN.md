@@ -93,10 +93,10 @@
 ### שלב 0: הכנות (👤 בעיקר)
 | # | משימה | מי |
 |---|---|---|
-| 0.1 | ליצור ב-Roblox Experience חדש עם 2 Places: Emberhold ו-Depths. לפרסם, ולהפעיל Enable Studio Access to API Services | 👤 |
+| 0.1 | ✅ ליצור ב-Roblox Experience חדש עם 2 Places: Emberhold ו-Depths. לפרסם, ולהפעיל Enable Studio Access to API Services | 👤 |
 | 0.2 | להוריד את חבילות KayKit (Dungeon Remastered, Adventurers, Skeletons) ו-Quaternius, ולייבא ל-Studio (Import 3D) | 👤 |
-| 0.3 | מבנה Rojo לשני ה-Places, עם קוד משותף | 🤖 |
-| 0.4 | להעתיק מ-Breed a Dragon: DataService, Remotes, RateLimiter, Fonts ובדיקות | 🤖 |
+| 0.3 | ✅ מבנה Rojo לשני ה-Places, עם קוד משותף | 🤖 |
+| 0.4 | ✅ להעתיק מ-Breed a Dragon: DataService, Remotes, RateLimiter, Fonts ובדיקות | 🤖 |
 ✅ **סיום:** שינוי בקוד מופיע בשני ה-Places.
 
 ### שלב 1: בסיס הדמות והקרב
@@ -230,8 +230,11 @@
 - ✅ דמואים וקונספט (Artifacts).
 - ✅ 3 השאלות הפתוחות הוחלטו.
 - ✅ 0.3 + 0.4: מבנה הקוד מוכן ב-`ashen-depths/` (`hub.project.json`, `dungeon.project.json`, `src/...`). הועתקו מ-Breed a Dragon: `DataService`, `RateLimiter`, `Remotes`, `Fonts`. נוספו `Config` ו-`DataTemplate` חדשים.
-- ⚠️ **Rojo חסום במחשב** (Smart App Control חוסם את rojo.exe, בדיוק כמו ב-Breed a Dragon). לכן Claude מעביר את הקוד ל-Studio דרך ה-MCP של Studio, ואחר כך השחקן-מפתח לוחץ Ctrl+S.
-- ⏭️ **הצעד הבא (👤):** 0.1, ליצור Experience עם 2 Places ולפרסם, ו-0.2, להוריד את חבילות KayKit. אחר כך Claude מעביר את הקוד לשני ה-Places ובודק שמופיע `v0.0.1` בשניהם.
+- ✅ 0.1: נוצר Experience בשם Ashen Depths (GameId 10769924467) עם 2 Places: **Ashen Depths** (העיר, 127167308890339, Start Place) ו-**Depths** (המבוך, 94536878288268). Studio Access to API Services דולק (ב-Studio החדש: File ← Experience Settings ← Security).
+- ✅ שלב 0 נבדק: הקוד נמצא בשני ה-Places, ושניהם מדפיסים `v0.0.1`. השמירה משותפת: שמירה שנוצרה בעיר נטענה במבוך (JoinCount עלה מ-1 ל-2), והנעילה משתחררת ביציאה.
+- ⚠️ **Rojo חסום במחשב** (Smart App Control חוסם את rojo.exe, כמו ב-Breed a Dragon). Claude מעביר את הקוד ל-Studio דרך ה-MCP של Studio (סקריפט שבונה את הסקריפטים מהקבצים ב-`src/`), ואחר כך השחקן-מפתח לוחץ Ctrl+S בכל Place.
+- ℹ️ Claude עובד מתיקיית worktree נפרדת (`ROBLOX/ashen-depths-work`, ענף מקומי `ashen-depths`), כי בתיקייה הראשית יש commits של Breed a Dragon שעוד לא עלו.
+- ⏭️ **הצעד הבא:** 0.2 (👤): להוריד מ-kaylousberg.itch.io את KayKit Dungeon Remastered, Adventurers ו-Skeletons, ולייבא ל-Studio. במקביל אפשר להתחיל בשלב 1 (🤖): נתוני שחקן, חפצים וקרב בסיסי.
 
 ### 💬 הודעה לפתיחת שיחה חדשה
 העתק והדבק:
