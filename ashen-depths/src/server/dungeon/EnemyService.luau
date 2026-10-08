@@ -127,8 +127,8 @@ local function buildSkeleton(): Model
 	local light = Instance.new("PointLight")
 	light.Name = "EyeLight"
 	light.Color = EYE
-	light.Range = 6
-	light.Brightness = 1.2
+	light.Range = 5
+	light.Brightness = 0.6
 	light.Parent = head
 
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
@@ -192,8 +192,8 @@ local function setEyes(enemy: Enemy, flaring: boolean)
 		eye.Color = if flaring then Color3.fromRGB(255, 230, 160) else enemy.EyeColor
 		eye.Size = if flaring then Vector3.new(0.18, 0.14, 0.05) else Vector3.new(0.14, 0.1, 0.05)
 	end
-	enemy.EyeLight.Brightness = if flaring then 4 else 1.2
-	enemy.EyeLight.Range = if flaring then 10 else 6
+	enemy.EyeLight.Brightness = if flaring then 3 else 0.6
+	enemy.EyeLight.Range = if flaring then 9 else 5
 end
 
 local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)

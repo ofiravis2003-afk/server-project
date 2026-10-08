@@ -329,8 +329,8 @@ local function buildRoom(
 	end
 	if plan.Type ~= "Stairs" and rng:NextNumber() < 0.45 then
 		-- A dark, wet patch of standing water.
-		local puddle = block(model, "Puddle", Vector3.new(S * rng:NextNumber(0.3, 0.5), 0.1, S * rng:NextNumber(0.25, 0.4)), CFrame.new(center + Vector3.new(rng:NextNumber(-S / 6, S / 6), 0.05, rng:NextNumber(-S / 6, S / 6))), Color3.fromRGB(16, 24, 26), Enum.Material.SmoothPlastic)
-		puddle.Reflectance = 0.12
+		local puddle = block(model, "Puddle", Vector3.new(S * rng:NextNumber(0.2, 0.35), 0.1, S * rng:NextNumber(0.15, 0.3)), CFrame.new(center + Vector3.new(rng:NextNumber(-S / 6, S / 6), 0.05, rng:NextNumber(-S / 6, S / 6))), Color3.fromRGB(38, 50, 52), Enum.Material.SmoothPlastic)
+		puddle.Reflectance = 0.25
 		puddle.CanCollide = false
 		puddle.CastShadow = false
 	end
