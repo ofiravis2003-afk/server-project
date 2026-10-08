@@ -1,7 +1,9 @@
 --!strict
 -- Spawns enemies, runs their simple AI (chase, wind up, hit), takes their damage and pays out rewards.
 --
--- Enemies appear at every part tagged "EnemySpawn" (attribute Enemy = "Skeleton").
+-- The dungeon floors spawn enemies with EnemyService.Spawn. The test room also spawns one at every
+-- part tagged "EnemySpawn" (attribute Enemy = "Skeleton"), and those come back after dying in test mode.
+-- Elite enemies are bigger, have golden eyes, hit harder and drop a Bronze Key (see FloorService).
 -- An enemy shows its attack coming (red eyes flare + swing) for `Windup` seconds before it lands,
 -- so a player who steps away in time takes no damage.
 
@@ -28,10 +30,23 @@ local ANIMATIONS = {
 
 local BONE = Color3.fromRGB(214, 205, 180)
 local EYE = Color3.fromRGB(255, 40, 30)
+local ELITE_EYE = Color3.fromRGB(255, 190, 40)
+
+local ELITE = { Scale = 1.3, Health = 3.5, Damage = 1.5, Rewards = 3 }
+
+export type SpawnOptions = {
+	HealthMultiplier: number?,
+	DamageMultiplier: number?,
+	Elite: boolean?,
+	OnDied: ((Enemy) -> ())?,
+}
 
 export type Enemy = {
 	Name: string,
 	Def: Enemies.EnemyDef,
+	Damage: number,
+	Elite: boolean,
+	EyeColor: Color3,
 	Model: Model,
 	Humanoid: Humanoid,
 	Root: BasePart,
@@ -174,16 +189,14 @@ end
 
 local function setEyes(enemy: Enemy, flaring: boolean)
 	for _, eye in enemy.Eyes do
-		eye.Color = if flaring then Color3.fromRGB(255, 200, 120) else EYE
+		eye.Color = if flaring then Color3.fromRGB(255, 230, 160) else enemy.EyeColor
 		eye.Size = if flaring then Vector3.new(0.18, 0.14, 0.05) else Vector3.new(0.14, 0.1, 0.05)
 	end
 	enemy.EyeLight.Brightness = if flaring then 4 else 1.2
 	enemy.EyeLight.Range = if flaring then 10 else 6
 end
 
-local spawnEnemy: (string, CFrame, BasePart?) -> ()
-
-local function onDied(enemy: Enemy, spawnPart: BasePart?)
+local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	if enemy.Dead then
 		return
 	end
@@ -208,13 +221,18 @@ local function onDied(enemy: Enemy, spawnPart: BasePart?)
 	end
 
 	local position = enemy.Root.Position
+	local rewards = if enemy.Elite then ELITE.Rewards else 1
 	for player, dealt in enemy.Damagers do
 		if player.Parent and dealt > 0 then
-			local gold = math.random(enemy.Def.Gold[1], enemy.Def.Gold[2])
-			ProgressService.AddXP(player, enemy.Def.XP)
+			local xp = enemy.Def.XP * rewards
+			local gold = math.random(enemy.Def.Gold[1], enemy.Def.Gold[2]) * rewards
+			ProgressService.AddXP(player, xp)
 			ProgressService.AddGold(player, gold)
-			damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), `+{enemy.Def.XP} XP   +{gold} Gold`, "Reward")
+			damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), `+{xp} XP   +{gold} Gold`, "Reward")
 		end
+	end
+	if options.OnDied then
+		task.spawn(options.OnDied, enemy)
 	end
 
 	task.delay(4, function()
@@ -223,36 +241,70 @@ local function onDied(enemy: Enemy, spawnPart: BasePart?)
 	if Config.TestMode and spawnPart and spawnPart.Parent then
 		task.delay(enemy.Def.RespawnTime, function()
 			if spawnPart.Parent then
-				spawnEnemy(enemy.Name, spawnPart.CFrame, spawnPart)
+				EnemyService.Spawn(enemy.Name, spawnPart.CFrame, options, spawnPart)
 			end
 		end)
 	end
 end
 
-spawnEnemy = function(name: string, cframe: CFrame, spawnPart: BasePart?)
+-- Spawns an enemy standing at `cframe` and returns it (nil if the name is unknown).
+-- The first spawn of each kind builds its model, so it can take a moment.
+function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?, spawnPart: BasePart?): Enemy?
 	local def = Enemies[name]
 	if not def then
 		warn(`[EnemyService] Unknown enemy "{name}"`)
-		return
+		return nil
 	end
+	local opts: SpawnOptions = options or {}
+	local elite = opts.Elite == true
 	local model = getTemplate(name):Clone()
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	local head = model:FindFirstChild("Head") :: BasePart
-	humanoid.MaxHealth = def.Health
-	humanoid.Health = def.Health
+	local health = def.Health * (opts.HealthMultiplier or 1) * (if elite then ELITE.Health else 1)
+	humanoid.MaxHealth = health
+	humanoid.Health = health
 	humanoid.WalkSpeed = def.WalkSpeed
+
+	local eyeColor = if elite then ELITE_EYE else EYE
+	local eyes = {}
+	for _, child in head:GetChildren() do
+		if child.Name == "Eye" then
+			(child :: BasePart).Color = eyeColor
+			table.insert(eyes, child :: BasePart)
+		end
+	end
+	local eyeLight = head:FindFirstChild("EyeLight") :: PointLight
+	eyeLight.Color = eyeColor
+	if elite then
+		model.Name = `Elite {def.DisplayName}`
+		model:ScaleTo(ELITE.Scale)
+		local aura = Instance.new("PointLight")
+		aura.Color = ELITE_EYE
+		aura.Range = 9
+		aura.Brightness = 0.8
+		aura.Parent = root
+		local tag = Instance.new("BillboardGui")
+		tag.Name = "EliteTag"
+		tag.Size = UDim2.fromOffset(160, 22)
+		tag.StudsOffset = Vector3.new(0, 2.8, 0)
+		tag.MaxDistance = 70
+		tag.Adornee = head
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.fromScale(1, 1)
+		text.BackgroundTransparency = 1
+		text.Font = Enum.Font.Fondamento
+		text.TextSize = 18
+		text.TextColor3 = ELITE_EYE
+		text.TextStrokeTransparency = 0.3
+		text.Text = `Elite {def.DisplayName}`
+		text.Parent = tag
+		tag.Parent = head
+	end
 
 	model:PivotTo(cframe + Vector3.new(0, 3, 0))
 	model.Parent = folder
 	root:SetNetworkOwner(nil)
-
-	local eyes = {}
-	for _, child in head:GetChildren() do
-		if child.Name == "Eye" then
-			table.insert(eyes, child :: BasePart)
-		end
-	end
 
 	local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
 	local tracks = {}
@@ -270,11 +322,14 @@ spawnEnemy = function(name: string, cframe: CFrame, spawnPart: BasePart?)
 	local enemy: Enemy = {
 		Name = name,
 		Def = def,
+		Damage = def.Damage * (opts.DamageMultiplier or 1) * (if elite then ELITE.Damage else 1),
+		Elite = elite,
+		EyeColor = eyeColor,
 		Model = model,
 		Humanoid = humanoid,
 		Root = root,
 		Eyes = eyes,
-		EyeLight = head:FindFirstChild("EyeLight") :: PointLight,
+		EyeLight = eyeLight,
 		Flash = model:FindFirstChild("HitFlash") :: Highlight,
 		HealthFill = (barGui:FindFirstChildOfClass("Frame") :: Frame):FindFirstChild("Fill") :: Frame,
 		Tracks = tracks,
@@ -299,8 +354,20 @@ spawnEnemy = function(name: string, cframe: CFrame, spawnPart: BasePart?)
 		enemy.HealthFill.Size = UDim2.fromScale(math.clamp(health / humanoid.MaxHealth, 0, 1), 1)
 	end)
 	humanoid.Died:Connect(function()
-		onDied(enemy, spawnPart)
+		onDied(enemy, opts, spawnPart)
 	end)
+	return enemy
+end
+
+-- Takes an enemy away without rewards (a room reset after everyone in it died).
+function EnemyService.Remove(enemy: Enemy)
+	if enemy.Dead then
+		return
+	end
+	enemy.Dead = true
+	enemies[enemy.Model] = nil
+	CollectionService:RemoveTag(enemy.Model, ENEMY_TAG)
+	enemy.Model:Destroy()
 end
 
 local function nearestTarget(position: Vector3, range: number): (BasePart?, Humanoid?)
@@ -342,8 +409,9 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 		local flat = Vector3.new(offset.X, 0, offset.Z)
 		local inFront = flat.Magnitude < 1 or enemy.Root.CFrame.LookVector:Dot(flat.Unit) > 0.2
 		if targetHumanoid.Health > 0 and flat.Magnitude <= enemy.Def.AttackRange + 1.5 and inFront then
-			targetHumanoid:TakeDamage(enemy.Def.Damage)
-			damageNumberRemote:FireAllClients(targetRoot.Position + Vector3.new(0, 2.5, 0), enemy.Def.Damage, "Hurt")
+			local damage = math.floor(enemy.Damage + 0.5)
+			targetHumanoid:TakeDamage(damage)
+			damageNumberRemote:FireAllClients(targetRoot.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
 		end
 	end
 	enemy.Attacking = false
@@ -411,7 +479,7 @@ function EnemyService.Start()
 	local function onSpawnPart(instance: Instance)
 		if instance:IsA("BasePart") then
 			local name = instance:GetAttribute("Enemy")
-			spawnEnemy(if type(name) == "string" then name else "Skeleton", instance.CFrame, instance)
+			EnemyService.Spawn(if type(name) == "string" then name else "Skeleton", instance.CFrame, nil, instance)
 		end
 	end
 	-- One after another: the first spawn builds the template, the rest just clone it.

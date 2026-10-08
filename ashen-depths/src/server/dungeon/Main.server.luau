@@ -13,11 +13,13 @@ local InventoryService = require(Common.InventoryService)
 local ProgressService = require(Common.ProgressService)
 local CombatService = require(script.Parent.CombatService)
 local EnemyService = require(script.Parent.EnemyService)
+local FloorService = require(script.Parent.FloorService)
 
 InventoryService.Start()
 ProgressService.Start()
 EnemyService.Start()
 CombatService.Start()
+FloorService.Start()
 
 -- Last: everything that reacts to a player's data loading has registered by now.
 DataService.Start()

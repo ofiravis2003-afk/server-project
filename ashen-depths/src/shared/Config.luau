@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.1.0",
+	Version = "0.2.0",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
@@ -16,4 +16,8 @@ return {
 	-- While building: every player gets one weapon of each type, and enemies come back after dying.
 	-- Turn off before launch.
 	TestMode = true,
+
+	-- Depths only: true starts players in the TestArena (a fixed room for trying weapons)
+	-- instead of on floor 1 of the dungeon.
+	StartInTestArena = false,
 }
