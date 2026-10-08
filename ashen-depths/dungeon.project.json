@@ -1,0 +1,35 @@
+{
+  "name": "AshenDepths-Depths",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$className": "Folder",
+        "Common": {
+          "$path": "src/server/common"
+        },
+        "Dungeon": {
+          "$path": "src/server/dungeon"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$className": "Folder",
+          "Common": {
+            "$path": "src/client/common"
+          },
+          "Dungeon": {
+            "$path": "src/client/dungeon"
+          }
+        }
+      }
+    }
+  }
+}

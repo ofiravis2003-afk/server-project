@@ -1,0 +1,35 @@
+{
+  "name": "AshenDepths-Emberhold",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$className": "Folder",
+        "Common": {
+          "$path": "src/server/common"
+        },
+        "Hub": {
+          "$path": "src/server/hub"
+        }
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$className": "Folder",
+          "Common": {
+            "$path": "src/client/common"
+          },
+          "Hub": {
+            "$path": "src/client/hub"
+          }
+        }
+      }
+    }
+  }
+}
