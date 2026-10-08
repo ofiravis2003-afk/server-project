@@ -78,7 +78,7 @@ local function hotbarIds(data: { [string]: any }): { string }
 		if orderA ~= orderB then
 			return orderA < orderB
 		end
-		return tonumber(a) :: number < tonumber(b) :: number
+		return (tonumber(a) :: number) < (tonumber(b) :: number)
 	end)
 	return ids
 end
