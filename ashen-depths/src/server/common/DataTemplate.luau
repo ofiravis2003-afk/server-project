@@ -6,6 +6,7 @@ return {
 	Level = 1,
 	XP = 0,
 	Gold = 0,
+	NextItemId = 1, -- every item gets its own id, so two Rusty Swords are still two items
 	Inventory = {}, -- [itemId] = { Item = "IronSword", Rarity = "Common", Upgrade = 0 }
 	Equipped = {}, -- [slot] = itemId, slots: Head, Chest, Hands, Legs, Weapon, Ring
 	GuildRank = "Copper",

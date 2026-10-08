@@ -8,6 +8,10 @@ local RunService = game:GetService("RunService")
 
 local EVENT_NAMES = {
 	"Notify", -- server -> client: show a message on screen
+	"StatsUpdated", -- server -> client: level, XP and gold changed
+	"DamageNumber", -- server -> client: show a floating number (damage, poison, rewards)
+	"Effect", -- server -> client: draw an arrow, fireball or blast
+	"Attack", -- client -> server: swing / shoot the held weapon in a direction
 }
 
 local FUNCTION_NAMES = {}

@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.0.1",
+	Version = "0.1.0",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
@@ -12,4 +12,8 @@ return {
 	},
 
 	MaxPartySize = 4,
+
+	-- While building: every player gets one weapon of each type, and enemies come back after dying.
+	-- Turn off before launch.
+	TestMode = true,
 }
