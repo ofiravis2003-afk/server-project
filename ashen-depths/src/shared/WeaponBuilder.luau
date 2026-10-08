@@ -5,7 +5,7 @@
 
 local WeaponBuilder = {}
 
-local GRIP = CFrame.Angles(math.rad(-90), 0, 0)
+local GRIP = CFrame.Angles(math.rad(90), 0, 0)
 
 local WOOD = Color3.fromRGB(92, 64, 42)
 local LEATHER = Color3.fromRGB(58, 40, 30)
