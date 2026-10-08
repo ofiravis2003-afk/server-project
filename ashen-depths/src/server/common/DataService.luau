@@ -68,6 +68,7 @@ local function isStudioAccessError(err: any): boolean
 	end
 	local message = tostring(err)
 	return message:find("StudioAccessToApisNotAllowed") ~= nil
+		or message:find("Studio access to APIs is not allowed") ~= nil
 		or message:find("403") ~= nil
 		or message:find("publish") ~= nil
 end

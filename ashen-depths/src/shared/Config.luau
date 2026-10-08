@@ -7,8 +7,8 @@ return {
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
-		Emberhold = 0,
-		Depths = 0,
+		Emberhold = 127167308890339,
+		Depths = 94536878288268,
 	},
 
 	MaxPartySize = 4,
