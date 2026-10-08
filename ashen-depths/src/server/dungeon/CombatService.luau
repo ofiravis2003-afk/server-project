@@ -21,6 +21,7 @@ local CombatService = {}
 
 local attackRemote = Remotes.Event("Attack")
 local effectRemote = Remotes.Event("Effect")
+local damageNumberRemote = Remotes.Event("DamageNumber")
 local lastAttack: { [Player]: number } = {}
 local comboCount: { [Player]: number } = {}
 
@@ -119,16 +120,6 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 				hit(enemy)
 			end
 		end
-	elseif weapon.Kind == "Line" then
-		local width = weapon.Width or 3
-		for _, enemy in EnemyService.GetAlive() do
-			local offset = flat(enemy.Root.Position - origin)
-			local along = offset:Dot(aim)
-			local across = (offset - aim * along).Magnitude
-			if along >= -1 and along <= weapon.Range + ENEMY_RADIUS and across <= width then
-				hit(enemy)
-			end
-		end
 	elseif weapon.Kind == "Arrow" then
 		local width = weapon.Width or 2.5
 		local target: EnemyService.Enemy? = nil
@@ -171,6 +162,54 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 				end
 			end
 		end)
+	elseif weapon.Kind == "Mend" then
+		-- A bolt of light at the enemy closest to the aim line...
+		local width = weapon.Width or 3
+		local target: EnemyService.Enemy? = nil
+		local targetAlong = weapon.Range
+		for _, enemy in EnemyService.GetAlive() do
+			local offset = flat(enemy.Root.Position - origin)
+			local along = offset:Dot(aim)
+			local across = (offset - aim * along).Magnitude
+			if along > 0 and along < targetAlong and across <= width then
+				target, targetAlong = enemy, along
+			end
+		end
+		if target then
+			local from = origin + Vector3.new(0, 1.5, 0) + aim * 1.5
+			local to = target.Root.Position
+			local travel = (to - from).Magnitude / (weapon.ProjectileSpeed or 90)
+			effectRemote:FireAllClients("Bolt", from, to, travel)
+			local struck = target
+			task.delay(travel, function()
+				hit(struck)
+			end)
+		end
+
+		-- ...and a heal for the most hurt player nearby (yourself counts, at a reduced rate).
+		local patient: Humanoid? = nil
+		local patientRoot: BasePart? = nil
+		local lowest = 1
+		for _, other in Players:GetPlayers() do
+			local otherHumanoid = other.Character and other.Character:FindFirstChildOfClass("Humanoid")
+			local otherRoot = other.Character and other.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if otherHumanoid and otherRoot and otherHumanoid.Health > 0 then
+				local ratio = otherHumanoid.Health / otherHumanoid.MaxHealth
+				if ratio < lowest and (otherRoot.Position - origin).Magnitude <= (weapon.HealRange or 35) then
+					patient, patientRoot, lowest = otherHumanoid, otherRoot, ratio
+				end
+			end
+		end
+		if patient and patientRoot then
+			local amount = Items.WeaponHeal(item.Item, item.Rarity, item.Upgrade) * Leveling.DamageMultiplier(data.Level)
+			if patient == humanoid then
+				amount *= weapon.SelfHeal or 1
+			end
+			local healed = math.max(1, math.floor(math.min(amount, patient.MaxHealth - patient.Health) + 0.5))
+			patient.Health = math.min(patient.MaxHealth, patient.Health + healed)
+			effectRemote:FireAllClients("Heal", patientRoot.Position)
+			damageNumberRemote:FireAllClients(patientRoot.Position + Vector3.new(0, 2.5, 0), healed, "Heal")
+		end
 	end
 end
 

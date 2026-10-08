@@ -1,5 +1,5 @@
 --!strict
--- Draws what the server says happened: arrows, fireballs and the blast where a fireball lands.
+-- Draws what the server says happened: arrows, fireballs and their blasts, and the healer's light.
 
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local FIRE = Color3.fromRGB(255, 120, 40)
+local HOLY = Color3.fromRGB(255, 225, 140)
 
 local Effects = {}
 
@@ -79,6 +80,38 @@ local handlers: { [string]: (...any) -> () } = {
 		TweenService:Create(blast, info, { Size = Vector3.one * radius * 2, Transparency = 1 }):Play()
 		TweenService:Create(light, info, { Brightness = 0 }):Play()
 		Debris:AddItem(blast, 0.4)
+	end,
+	Bolt = function(from: Vector3, to: Vector3, duration: number)
+		local bolt = basePart(Vector3.new(0.7, 0.7, 0.7), HOLY, Enum.Material.Neon)
+		bolt.Shape = Enum.PartType.Ball
+		local light = Instance.new("PointLight")
+		light.Color = HOLY
+		light.Range = 10
+		light.Brightness = 2.5
+		light.Parent = bolt
+		fly(bolt, from, to, duration)
+	end,
+	-- A ring of light rising around the healed player.
+	Heal = function(position: Vector3)
+		local ring = basePart(Vector3.new(0.2, 5, 5), Color3.fromRGB(170, 255, 150), Enum.Material.Neon)
+		ring.Shape = Enum.PartType.Cylinder
+		ring.Transparency = 0.35
+		local start = CFrame.new(position - Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		ring.CFrame = start
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(170, 255, 150)
+		light.Range = 10
+		light.Brightness = 2
+		light.Parent = ring
+		ring.Parent = workspace
+		local info = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		TweenService:Create(ring, info, {
+			CFrame = start + Vector3.new(0, 4, 0),
+			Size = Vector3.new(0.2, 3, 3),
+			Transparency = 1,
+		}):Play()
+		TweenService:Create(light, info, { Brightness = 0 }):Play()
+		Debris:AddItem(ring, 0.65)
 	end,
 }
 

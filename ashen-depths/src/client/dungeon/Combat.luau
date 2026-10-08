@@ -65,9 +65,7 @@ local function tryAttack()
 	end
 	lastFire = now
 
-	local reach = if weapon.Kind == "Melee" or weapon.Kind == "Line"
-		then weapon.Range * AUTO_AIM_REACH
-		else weapon.Range
+	local reach = if weapon.Kind == "Melee" then weapon.Range * AUTO_AIM_REACH else weapon.Range
 	local target = findTarget(root, reach)
 	local direction: Vector3
 	local aimPoint: Vector3? = nil

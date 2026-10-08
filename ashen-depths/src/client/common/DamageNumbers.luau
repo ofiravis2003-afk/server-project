@@ -1,6 +1,6 @@
 --!strict
 -- Floating numbers above whoever got hit: white hits, orange crits, green poison,
--- red when the player is hurt, and gold rewards.
+-- red when the player is hurt, light green heals, and gold rewards.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +14,7 @@ local STYLES = {
 	Crit = { Color = Color3.fromRGB(255, 150, 40), Size = 36, Font = Fonts.Number },
 	Poison = { Color = Color3.fromRGB(120, 220, 90), Size = 20, Font = Fonts.Number },
 	Hurt = { Color = Color3.fromRGB(255, 70, 60), Size = 26, Font = Fonts.Number },
+	Heal = { Color = Color3.fromRGB(150, 255, 140), Size = 24, Font = Fonts.Number },
 	Reward = { Color = Color3.fromRGB(240, 200, 90), Size = 22, Font = Fonts.Body },
 }
 
@@ -37,7 +38,7 @@ local function show(position: Vector3, value: number | string, kind: string)
 	text.TextSize = style.Size
 	text.TextColor3 = style.Color
 	text.TextStrokeTransparency = 0.2
-	text.Text = if kind == "Crit" then `{value}!` else tostring(value)
+	text.Text = if kind == "Crit" then `{value}!` elseif kind == "Heal" then `+{value}` else tostring(value)
 	text.Parent = gui
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 

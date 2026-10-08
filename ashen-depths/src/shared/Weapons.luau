@@ -4,9 +4,10 @@
 --   Cooldown:   seconds between attacks
 --   Range:      reach in studs (melee) or max distance (ranged)
 --   Arc:        melee only, the width of the swing in degrees in front of the player
---   Width:      spear and bow, how wide the line of the thrust / arrow is
---   Pierce:     hits every enemy on the line instead of only the first
+--   Width:      bow and tome, how wide the line of the arrow / bolt is
 --   Radius:     staff only, the size of the blast where the fireball lands
+--   HealRange:  tome only, how far away a hurt player can be and still get healed
+--   SelfHeal:   tome only, healing yourself works at this fraction (so a healer alone isn't unbeatable)
 --   Combo:      every Nth hit in a row does `ComboBonus` times the damage
 --   Poison:     daggers only, extra damage over time after a hit
 --   Anim:       the swing the character plays ("Slash", "Lunge" or none)
@@ -14,11 +15,12 @@
 export type WeaponType = {
 	Cooldown: number,
 	Range: number,
-	Kind: "Melee" | "Line" | "Arrow" | "Blast",
+	Kind: "Melee" | "Arrow" | "Blast" | "Mend",
 	Arc: number?,
 	Width: number?,
-	Pierce: boolean?,
 	Radius: number?,
+	HealRange: number?,
+	SelfHeal: number?,
 	ProjectileSpeed: number?,
 	CritChance: number,
 	CritMultiplier: number,
@@ -78,15 +80,17 @@ local Weapons: { [string]: WeaponType } = {
 		Poison = { Ticks = 3, Interval = 1, Fraction = 0.3 },
 		Anim = "Slash",
 	},
-	Spear = {
-		Kind = "Line",
-		Cooldown = 0.75,
-		Range = 12,
+	-- The healer: every cast throws a bolt of light at an enemy and heals the most hurt player nearby.
+	Tome = {
+		Kind = "Mend",
+		Cooldown = 0.9,
+		Range = 40,
 		Width = 3,
-		Pierce = true,
-		CritChance = 0.1,
-		CritMultiplier = 1.75,
-		Anim = "Lunge",
+		ProjectileSpeed = 90,
+		HealRange = 35,
+		SelfHeal = 0.5,
+		CritChance = 0.05,
+		CritMultiplier = 1.5,
 	},
 }
 

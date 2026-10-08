@@ -44,6 +44,26 @@ local function ownsItemNamed(data: { [string]: any }, itemName: string): boolean
 end
 
 local function giveStarterItems(data: { [string]: any })
+	-- Items that were taken out of the game (like the old Iron Spear) leave the save.
+	for id, item in data.Inventory do
+		if not Items.Defs[item.Item] then
+			data.Inventory[id] = nil
+		end
+	end
+	for slot, id in data.Equipped do
+		if not data.Inventory[id] then
+			data.Equipped[slot] = nil
+		end
+	end
+	if not data.Equipped.Weapon then
+		for id, item in data.Inventory do
+			if Items.Defs[item.Item].Slot == "Weapon" then
+				data.Equipped.Weapon = id
+				break
+			end
+		end
+	end
+
 	if next(data.Inventory) == nil then
 		data.Equipped.Weapon = InventoryService.AddItem(data, "RustySword")
 	end

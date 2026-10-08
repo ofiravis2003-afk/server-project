@@ -95,15 +95,24 @@ local builders: { [string]: (Part) -> () } = {
 		part(h, Vector3.new(0.26, 1.3, 0.08), CFrame.new(0, 1.14, 0), STEEL, Enum.Material.Metal)
 		part(h, Vector3.new(0.18, 0.18, 0.08), CFrame.new(0, 1.8, 0) * CFrame.Angles(0, 0, math.rad(45)), STEEL, Enum.Material.Metal)
 	end,
-	Spear = function(h)
-		part(h, Vector3.new(0.22, 6.6, 0.22), CFrame.new(0, 1.7, 0), WOOD, Enum.Material.Wood)
-		part(h, Vector3.new(0.34, 0.3, 0.34), CFrame.new(0, 5.0, 0), IRON, Enum.Material.Metal)
-		part(h, Vector3.new(0.4, 1.1, 0.1), CFrame.new(0, 5.65, 0), STEEL, Enum.Material.Metal)
-		part(h, Vector3.new(0.28, 0.28, 0.1), CFrame.new(0, 6.2, 0) * CFrame.Angles(0, 0, math.rad(45)), STEEL, Enum.Material.Metal)
+	-- An open book held flat in front of the hand, its pages glowing softly.
+	Tome = function(h)
+		local cover = Color3.fromRGB(90, 24, 28)
+		local gold = Color3.fromRGB(200, 160, 70)
+		part(h, Vector3.new(1.9, 1.4, 0.12), CFrame.new(0, 0.95, 0), cover, Enum.Material.Leather)
+		part(h, Vector3.new(0.85, 1.3, 0.14), CFrame.new(-0.45, 0.95, -0.1) * CFrame.Angles(0, math.rad(6), 0), Color3.fromRGB(235, 225, 195), Enum.Material.SmoothPlastic)
+		part(h, Vector3.new(0.85, 1.3, 0.14), CFrame.new(0.45, 0.95, -0.1) * CFrame.Angles(0, math.rad(-6), 0), Color3.fromRGB(235, 225, 195), Enum.Material.SmoothPlastic)
+		part(h, Vector3.new(0.1, 1.42, 0.2), CFrame.new(0, 0.95, -0.05), gold, Enum.Material.Metal)
+		local rune = part(h, Vector3.new(0.3, 0.3, 0.05), CFrame.new(0.45, 1.0, -0.19) * CFrame.Angles(0, 0, math.rad(45)), Color3.fromRGB(255, 220, 120), Enum.Material.Neon)
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 220, 140)
+		light.Range = 7
+		light.Brightness = 1.2
+		light.Parent = rune
 	end,
 }
 
--- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Daggers", "Spear").
+-- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Daggers", "Tome").
 function WeaponBuilder.Build(look: string): Tool
 	local tool = Instance.new("Tool")
 	tool.CanBeDropped = false
