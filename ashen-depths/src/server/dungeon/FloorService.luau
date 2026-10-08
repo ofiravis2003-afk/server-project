@@ -188,7 +188,7 @@ local function activateRoom(room: CombatRoom, floor: number)
 			break
 		end
 		local spot = freeSpot(room.Built, rng, 6)
-		local enemy = EnemyService.Spawn("Skeleton", CFrame.lookAt(spot, room.Center), {
+		local enemy = EnemyService.Spawn("Skeleton", CFrame.lookAt(spot, room.Built.Center), {
 			HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
 			DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
 			Elite = i == eliteIndex,

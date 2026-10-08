@@ -18,7 +18,7 @@ local WALL_COLOR = Color3.fromRGB(72, 76, 73)
 local CEILING_COLOR = Color3.fromRGB(38, 40, 40)
 local IRON = Color3.fromRGB(42, 40, 40)
 local BONE = Color3.fromRGB(205, 196, 172)
-local SARCOPHAGUS = Color3.fromRGB(150, 146, 132)
+local SARCOPHAGUS = Color3.fromRGB(112, 108, 98)
 
 export type Gate = { Part: BasePart, Open: CFrame, Closed: CFrame }
 
@@ -105,7 +105,7 @@ function FloorBuilder.Torch(parent: Instance, position: Vector3, facing: Vector3
 	local light = Instance.new("PointLight")
 	light.Color = Color3.fromRGB(255, 150, 70)
 	light.Range = 24
-	light.Brightness = 1.8
+	light.Brightness = 1.25
 	light.Shadows = shadows
 	light.Parent = flame
 	local fire = Instance.new("Fire")
@@ -304,7 +304,7 @@ local function buildRoom(
 			local frame = plainWalls[i]
 			local cf = frame * CFrame.new(rng:NextNumber(-S / 5, S / 5), 0, -(S / 2 - 2.5))
 			block(model, "Sarcophagus", Vector3.new(7, 2.4, 3), cf * CFrame.new(0, 1.2, 0), SARCOPHAGUS, Enum.Material.Limestone)
-			block(model, "SarcophagusLid", Vector3.new(7.4, 0.6, 3.4), cf * CFrame.new(0, 2.7, 0), Color3.fromRGB(130, 126, 114), Enum.Material.Limestone)
+			block(model, "SarcophagusLid", Vector3.new(7.4, 0.6, 3.4), cf * CFrame.new(0, 2.7, 0), Color3.fromRGB(98, 94, 86), Enum.Material.Limestone)
 		end
 	end
 	local function cornerSpot(): Vector3
