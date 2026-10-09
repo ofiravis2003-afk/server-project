@@ -392,7 +392,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 			table.insert(eyes, child :: BasePart)
 		end
 	end
-	local eyeLight = head:FindFirstChild("EyeLight") :: PointLight
+	local eyeLight = model:FindFirstChild("EyeLight", true) :: PointLight
 	eyeLight.Color = eyeColor
 	if elite then
 		model.Name = `Elite {def.DisplayName}`
