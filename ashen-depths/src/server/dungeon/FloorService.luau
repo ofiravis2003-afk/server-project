@@ -181,7 +181,8 @@ local function activateRoom(room: CombatRoom, floor: number)
 	setGates(room, true)
 
 	local rng = Random.new()
-	local count = math.min(math.floor(room.Built.Size / 16) + math.floor((floor - 1) / 3), 7)
+	-- Small rooms 2, medium 3, big 4, plus one more every second floor.
+	local count = math.min(math.floor(room.Built.Size / 12) + math.floor((floor - 1) / 2), 8)
 	local eliteIndex = if room.HasElite then rng:NextInteger(1, count) else 0
 	for i = 1, count do
 		if not room.Active then

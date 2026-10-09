@@ -20,7 +20,7 @@ end
 
 -- Enemies get tougher every floor.
 function Floors.EnemyHealthMultiplier(floor: number): number
-	return 1 + 0.15 * (floor - 1)
+	return 1 + 0.2 * (floor - 1)
 end
 
 function Floors.EnemyDamageMultiplier(floor: number): number

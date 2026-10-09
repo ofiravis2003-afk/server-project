@@ -5,6 +5,7 @@
 
 
 local FloorLayout = require(script.Parent.FloorLayout)
+local RoomDecor = require(script.Parent.RoomDecor)
 
 local PITCH = 76 -- distance between room centers
 local WALL_HEIGHT = 18
@@ -17,8 +18,6 @@ local FLOOR_COLOR = Color3.fromRGB(58, 58, 60)
 local WALL_COLOR = Color3.fromRGB(72, 76, 73)
 local CEILING_COLOR = Color3.fromRGB(38, 40, 40)
 local IRON = Color3.fromRGB(42, 40, 40)
-local BONE = Color3.fromRGB(140, 132, 112)
-local SARCOPHAGUS = Color3.fromRGB(112, 108, 98)
 
 export type Gate = { Part: BasePart, Open: CFrame, Closed: CFrame }
 
@@ -122,18 +121,20 @@ function FloorBuilder.Torch(parent: Instance, position: Vector3, facing: Vector3
 end
 
 -- An iron portcullis filling a doorway. Starts open (sunk into the floor).
+-- Built directly in the open spot: welds only follow a moved part once it is in the world,
+-- so moving it here (before the floor is placed) would leave the bars behind.
 local function buildGate(parent: Instance, closed: CFrame): Gate
 	local open = closed - Vector3.new(0, DOOR_HEIGHT + 1, 0)
-	local gate = block(parent, "Gate", Vector3.new(DOOR_WIDTH, DOOR_HEIGHT, 0.6), closed, IRON, Enum.Material.Metal)
+	local gate = block(parent, "Gate", Vector3.new(DOOR_WIDTH, DOOR_HEIGHT, 0.6), open, IRON, Enum.Material.Metal)
 	gate.Transparency = 1
 	for i = 0, 6 do
 		local x = -DOOR_WIDTH / 2 + 0.4 + i * (DOOR_WIDTH - 0.8) / 6
-		attached(gate, "Bar", Vector3.new(0.35, DOOR_HEIGHT, 0.35), closed * CFrame.new(x, 0, 0), IRON, Enum.Material.Metal)
+		attached(gate, "Bar", Vector3.new(0.35, DOOR_HEIGHT, 0.35), open * CFrame.new(x, 0, 0), IRON, Enum.Material.Metal)
+		attached(gate, "Spike", Vector3.new(0.5, 0.6, 0.5), open * CFrame.new(x, -DOOR_HEIGHT / 2 - 0.2, 0) * CFrame.Angles(0, math.rad(45), 0), IRON, Enum.Material.Metal)
 	end
 	for _, y in { -DOOR_HEIGHT / 2 + 2, 0, DOOR_HEIGHT / 2 - 1.5 } do
-		attached(gate, "Rail", Vector3.new(DOOR_WIDTH, 0.4, 0.4), closed * CFrame.new(0, y, 0), IRON, Enum.Material.Metal)
+		attached(gate, "Rail", Vector3.new(DOOR_WIDTH, 0.4, 0.4), open * CFrame.new(0, y, 0), IRON, Enum.Material.Metal)
 	end
-	gate.CFrame = open
 	return { Part = gate, Open = open, Closed = closed }
 end
 
@@ -187,10 +188,12 @@ local function buildRoom(
 	plan: FloorLayout.RoomPlan,
 	center: Vector3,
 	openings: { { Dir: Vector2, SecretHere: boolean } },
+	theme: string,
 	rng: Random
 ): BuiltRoom
 	local model = Instance.new("Model")
 	model.Name = `{plan.Type}_{plan.Key}`
+	model:SetAttribute("Theme", theme)
 	local S = plan.Size
 	local outer = S + WALL * 2
 
@@ -304,41 +307,14 @@ local function buildRoom(
 		end
 	end
 
-	-- Catacomb clutter along the walls and in the corners: sarcophagi, bones, rubble, puddles
-	if (plan.Type == "Combat" and S >= 40) or plan.Type == "Entrance" then
-		for i = 1, math.min(2, #plainWalls) do
-			local frame = plainWalls[i]
-			local cf = frame * CFrame.new(rng:NextNumber(-S / 5, S / 5), 0, -(S / 2 - 2.5))
-			block(model, "Sarcophagus", Vector3.new(7, 2.4, 3), cf * CFrame.new(0, 1.2, 0), SARCOPHAGUS, Enum.Material.Limestone)
-			block(model, "SarcophagusLid", Vector3.new(7.4, 0.6, 3.4), cf * CFrame.new(0, 2.7, 0), Color3.fromRGB(98, 94, 86), Enum.Material.Limestone)
-		end
-	end
-	local function cornerSpot(): Vector3
-		local sx = if rng:NextNumber() < 0.5 then -1 else 1
-		local sz = if rng:NextNumber() < 0.5 then -1 else 1
-		return center + Vector3.new(sx * rng:NextNumber(S / 2 - 7, S / 2 - 3), 0, sz * rng:NextNumber(S / 2 - 7, S / 2 - 3))
-	end
-	for _ = 1, rng:NextInteger(1, 3) do
-		local spot = cornerSpot()
-		for _ = 1, rng:NextInteger(4, 7) do
-			local bone = block(model, "Bone", Vector3.new(0.3, 0.3, rng:NextNumber(1, 2)), CFrame.new(spot + Vector3.new(rng:NextNumber(-1.2, 1.2), 0.2, rng:NextNumber(-1.2, 1.2))) * CFrame.Angles(0, rng:NextNumber(0, math.pi), rng:NextNumber(-0.3, 0.3)), BONE, Enum.Material.Limestone)
-			bone.CanCollide = false
-		end
-		if rng:NextNumber() < 0.5 then
-			block(model, "Skull", Vector3.new(0.9, 0.9, 0.9), CFrame.new(spot + Vector3.new(0, 0.45, 0)), BONE, Enum.Material.Limestone).Shape = Enum.PartType.Ball
-		end
-	end
-	for _ = 1, rng:NextInteger(1, 3) do
-		local rubble = block(model, "Rubble", Vector3.new(rng:NextNumber(1, 2.5), rng:NextNumber(0.6, 1.4), rng:NextNumber(1, 2.5)), CFrame.new(cornerSpot() + Vector3.new(0, 0.4, 0)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, math.pi), rng:NextNumber(-0.3, 0.3)), WALL_COLOR, Enum.Material.Slate)
-		rubble.CanCollide = false
-	end
-	if plan.Type ~= "Stairs" and rng:NextNumber() < 0.45 then
-		-- A dark, wet patch of standing water.
-		local puddle = block(model, "Puddle", Vector3.new(S * rng:NextNumber(0.2, 0.35), 0.1, S * rng:NextNumber(0.15, 0.3)), CFrame.new(center + Vector3.new(rng:NextNumber(-S / 6, S / 6), 0.05, rng:NextNumber(-S / 6, S / 6))), Color3.fromRGB(38, 50, 52), Enum.Material.SmoothPlastic)
-		puddle.Reflectance = 0.25
-		puddle.CanCollide = false
-		puddle.CastShadow = false
-	end
+	RoomDecor.Decorate({
+		Model = model,
+		Center = center,
+		Size = S,
+		Height = WALL_HEIGHT,
+		PlainWalls = plainWalls,
+		Rng = rng,
+	}, theme)
 
 	model.Parent = floorModel
 	return built
@@ -358,6 +334,18 @@ local function buildCorridor(floorModel: Model, from: Vector3, to: Vector3): Bui
 		block(model, "Wall", Vector3.new(WALL, DOOR_HEIGHT, length), frame * CFrame.new(sign * (DOOR_WIDTH / 2 + WALL / 2), DOOR_HEIGHT / 2, 0), WALL_COLOR, Enum.Material.Cobblestone)
 	end
 	FloorBuilder.Torch(model, (frame * CFrame.new(DOOR_WIDTH / 2, 8, 0)).Position, -frame.RightVector, false)
+	-- Stone arches along the way (kept clear of the middle, where an arrow trap may sit)
+	local archColor = Color3.fromRGB(56, 58, 56)
+	local z = -length / 2 + 3
+	while z <= length / 2 - 3 do
+		if math.abs(z) > 3 then
+			for _, sign in { -1, 1 } do
+				block(model, "Arch", Vector3.new(1, DOOR_HEIGHT, 1.4), frame * CFrame.new(sign * (DOOR_WIDTH / 2 - 0.5), DOOR_HEIGHT / 2, z), archColor, Enum.Material.Cobblestone)
+			end
+			block(model, "Arch", Vector3.new(DOOR_WIDTH, 1.2, 1.4), frame * CFrame.new(0, DOOR_HEIGHT - 0.6, z), archColor, Enum.Material.Cobblestone)
+		end
+		z += 9
+	end
 	model.Parent = floorModel
 	return { Frame = frame, Length = length }
 end
@@ -381,9 +369,26 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 		table.insert(openings[link.B], { Dir = Vector2.new(a.X - b.X, a.Z - b.Z), SecretHere = false })
 	end
 
+	-- Each combat room along the path gets the next theme from a shuffled list, so neighbors differ.
+	local themes = table.clone(RoomDecor.CombatThemes)
+	for i = #themes, 2, -1 do
+		local j = rng:NextInteger(1, i)
+		themes[i], themes[j] = themes[j], themes[i]
+	end
+	local themeOf: { [string]: string } = {}
+	local nextTheme = 0
+	for _, key in layout.Path do
+		if layout.Rooms[key].Type == "Combat" then
+			themeOf[key] = themes[nextTheme % #themes + 1]
+			nextTheme += 1
+		end
+	end
+	local FIXED_THEMES = { Entrance = "Crypt", Treasure = "Vault", Secret = "Ossuary", Stairs = "Plain" }
+
 	local rooms: { [string]: BuiltRoom } = {}
 	for key, plan in layout.Rooms do
-		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], rng)
+		local theme = themeOf[key] or FIXED_THEMES[plan.Type] or "Plain"
+		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], theme, rng)
 	end
 
 	local corridors = {}
