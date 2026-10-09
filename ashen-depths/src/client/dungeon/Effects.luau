@@ -1,5 +1,6 @@
 --!strict
--- Draws what the server says happened: arrows, fireballs and their blasts, and the healer's light.
+-- Draws what the server says happened: arrows, fireballs and their blasts, the healer's light,
+-- and the red line an archer aims along before it shoots.
 
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -90,6 +91,19 @@ local handlers: { [string]: (...any) -> () } = {
 		light.Brightness = 2.5
 		light.Parent = bolt
 		fly(bolt, from, to, duration)
+	end,
+	-- A thin red line from an archer to where it aims; it brightens until the arrow flies.
+	AimLine = function(from: Vector3, to: Vector3, duration: number)
+		local length = (to - from).Magnitude
+		local line = basePart(Vector3.new(0.08, 0.08, length), Color3.fromRGB(255, 50, 40), Enum.Material.Neon)
+		line.CFrame = CFrame.lookAt((from + to) / 2, to)
+		line.Transparency = 0.8
+		line.Parent = workspace
+		TweenService:Create(line, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
+			Transparency = 0.15,
+			Size = Vector3.new(0.16, 0.16, length),
+		}):Play()
+		Debris:AddItem(line, duration)
 	end,
 	-- A ring of light rising around the healed player.
 	Heal = function(position: Vector3)

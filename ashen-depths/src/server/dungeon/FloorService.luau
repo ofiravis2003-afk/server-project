@@ -162,6 +162,24 @@ local function clearRoom(room: CombatRoom)
 end
 
 local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
+	-- Slimes split: the little ones join the fight before the room checks whether it is clear.
+	local split = enemy.Def.SplitInto
+	if split and room.Active then
+		for i = 1, split.Count do
+			local angle = (i / split.Count) * math.pi * 2
+			local at = enemy.Root.Position + Vector3.new(math.cos(angle) * 2, 0, math.sin(angle) * 2)
+			local ok, child = pcall(EnemyService.Spawn, split.Name, CFrame.new(at - Vector3.new(0, 2, 0)), {
+				HealthMultiplier = Floors.EnemyHealthMultiplier(currentFloor),
+				DamageMultiplier = Floors.EnemyDamageMultiplier(currentFloor),
+				OnDied = function(dead)
+					onEnemyDied(room, dead)
+				end,
+			})
+			if ok and child then
+				room.Enemies[child] = true
+			end
+		end
+	end
 	room.Enemies[enemy] = nil
 	if enemy.Elite then
 		for player in enemy.Damagers do
@@ -191,7 +209,7 @@ local function activateRoom(room: CombatRoom, floor: number)
 		end
 		local spot = freeSpot(room.Built, rng, 6)
 		-- A spawn that fails must not leave the room waiting forever.
-		local ok, enemy = pcall(EnemyService.Spawn, "Skeleton", CFrame.lookAt(spot, room.Built.Center), {
+		local ok, enemy = pcall(EnemyService.Spawn, Floors.PickEnemy(floor, rng), CFrame.lookAt(spot, room.Built.Center), {
 			HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
 			DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
 			Elite = i == eliteIndex,

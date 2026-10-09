@@ -71,6 +71,7 @@ local enemies: { [Model]: Enemy } = {}
 local templates: { [string]: Model } = {}
 local folder: Folder
 local damageNumberRemote = Remotes.Event("DamageNumber")
+local effectRemote = Remotes.Event("Effect")
 
 local function weld(part0: BasePart, part1: BasePart)
 	local w = Instance.new("WeldConstraint")
@@ -178,8 +179,32 @@ local function buildSkeleton(): Model
 	return model
 end
 
+-- Until a real slime model exists: a glossy green blob.
+local function slimeBlob(): Model
+	local model = Instance.new("Model")
+	local blob = Instance.new("Part")
+	blob.Name = "Blob"
+	blob.Shape = Enum.PartType.Ball
+	blob.Size = Vector3.new(4, 4, 4)
+	blob.Color = Color3.fromRGB(90, 190, 80)
+	blob.Material = Enum.Material.Glass
+	blob.Transparency = 0.25
+	blob.Parent = model
+	for _, side in { -1, 1 } do
+		local eye = Instance.new("Part")
+		eye.Name = "BlobEye"
+		eye.Shape = Enum.PartType.Ball
+		eye.Size = Vector3.new(0.5, 0.5, 0.5)
+		eye.Color = Color3.fromRGB(20, 30, 15)
+		eye.CFrame = CFrame.new(side * 0.7, 0.6, -1.75)
+		eye.Parent = model
+	end
+	return model
+end
+
 local BUILDERS: { [string]: () -> Model } = {
 	Skeleton = buildSkeleton,
+	SkeletonArcher = buildSkeleton,
 }
 
 -- Turns an imported, rigged 3D model (ServerStorage.EnemyModels.<name>, e.g. from Tripo) into an enemy:
@@ -291,12 +316,63 @@ local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 	return model
 end
 
+-- Puts a dungeon prop (the archer's bow) in a hand: held to the hand bone so it follows the animations.
+local function holdProp(model: Model, held: { Prop: string, Bone: string })
+	local bone = model:FindFirstChild(held.Bone, true)
+	local props = ServerStorage:FindFirstChild("DungeonProps")
+	local source = props and props:FindFirstChild(held.Prop)
+	if not bone or not bone:IsA("Bone") or not source or not source:IsA("Model") then
+		return
+	end
+	local prop = source:Clone()
+	prop.Name = "Held" .. held.Prop
+	local parts = {}
+	for _, part in prop:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanQuery = false
+			part.Massless = true
+			table.insert(parts, part)
+		end
+	end
+	local main = parts[1]
+	if not main then
+		return
+	end
+	for i = 2, #parts do
+		weld(main, parts[i])
+	end
+	local grip = Instance.new("Attachment")
+	grip.Name = "Grip"
+	grip.Parent = main
+	local hold = Instance.new("RigidConstraint")
+	hold.Attachment0 = bone
+	hold.Attachment1 = grip
+	hold.Parent = main
+	prop.Parent = model
+end
+
 local function getTemplate(name: string): Model
 	local template = templates[name]
 	if not template then
+		local def = Enemies[name]
 		local modelsFolder = ServerStorage:FindFirstChild("EnemyModels")
-		local source = modelsFolder and modelsFolder:FindFirstChild(name)
-		template = if source and source:IsA("Model") then buildFromModel(source, Enemies[name]) else BUILDERS[name]()
+		local source = modelsFolder and modelsFolder:FindFirstChild(def.Model or name)
+		if source and source:IsA("Model") then
+			template = buildFromModel(source, def)
+		elseif BUILDERS[name] then
+			template = BUILDERS[name]()
+		else
+			template = buildFromModel(slimeBlob(), def)
+		end
+		if def.Scale and def.Scale ~= 1 then
+			template:ScaleTo(template:GetScale() * def.Scale)
+		end
+		if def.HeldProp then
+			holdProp(template, def.HeldProp)
+		end
+		template.Name = name
 		templates[name] = template
 	end
 	return template
@@ -307,8 +383,8 @@ local function setEyes(enemy: Enemy, flaring: boolean)
 		eye.Color = if flaring then Color3.fromRGB(255, 230, 160) else enemy.EyeColor
 		eye.Size = if flaring then Vector3.new(0.18, 0.14, 0.05) else Vector3.new(0.14, 0.1, 0.05)
 	end
-	enemy.EyeLight.Brightness = if flaring then 3 else 0.6
-	enemy.EyeLight.Range = if flaring then 9 else 5
+	enemy.EyeLight.Brightness = if flaring then 1.4 else 0.6
+	enemy.EyeLight.Range = if flaring then 6 else 5
 end
 
 -- One flying piece of a shattered skeleton: the AI-made "Skull" / "Bone" dungeon props if they exist,
@@ -407,7 +483,39 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		local crumble = enemy.Def.CrumbleInto
 		local death = enemy.Tracks.Death
 		local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
-		if crumble then
+		if enemy.Def.DeathStyle == "Splat" then
+			-- Bursts into goo: a splash of green drops, and the body is gone.
+			local splash = Instance.new("Part")
+			splash.Anchored = true
+			splash.CanCollide = false
+			splash.CanQuery = false
+			splash.Transparency = 1
+			splash.Size = Vector3.new(1, 1, 1)
+			splash.CFrame = enemy.Root.CFrame
+			local goo = Instance.new("ParticleEmitter")
+			goo.Color = ColorSequence.new(Color3.fromRGB(110, 210, 90))
+			goo.LightEmission = 0.3
+			goo.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(1, 0.1) })
+			goo.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+			goo.Lifetime = NumberRange.new(0.5, 0.9)
+			goo.Speed = NumberRange.new(10, 18)
+			goo.SpreadAngle = Vector2.new(180, 180)
+			goo.Acceleration = Vector3.new(0, -40, 0)
+			goo.Rate = 160
+			goo.Parent = splash
+			splash.Parent = workspace
+			task.delay(0.2, function()
+				goo.Enabled = false
+			end)
+			task.delay(1.5, function()
+				splash:Destroy()
+			end)
+			for _, part in enemy.Model:GetDescendants() do
+				if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+					TweenService:Create(part, TweenInfo.new(0.15), { Transparency = 1 }):Play()
+				end
+			end
+		elseif crumble then
 			local hit = enemy.Tracks.Hit
 			if hit then
 				hit:Play(0.05, 1, 1.4)
@@ -661,6 +769,9 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	}
 	enemies[model] = enemy
 	CollectionService:AddTag(model, ENEMY_TAG)
+	if def.Squishy then
+		CollectionService:AddTag(model, "Squishy")
+	end
 
 	humanoid.Running:Connect(function(speed)
 		local walk = tracks.Walk
@@ -745,6 +856,46 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 	enemy.Attacking = false
 end
 
+-- Archers: show a red aiming line, then loose an arrow at where the target stands at that moment.
+-- Whoever is still within HitRadius of that spot when the arrow arrives is hit.
+local function shoot(enemy: Enemy, targetRoot: BasePart)
+	local ranged = enemy.Def.Ranged :: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }
+	enemy.Attacking = true
+	enemy.LastAttack = os.clock()
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	face(enemy, targetRoot.Position)
+	setEyes(enemy, true)
+	if enemy.Tracks.Attack then
+		local speeds = enemy.Def.AnimationSpeeds or {}
+		enemy.Tracks.Attack:Play(0.1, 1, speeds.Attack or 1)
+	end
+	local from = enemy.Root.Position + Vector3.new(0, 1.2, 0) + enemy.Root.CFrame.LookVector * 1.5
+	effectRemote:FireAllClients("AimLine", from, targetRoot.Position, enemy.Def.Windup)
+
+	task.wait(enemy.Def.Windup)
+	if not enemy.Dead then
+		setEyes(enemy, false)
+		face(enemy, targetRoot.Position)
+		from = enemy.Root.Position + Vector3.new(0, 1.2, 0) + enemy.Root.CFrame.LookVector * 1.5
+		local aim = targetRoot.Position
+		local travel = (aim - from).Magnitude / ranged.ProjectileSpeed
+		effectRemote:FireAllClients("Arrow", from, aim, travel)
+		local damage = math.floor(enemy.Damage + 0.5)
+		task.delay(travel, function()
+			for _, player in Players:GetPlayers() do
+				local character = player.Character
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+				if root and humanoid and humanoid.Health > 0 and (root.Position - aim).Magnitude <= ranged.HitRadius then
+					humanoid:TakeDamage(damage)
+					damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
+				end
+			end
+		end)
+	end
+	enemy.Attacking = false
+end
+
 local function think()
 	local now = os.clock()
 	for _, enemy in enemies do
@@ -758,7 +909,21 @@ local function think()
 		end
 		local offset = targetRoot.Position - enemy.Root.Position
 		local distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
-		if distance <= enemy.Def.AttackRange then
+		local ranged = enemy.Def.Ranged
+		if ranged then
+			if distance < ranged.KeepAway then
+				-- Too close: back away from the player.
+				local away = Vector3.new(-offset.X, 0, -offset.Z).Unit
+				enemy.Humanoid:MoveTo(enemy.Root.Position + away * 8)
+			elseif distance > enemy.Def.AttackRange then
+				enemy.Humanoid:MoveTo(targetRoot.Position)
+			elseif now - enemy.LastAttack >= enemy.Def.AttackCooldown then
+				task.spawn(shoot, enemy, targetRoot)
+			else
+				enemy.Humanoid:MoveTo(enemy.Root.Position)
+				face(enemy, targetRoot.Position)
+			end
+		elseif distance <= enemy.Def.AttackRange then
 			if now - enemy.LastAttack >= enemy.Def.AttackCooldown then
 				task.spawn(attack, enemy, targetRoot, targetHumanoid)
 			else
