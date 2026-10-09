@@ -123,8 +123,7 @@ local Enemies: { [string]: EnemyDef } = {
 		XP = 6,
 		Gold = { 1, 3 },
 		RespawnTime = 5,
-		ModelYaw = 180,
-		Procedural = "Scurry",
+		-- (The code-driven scurry looked bad; it waits for a real animated rat. Procedural = "Scurry" brings it back.)
 		DeathStyle = "Flip",
 		Pack = { 2, 3 },
 	},
