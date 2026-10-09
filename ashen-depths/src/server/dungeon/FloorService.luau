@@ -251,7 +251,7 @@ local function watchRooms()
 						room.Enemies[enemy] = nil
 					elseif not isInside(room.Built, enemy.Root.Position, 0.5) then
 						warn(`[FloorService] An enemy left room {room.Built.Plan.Key}; bringing it back`)
-						enemy.Model:PivotTo(CFrame.new(freeSpot(room.Built, Random.new(), 4) + Vector3.new(0, 4, 0)))
+						enemy.Root.CFrame = CFrame.new(freeSpot(room.Built, Random.new(), 4) + Vector3.new(0, enemy.Humanoid.HipHeight + 2, 0))
 					end
 				end
 				if next(room.Enemies) == nil then
