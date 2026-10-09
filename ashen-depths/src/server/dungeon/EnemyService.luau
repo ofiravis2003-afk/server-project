@@ -367,18 +367,22 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				puff.Size = Vector3.new(1, 1, 1)
 				puff.CFrame = CFrame.new(ground + Vector3.new(0, 1.5, 0))
 				local dust = Instance.new("ParticleEmitter")
-				dust.Color = ColorSequence.new(Color3.fromRGB(170, 160, 140))
-				dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 3) })
-				dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 1) })
-				dust.Lifetime = NumberRange.new(0.6, 1.1)
+				dust.Color = ColorSequence.new(Color3.fromRGB(205, 195, 175))
+				dust.LightEmission = 0.25
+				dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.6 * scale), NumberSequenceKeypoint.new(1, 4 * scale) })
+				dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) })
+				dust.Lifetime = NumberRange.new(0.8, 1.4)
 				dust.Speed = NumberRange.new(3, 7)
 				dust.SpreadAngle = Vector2.new(180, 180)
 				dust.Drag = 4
-				dust.Rate = 0
+				-- Emit() on the server doesn't reach players' screens, so the emitter runs for a moment instead.
+				dust.Rate = 140
 				dust.Parent = puff
 				puff.Parent = workspace
-				dust:Emit(math.floor(28 * scale))
-				task.delay(1.5, function()
+				task.delay(0.25, function()
+					dust.Enabled = false
+				end)
+				task.delay(2, function()
 					puff:Destroy()
 				end)
 				-- The body vanishes; the bones stay for a while, then fade too
@@ -388,8 +392,16 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 					end
 				end
 				enemy.EyeLight.Enabled = false
-				local pile = Props.Place(crumble.Prop, workspace, CFrame.new(ground) * CFrame.Angles(0, math.random() * math.pi * 2, 0), scale)
+				local pile = Props.Place(crumble.Prop, workspace, CFrame.new(ground) * CFrame.Angles(0, math.random() * math.pi * 2, 0), scale * 0.6)
 				if pile then
+					-- Just scenery: players walk straight through it.
+					for _, part in pile:GetDescendants() do
+						if part:IsA("BasePart") then
+							part.CanCollide = false
+							part.CanQuery = false
+							part.CanTouch = false
+						end
+					end
 					task.delay(6, function()
 						for _, part in pile:GetDescendants() do
 							if part:IsA("BasePart") then
