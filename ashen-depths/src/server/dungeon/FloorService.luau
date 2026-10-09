@@ -190,7 +190,8 @@ local function activateRoom(room: CombatRoom, floor: number)
 			break
 		end
 		local spot = freeSpot(room.Built, rng, 6)
-		local enemy = EnemyService.Spawn("Skeleton", CFrame.lookAt(spot, room.Built.Center), {
+		-- A spawn that fails must not leave the room waiting forever.
+		local ok, enemy = pcall(EnemyService.Spawn, "Skeleton", CFrame.lookAt(spot, room.Built.Center), {
 			HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
 			DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
 			Elite = i == eliteIndex,
@@ -198,7 +199,9 @@ local function activateRoom(room: CombatRoom, floor: number)
 				onEnemyDied(room, dead)
 			end,
 		})
-		if enemy then
+		if not ok then
+			warn(`[FloorService] Spawning an enemy failed: {enemy}`)
+		elseif enemy then
 			room.Enemies[enemy] = true
 		end
 		task.wait(0.15)
@@ -240,6 +243,21 @@ local function watchRooms()
 			end
 		elseif anyoneInside then
 			room.EmptySince = nil
+			if not room.Spawning then
+				-- Safety net: a monster that slipped out of the room (into a wall, under the floor) is put
+				-- back in the middle where it can be fought; one that vanished without dying is forgotten.
+				for enemy in room.Enemies do
+					if enemy.Dead or not enemy.Model.Parent then
+						room.Enemies[enemy] = nil
+					elseif not isInside(room.Built, enemy.Root.Position, 0.5) then
+						warn(`[FloorService] An enemy left room {room.Built.Plan.Key}; bringing it back`)
+						enemy.Model:PivotTo(CFrame.new(freeSpot(room.Built, Random.new(), 4) + Vector3.new(0, 4, 0)))
+					end
+				end
+				if next(room.Enemies) == nil then
+					clearRoom(room)
+				end
+			end
 		else
 			room.EmptySince = room.EmptySince or now
 			if now - (room.EmptySince :: number) >= RESET_AFTER_EMPTY then
