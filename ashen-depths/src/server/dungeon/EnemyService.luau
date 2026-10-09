@@ -28,7 +28,7 @@ local ANIMATIONS = {
 	Attack = "rbxassetid://522635514",
 }
 
-local BONE = Color3.fromRGB(214, 205, 180)
+local BONE = Color3.fromRGB(150, 141, 118)
 local EYE = Color3.fromRGB(255, 40, 30)
 local ELITE_EYE = Color3.fromRGB(255, 190, 40)
 
