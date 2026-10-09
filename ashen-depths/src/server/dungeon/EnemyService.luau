@@ -18,6 +18,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
+local Props = require(script.Parent.Props)
 
 local SPAWN_TAG = "EnemySpawn"
 local ENEMY_TAG = "Enemy"
@@ -328,45 +329,93 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		bar:Destroy()
 	end
 	if enemy.Custom then
-		-- Play the death animation and hold its last frame (lying on the floor), or topple over if
-		-- there is none. Then the body fades away.
+		-- Start the death clip, then (skeletons) burst into dust and leave a pile of bones,
+		-- or hold the clip's last frame and fade. With no death clip, topple over.
 		for _, track in enemy.Tracks do
 			if track ~= enemy.Tracks.Death then
 				track:Stop(0.1)
 			end
 		end
 		enemy.Root.Anchored = true
-		local death = enemy.Tracks.Death
-		local fadeAfter = 1.2
-		if death then
-			local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
-			local duration = (if death.Length > 0 then death.Length else 5) / speed
-			death:Play(0.1, 1, speed)
-			local fall = enemy.Def.DeathFall
-			if fall then
-				local scale = enemy.Model:GetScale() / getTemplate(enemy.Name):GetScale()
-				local lowered = enemy.Root.CFrame - Vector3.new(0, fall.Drop * scale, 0)
-				task.delay(fall.From / speed, function()
-					TweenService:Create(enemy.Root, TweenInfo.new((fall.To - fall.From) / speed, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = lowered }):Play()
-				end)
+		for _, gui in enemy.Model:GetDescendants() do
+			if gui:IsA("BillboardGui") then
+				gui.Enabled = false
 			end
+		end
+		local death = enemy.Tracks.Death
+		local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
+		if death then
+			death:Play(0.1, 1, speed)
+		else
+			local fallen = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight, 0) * CFrame.Angles(math.rad(-85), 0, 0)
+			TweenService:Create(enemy.Root, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = fallen }):Play()
+		end
+		local crumble = enemy.Def.CrumbleInto
+		if crumble then
+			task.delay(crumble.At, function()
+				if not enemy.Model.Parent then
+					return
+				end
+				local scale = enemy.Model:GetScale() / getTemplate(enemy.Name):GetScale()
+				local ground = enemy.Root.Position - Vector3.new(0, enemy.Humanoid.HipHeight + enemy.Root.Size.Y / 2, 0)
+				-- A puff of grey bone dust
+				local puff = Instance.new("Part")
+				puff.Anchored = true
+				puff.CanCollide = false
+				puff.CanQuery = false
+				puff.Transparency = 1
+				puff.Size = Vector3.new(1, 1, 1)
+				puff.CFrame = CFrame.new(ground + Vector3.new(0, 1.5, 0))
+				local dust = Instance.new("ParticleEmitter")
+				dust.Color = ColorSequence.new(Color3.fromRGB(170, 160, 140))
+				dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 3) })
+				dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 1) })
+				dust.Lifetime = NumberRange.new(0.6, 1.1)
+				dust.Speed = NumberRange.new(3, 7)
+				dust.SpreadAngle = Vector2.new(180, 180)
+				dust.Drag = 4
+				dust.Rate = 0
+				dust.Parent = puff
+				puff.Parent = workspace
+				dust:Emit(math.floor(28 * scale))
+				task.delay(1.5, function()
+					puff:Destroy()
+				end)
+				-- The body vanishes; the bones stay for a while, then fade too
+				for _, part in enemy.Model:GetDescendants() do
+					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+						TweenService:Create(part, TweenInfo.new(0.25), { Transparency = 1 }):Play()
+					end
+				end
+				enemy.EyeLight.Enabled = false
+				local pile = Props.Place(crumble.Prop, workspace, CFrame.new(ground) * CFrame.Angles(0, math.random() * math.pi * 2, 0), scale)
+				if pile then
+					task.delay(6, function()
+						for _, part in pile:GetDescendants() do
+							if part:IsA("BasePart") then
+								TweenService:Create(part, TweenInfo.new(1.5), { Transparency = 1 }):Play()
+							end
+						end
+						task.wait(1.6)
+						pile:Destroy()
+					end)
+				end
+			end)
+		elseif death then
+			local duration = (if death.Length > 0 then death.Length else 5) / speed
 			task.delay(math.max(duration - 0.1, 0), function()
 				if death.IsPlaying then
 					death:AdjustSpeed(0)
 				end
 			end)
-			fadeAfter = duration + 0.6
-		else
-			local fallen = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight, 0) * CFrame.Angles(math.rad(-85), 0, 0)
-			TweenService:Create(enemy.Root, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = fallen }):Play()
-		end
-		task.delay(fadeAfter, function()
-			for _, part in enemy.Model:GetDescendants() do
-				if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
-					TweenService:Create(part, TweenInfo.new(1), { Transparency = 1 }):Play()
+			task.delay(duration + 0.6, function()
+				for _, part in enemy.Model:GetDescendants() do
+					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+						TweenService:Create(part, TweenInfo.new(1), { Transparency = 1 }):Play()
+					end
 				end
-			end
-		end)
+			end)
+		end
 	else
 		-- The bones fall apart and scatter on the floor.
 		for _, part in enemy.Model:GetDescendants() do
