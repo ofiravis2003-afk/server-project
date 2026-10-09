@@ -196,11 +196,14 @@ local function buildFromModel(source: Model): Model
 
 	-- The root part looks where the model's face looks (worked out from the toes, which point forward),
 	-- so turning the root to face a player turns the whole body toward them.
+	-- (Bone world positions are only right while the model is in the world, so it visits briefly.)
 	local forward = Vector3.new(0, 0, -1)
 	local foot = model:FindFirstChild("mixamorig:LeftFoot", true) :: Bone?
 	local toe = model:FindFirstChild("mixamorig:LeftToeBase", true) :: Bone?
 	if foot and toe then
+		model.Parent = workspace
 		local along = toe.WorldPosition - foot.WorldPosition
+		model.Parent = nil
 		along = Vector3.new(along.X, 0, along.Z)
 		if along.Magnitude > 0.01 then
 			forward = along.Unit
