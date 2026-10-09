@@ -28,16 +28,10 @@ function Floors.EnemyDamageMultiplier(floor: number): number
 end
 
 -- Which monsters a floor's combat rooms are filled with, and how often (weights).
--- Floor 1: skeletons. From 2: packs of giant rats. From 4: archers. From 6: slimes too.
+-- Floor 1: skeletons. From 2: packs of giant rats. From 4: archers.
+-- (Slimes are built but left out until they have a proper look.)
 function Floors.EnemyMix(floor: number): { { Name: string, Weight: number } }
-	if floor >= 6 then
-		return {
-			{ Name = "Skeleton", Weight = 4 },
-			{ Name = "SkeletonArcher", Weight = 2 },
-			{ Name = "Slime", Weight = 2 },
-			{ Name = "Rat", Weight = 2 },
-		}
-	elseif floor >= 4 then
+	if floor >= 4 then
 		return { { Name = "Skeleton", Weight = 5 }, { Name = "SkeletonArcher", Weight = 3 }, { Name = "Rat", Weight = 2 } }
 	elseif floor >= 2 then
 		return { { Name = "Skeleton", Weight = 7 }, { Name = "Rat", Weight = 3 } }
