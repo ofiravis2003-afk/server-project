@@ -83,6 +83,11 @@ local function flat(d: Vector2): Vector3
 	return Vector3.new(d.X, 0, d.Y)
 end
 
+-- "1,0"-style name for a side. Adding 0 turns -0 into 0, so (-1, -0) and (-1, 0) name the same side.
+local function sideKey(dir: Vector2): string
+	return `{dir.X + 0},{dir.Y + 0}`
+end
+
 -- A frame standing at `center`, looking out through the wall on side `dir`.
 local function sideFrame(center: Vector3, dir: Vector2): CFrame
 	return CFrame.lookAt(center, center + flat(dir))
@@ -241,13 +246,13 @@ local function buildRoom(
 	-- Walls, doorways, gates and torches, side by side
 	local openSides: { [string]: { Dir: Vector2, SecretHere: boolean } } = {}
 	for _, opening in openings do
-		openSides[`{opening.Dir.X},{opening.Dir.Y}`] = opening
+		openSides[sideKey(opening.Dir)] = opening
 	end
 	local plainWalls: { CFrame } = {}
 	for _, dir in { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) } do
 		local frame = sideFrame(center, dir)
 		local wallZ = -(S / 2 + WALL / 2)
-		local opening = openSides[`{dir.X},{dir.Y}`]
+		local opening = openSides[sideKey(dir)]
 		local inward = -flat(dir)
 		if not opening then
 			block(model, "Wall", Vector3.new(outer, WALL_HEIGHT, WALL), frame * CFrame.new(0, WALL_HEIGHT / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
@@ -372,9 +377,8 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 	end
 	for _, link in layout.Links do
 		local a, b = layout.Rooms[link.A], layout.Rooms[link.B]
-		local dir = Vector2.new(b.X - a.X, b.Z - a.Z)
-		table.insert(openings[link.A], { Dir = dir, SecretHere = link.Secret })
-		table.insert(openings[link.B], { Dir = -dir, SecretHere = false })
+		table.insert(openings[link.A], { Dir = Vector2.new(b.X - a.X, b.Z - a.Z), SecretHere = link.Secret })
+		table.insert(openings[link.B], { Dir = Vector2.new(a.X - b.X, a.Z - b.Z), SecretHere = false })
 	end
 
 	local rooms: { [string]: BuiltRoom } = {}
