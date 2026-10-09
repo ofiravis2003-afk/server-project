@@ -95,7 +95,7 @@
 | # | משימה | מי |
 |---|---|---|
 | 0.1 | ✅ ליצור ב-Roblox Experience חדש עם 2 Places: Emberhold ו-Depths. לפרסם, ולהפעיל Enable Studio Access to API Services | 👤 |
-| 0.2 | להוריד את חבילות KayKit (Dungeon Remastered, Adventurers, Skeletons) ו-Quaternius, ולייבא ל-Studio (Import 3D) | 👤 |
+| 0.2 | ⏸️ מושהה עד החלטת הסגנון הגרפי (ראה שאלות פתוחות). להוריד את חבילות KayKit (Dungeon Remastered, Adventurers, Skeletons) ו-Quaternius, ולייבא ל-Studio (Import 3D) | 👤 |
 | 0.3 | ✅ מבנה Rojo לשני ה-Places, עם קוד משותף | 🤖 |
 | 0.4 | ✅ להעתיק מ-Breed a Dragon: DataService, Remotes, RateLimiter, Fonts ובדיקות | 🤖 |
 ✅ **סיום:** שינוי בקוד מופיע בשני ה-Places.
@@ -242,7 +242,7 @@
 - **אנימציות:** לשפר הרבה, אבל רק אחרי שיהיו נשקים ומודלים אמיתיים.
 
 ## ❓ שאלות פתוחות
-- אין כרגע. שלוש השאלות הקודמות הוחלטו (בטבלת "החלטות שכבר התקבלו").
+- **🎨 סגנון גרפי (חשוב):** השחקן-מפתח רוצה משחק **ברמה מאוד גבוהה**. ההמלצה היא לעבור מ-low-poly (KayKit) ל-**"פנטזיה אפלה חצי-ריאליסטית"**: חומרי PBR (MaterialVariant ו-SurfaceAppearance), תאורת Future חזקה, וצורות ברורות שקל לקרוא. KayKit נשאר רק לבדיקות, או לא בכלל. **הצעד הבא:** חדר מבחן סגנון ב-3 גרסאות (חלקים פשוטים, חומרי PBR שנוצרים ב-Studio, ופריטים ממודלי AI), עם צילומי מסך להחלטה. (2026-10-09)
 - קטן: הגופן Cinzel. ב-`Fonts.luau` יש כרגע Fondamento, עד שנבדוק אם Cinzel קיים ב-Roblox.
 
 ---
