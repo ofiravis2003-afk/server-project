@@ -318,13 +318,18 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		end
 		enemy.Root.Anchored = true
 		local death = enemy.Tracks.Death
+		local sinkAfter = 2.6
 		if death then
-			death:Play(0.1)
+			local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
+			death:Play(0.1, 1, speed)
+			if death.Length > 0 then
+				sinkAfter = death.Length / speed + 0.4
+			end
 		else
 			local fallen = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight, 0) * CFrame.Angles(math.rad(-85), 0, 0)
 			TweenService:Create(enemy.Root, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = fallen }):Play()
 		end
-		task.delay(2.6, function()
+		task.delay(sinkAfter, function()
 			if enemy.Root.Parent then
 				TweenService:Create(enemy.Root, TweenInfo.new(1.2), { CFrame = enemy.Root.CFrame - Vector3.new(0, 3, 0) }):Play()
 			end
@@ -353,7 +358,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		task.spawn(options.OnDied, enemy)
 	end
 
-	task.delay(4, function()
+	task.delay(if enemy.Custom then 6 else 4, function()
 		enemy.Model:Destroy()
 	end)
 	if Config.TestMode and spawnPart and spawnPart.Parent then
@@ -535,7 +540,8 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 	face(enemy, targetRoot.Position)
 	setEyes(enemy, true)
 	if enemy.Tracks.Attack then
-		enemy.Tracks.Attack:Play(0.1, 1, 0.8)
+		local speeds = enemy.Def.AnimationSpeeds or {}
+		enemy.Tracks.Attack:Play(0.1, 1, if enemy.Custom then speeds.Attack or 1 else 0.8)
 	end
 
 	task.wait(enemy.Def.Windup)
