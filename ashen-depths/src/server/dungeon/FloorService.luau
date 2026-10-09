@@ -21,6 +21,7 @@ local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local EnemyService = require(script.Parent.EnemyService)
 local FloorBuilder = require(script.Parent.FloorBuilder)
 local FloorLayout = require(script.Parent.FloorLayout)
+local Materials = require(script.Parent.Materials)
 local TrapService = require(script.Parent.TrapService)
 
 local ORIGIN = Vector3.new(2000, 0, 0) -- far from the test room
@@ -435,6 +436,7 @@ startFloor = function(floor: number)
 		end
 	end
 
+	Materials.Apply(model)
 	model.Name = `Floor{floor}`
 	model.Parent = dungeonFolder
 	floorModel = model
