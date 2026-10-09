@@ -342,6 +342,14 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 			local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
 			local duration = (if death.Length > 0 then death.Length else 5) / speed
 			death:Play(0.1, 1, speed)
+			local fall = enemy.Def.DeathFall
+			if fall then
+				local scale = enemy.Model:GetScale() / getTemplate(enemy.Name):GetScale()
+				local lowered = enemy.Root.CFrame - Vector3.new(0, fall.Drop * scale, 0)
+				task.delay(fall.From / speed, function()
+					TweenService:Create(enemy.Root, TweenInfo.new((fall.To - fall.From) / speed, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = lowered }):Play()
+				end)
+			end
 			task.delay(math.max(duration - 0.1, 0), function()
 				if death.IsPlaying then
 					death:AdjustSpeed(0)
