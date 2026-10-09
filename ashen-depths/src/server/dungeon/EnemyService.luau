@@ -396,7 +396,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	eyeLight.Color = eyeColor
 	if elite then
 		model.Name = `Elite {def.DisplayName}`
-		model:ScaleTo(ELITE.Scale)
+		model:ScaleTo(model:GetScale() * ELITE.Scale) -- relative: imported models are already scaled up
 		local aura = Instance.new("PointLight")
 		aura.Color = ELITE_EYE
 		aura.Range = 9
