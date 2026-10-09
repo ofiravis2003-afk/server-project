@@ -18,6 +18,8 @@ export type Context = {
 	Rng: Random,
 }
 
+local Props = require(script.Parent.Props)
+
 local RoomDecor = {}
 
 RoomDecor.CombatThemes = { "Crypt", "Flooded", "Ossuary", "Collapsed", "Chapel", "Prison" }
@@ -94,6 +96,9 @@ end
 
 local function bonePile(ctx: Context, spot: Vector3, size: number)
 	local rng = ctx.Rng
+	if Props.Place("BonePile", ctx.Model, CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), size * rng:NextNumber(0.8, 1.1)) then
+		return
+	end
 	for _ = 1, math.floor(4 * size) do
 		deco(ctx.Model, "Bone", Vector3.new(0.3, 0.3, rng:NextNumber(1, 2)), CFrame.new(spot + Vector3.new(rng:NextNumber(-1.2, 1.2) * size, 0.2, rng:NextNumber(-1.2, 1.2) * size)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), rng:NextNumber(-0.3, 0.3)), BONE, Enum.Material.Limestone)
 	end
@@ -135,11 +140,18 @@ themes.Crypt = function(ctx)
 		local positions = if ctx.Size >= 40 then { -ctx.Size / 5, ctx.Size / 5 } else { rng:NextNumber(-3, 3) }
 		for _, along in positions do
 			local cf = onWall(ctx, frame, along, 2.5)
-			part(ctx.Model, "Sarcophagus", Vector3.new(7, 2.4, 3), cf * CFrame.new(0, 1.2, 0), Color3.fromRGB(112, 108, 98), Enum.Material.Limestone)
-			part(ctx.Model, "SarcophagusLid", Vector3.new(7.4, 0.6, 3.4), cf * CFrame.new(0, 2.7, 0), Color3.fromRGB(98, 94, 86), Enum.Material.Limestone)
-			deco(ctx.Model, "LidCarving", Vector3.new(4.5, 0.3, 1.2), cf * CFrame.new(0, 3.1, 0), Color3.fromRGB(88, 84, 76), Enum.Material.Limestone)
+			local top = 3.0
+			local prop = Props.Place("Sarcophagus", ctx.Model, cf)
+			if prop then
+				local _, size = prop:GetBoundingBox()
+				top = size.Y
+			else
+				part(ctx.Model, "Sarcophagus", Vector3.new(7, 2.4, 3), cf * CFrame.new(0, 1.2, 0), Color3.fromRGB(112, 108, 98), Enum.Material.Limestone)
+				part(ctx.Model, "SarcophagusLid", Vector3.new(7.4, 0.6, 3.4), cf * CFrame.new(0, 2.7, 0), Color3.fromRGB(98, 94, 86), Enum.Material.Limestone)
+				deco(ctx.Model, "LidCarving", Vector3.new(4.5, 0.3, 1.2), cf * CFrame.new(0, 3.1, 0), Color3.fromRGB(88, 84, 76), Enum.Material.Limestone)
+			end
 			for c = 1, rng:NextInteger(1, 3) do
-				candle(ctx, (cf * CFrame.new(-3 + c * 0.7, 3.0, 1.1)).Position, not lit)
+				candle(ctx, (cf * CFrame.new(-3 + c * 0.7, top, 1.1)).Position, not lit)
 				lit = true
 			end
 		end
@@ -204,6 +216,10 @@ themes.Collapsed = function(ctx)
 		local radius = rng:NextNumber(S / 4, S / 2 - 6)
 		local base = ctx.Center + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
 		local height = rng:NextNumber(2.5, 7)
+		if Props.Place("BrokenPillar", ctx.Model, CFrame.new(base) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), height / 5) then
+			rubble(ctx, base + Vector3.new(2, 0, 1), 3)
+			continue
+		end
 		part(ctx.Model, "BrokenPillar", Vector3.new(height, 3, 3), CFrame.new(base + Vector3.new(0, height / 2, 0)) * CFrame.Angles(rng:NextNumber(-0.12, 0.12), 0, math.rad(90) + rng:NextNumber(-0.12, 0.12)), STONE, Enum.Material.Cobblestone, Enum.PartType.Cylinder)
 		rubble(ctx, base + Vector3.new(2, 0, 1), 3)
 	end

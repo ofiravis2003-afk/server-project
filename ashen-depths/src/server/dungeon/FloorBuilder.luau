@@ -5,6 +5,7 @@
 
 
 local FloorLayout = require(script.Parent.FloorLayout)
+local Props = require(script.Parent.Props)
 local RoomDecor = require(script.Parent.RoomDecor)
 
 local PITCH = 76 -- distance between room centers
@@ -92,18 +93,8 @@ local function sideFrame(center: Vector3, dir: Vector2): CFrame
 	return CFrame.lookAt(center, center + flat(dir))
 end
 
-function FloorBuilder.Torch(parent: Instance, position: Vector3, facing: Vector3, shadows: boolean)
-	local base = CFrame.lookAt(position, position + facing)
-	block(parent, "Bracket", Vector3.new(0.4, 0.4, 1.2), base * CFrame.new(0, 0, -0.5), IRON, Enum.Material.Metal)
-	local stick = block(
-		parent,
-		"TorchStick",
-		Vector3.new(0.35, 1.8, 0.35),
-		base * CFrame.new(0, 0.6, -1.0) * CFrame.Angles(math.rad(-20), 0, 0),
-		Color3.fromRGB(80, 55, 35),
-		Enum.Material.Wood
-	)
-	local flame = block(parent, "Flame", Vector3.new(0.5, 0.7, 0.5), stick.CFrame * CFrame.new(0, 1.1, 0), Color3.fromRGB(255, 140, 50), Enum.Material.Neon)
+local function torchFire(parent: Instance, cframe: CFrame, shadows: boolean): Part
+	local flame = block(parent, "Flame", Vector3.new(0.5, 0.7, 0.5), cframe, Color3.fromRGB(255, 140, 50), Enum.Material.Neon)
 	flame.CanCollide = false
 	flame.CastShadow = false
 	local light = Instance.new("PointLight")
@@ -118,6 +109,30 @@ function FloorBuilder.Torch(parent: Instance, position: Vector3, facing: Vector3
 	fire.Color = Color3.fromRGB(255, 120, 40)
 	fire.SecondaryColor = Color3.fromRGB(255, 200, 90)
 	fire.Parent = flame
+	return flame
+end
+
+-- `position` is on the wall's surface, `facing` points into the room.
+function FloorBuilder.Torch(parent: Instance, position: Vector3, facing: Vector3, shadows: boolean)
+	local wallFrame = CFrame.lookAt(position, position - facing)
+	local prop = Props.Place("Torch", parent, wallFrame * CFrame.new(0, -1.9, 0.6), 1.3)
+	if prop then
+		local box, size = prop:GetBoundingBox()
+		local flame = torchFire(parent, CFrame.new(box.Position + Vector3.new(0, size.Y / 2 + 0.15, 0) + facing * 0.15), shadows)
+		flame.Transparency = 1
+		return
+	end
+	local base = CFrame.lookAt(position, position + facing)
+	block(parent, "Bracket", Vector3.new(0.4, 0.4, 1.2), base * CFrame.new(0, 0, -0.5), IRON, Enum.Material.Metal)
+	local stick = block(
+		parent,
+		"TorchStick",
+		Vector3.new(0.35, 1.8, 0.35),
+		base * CFrame.new(0, 0.6, -1.0) * CFrame.Angles(math.rad(-20), 0, 0),
+		Color3.fromRGB(80, 55, 35),
+		Enum.Material.Wood
+	)
+	torchFire(parent, stick.CFrame * CFrame.new(0, 1.1, 0), shadows)
 end
 
 -- An iron portcullis filling a doorway. Starts open (sunk into the floor).
@@ -139,10 +154,25 @@ local function buildGate(parent: Instance, closed: CFrame): Gate
 end
 
 function FloorBuilder.Chest(parent: Instance, cframe: CFrame, tier: string): Model
+	local metal = FloorBuilder.TierColors[tier] or FloorBuilder.TierColors.Bronze
+	local prop = Props.Place("Chest", parent, cframe)
+	if prop and prop:FindFirstChild("Base", true) and prop:FindFirstChild("Lid", true) then
+		-- The real chest, with a glow in its key's color so you can tell which key it takes.
+		prop.Name = `{tier}Chest`
+		local base = prop:FindFirstChild("Base", true) :: BasePart
+		prop.PrimaryPart = base
+		local glow = Instance.new("PointLight")
+		glow.Color = metal
+		glow.Range = 7
+		glow.Brightness = 1.2
+		glow.Parent = base
+		local gem = block(prop, "TierGem", Vector3.new(0.4, 0.4, 0.15), cframe * CFrame.new(0, base.Size.Y * 0.55, -base.Size.Z / 2 - 0.05) * CFrame.Angles(0, 0, math.rad(45)), metal, Enum.Material.Neon)
+		gem.CanCollide = false
+		return prop
+	end
 	local model = Instance.new("Model")
 	model.Name = `{tier}Chest`
 	local wood = Color3.fromRGB(96, 62, 38)
-	local metal = FloorBuilder.TierColors[tier] or FloorBuilder.TierColors.Bronze
 	local base = block(model, "Base", Vector3.new(3.2, 1.6, 2.2), cframe * CFrame.new(0, 0.8, 0), wood, Enum.Material.Wood)
 	for _, x in { -1.1, 1.1 } do
 		attached(base, "Band", Vector3.new(0.25, 1.64, 2.26), base.CFrame * CFrame.new(x, 0, 0), metal, Enum.Material.Metal)

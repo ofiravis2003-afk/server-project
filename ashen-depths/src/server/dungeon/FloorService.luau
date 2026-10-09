@@ -276,19 +276,16 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 	if rng:NextNumber() < loot.WeaponChance then
 		local itemName = Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
 		local rarity = rollRarity(rng, loot.Rarities)
-		InventoryService.AddItem(data, itemName, rarity)
-		InventoryService.RefreshTools(player)
-		local displayName = Items.Defs[itemName].DisplayName
-		text ..= `   {rarity} {displayName}!`
-		notifyRemote:FireClient(player, `You found a {rarity} {displayName}!`)
+		InventoryService.GiveItem(player, itemName, rarity)
+		text ..= `   {rarity} {Items.Defs[itemName].DisplayName}!`
 	end
 	damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), text, "Reward")
 end
 
 local function placeChest(parent: Instance, cframe: CFrame, tier: string)
 	local chest = FloorBuilder.Chest(parent, cframe, tier)
-	local base = chest:FindFirstChild("Base") :: BasePart
-	local lid = chest:FindFirstChild("Lid") :: BasePart
+	local base = chest:FindFirstChild("Base", true) :: BasePart
+	local lid = chest:FindFirstChild("Lid", true) :: BasePart
 	local openedBy: { [Player]: boolean } = {}
 	local lidOpen = false
 	local p = prompt(base, "Unlock", `{tier} Chest`, 0.6, 8)

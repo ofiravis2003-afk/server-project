@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Items = require(ReplicatedStorage.Shared.Items)
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local WeaponBuilder = require(ReplicatedStorage.Shared.WeaponBuilder)
 local DataService = require(script.Parent.DataService)
 
@@ -23,6 +24,8 @@ function InventoryService.AddItem(data: { [string]: any }, itemName: string, rar
 	data.Inventory[id] = { Item = itemName, Rarity = rarity or "Common", Upgrade = 0 }
 	return id
 end
+
+local itemReceivedRemote = Remotes.Event("ItemReceived")
 
 -- Returns the player's item and its definition, or nil if they don't own it.
 function InventoryService.GetItem(player: Player, itemId: string): (Item?, Items.ItemDef?)
@@ -131,6 +134,18 @@ function InventoryService.RefreshTools(player: Player)
 		CollectionService:AddTag(tool, TOOL_TAG)
 		tool.Parent = backpack
 	end
+end
+
+-- Gives a player a new item: saves it, updates their weapons and shows them the "New item!" card.
+function InventoryService.GiveItem(player: Player, itemName: string, rarity: string): string?
+	local data = DataService.GetData(player)
+	if not data or not Items.Defs[itemName] then
+		return nil
+	end
+	local id = InventoryService.AddItem(data, itemName, rarity)
+	InventoryService.RefreshTools(player)
+	itemReceivedRemote:FireClient(player, { Item = itemName, Rarity = rarity })
+	return id
 end
 
 function InventoryService.Start()

@@ -41,7 +41,8 @@ end
 
 function Materials.Apply(root: Instance)
 	for _, part in root:GetDescendants() do
-		if part:IsA("BasePart") and part.MaterialVariant == "" then
+		-- Real 3D props carry their own textures (SurfaceAppearance); leave them alone.
+		if part:IsA("BasePart") and part.MaterialVariant == "" and not part:FindFirstChildOfClass("SurfaceAppearance") then
 			local rule = RULES[part.Material]
 			if rule and hasVariant(rule.Variant) then
 				local _, _, value = part.Color:ToHSV()

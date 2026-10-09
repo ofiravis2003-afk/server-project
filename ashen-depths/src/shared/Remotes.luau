@@ -14,6 +14,7 @@ local EVENT_NAMES = {
 	"Attack", -- client -> server: swing / shoot the held weapon in a direction
 	"RunUpdated", -- server -> client: the current floor and the keys in hand
 	"FloorStarted", -- server -> client: a new floor begins (shows its title)
+	"ItemReceived", -- server -> client: the player got a new item (shows the "New item!" card)
 }
 
 local FUNCTION_NAMES = {}
