@@ -1,6 +1,8 @@
 --!strict
 -- The dungeon's floors: which chapter each floor belongs to, and how hard it is.
 
+local Config = require(script.Parent.Config)
+
 local Floors = {}
 
 Floors.MaxFloor = 10 -- chapter I only, for the first release
@@ -31,6 +33,9 @@ end
 -- Floor 1: skeletons. From 2: packs of giant rats. From 4: archers.
 -- (Slimes are built but left out until they have a proper look.)
 function Floors.EnemyMix(floor: number): { { Name: string, Weight: number } }
+	if Config.TestEnemyMix then
+		return Config.TestEnemyMix
+	end
 	if floor >= 4 then
 		return { { Name = "Skeleton", Weight = 5 }, { Name = "SkeletonArcher", Weight = 3 }, { Name = "Rat", Weight = 2 } }
 	elseif floor >= 2 then

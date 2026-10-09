@@ -20,4 +20,12 @@ return {
 	-- Depths only: true starts players in the TestArena (a fixed room for trying weapons)
 	-- instead of on floor 1 of the dungeon.
 	StartInTestArena = false,
+
+	-- While testing: when set, every floor's monsters are picked from this list instead of the normal mix.
+	-- Set to nil to go back to the real per-floor mix.
+	TestEnemyMix = {
+		{ Name = "Rat", Weight = 4 },
+		{ Name = "SkeletonArcher", Weight = 4 },
+		{ Name = "Skeleton", Weight = 2 },
+	},
 }
