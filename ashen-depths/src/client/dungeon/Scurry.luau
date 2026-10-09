@@ -1,6 +1,6 @@
 --!strict
 -- Moves animals that have no animation clips (the giant rats) by hand, on players' screens:
--- a fast bouncing scurry while they run, a crouch-and-lunge when they bite, and a jolt when hit.
+-- a low quick skitter while they run, sniffing when still, a crouch-and-lunge bite, and a jolt when hit.
 -- The server tells us about bites and hits by counting them up in attributes (LungeCount / FlinchCount);
 -- the body is turned through the model's "BodyMotor" (root part to body), in the root's directions.
 
