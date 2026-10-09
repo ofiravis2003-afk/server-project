@@ -66,7 +66,7 @@ local function buildCard(gui: ScreenGui, received: Received): (Frame, () -> ())
 	view.Position = UDim2.fromOffset(10, 10)
 	view.Size = UDim2.fromOffset(100, 100)
 	view.BackgroundTransparency = 1
-	view.Ambient = Color3.fromRGB(150, 150, 150)
+	view.Ambient = Color3.fromRGB(215, 205, 195)
 	view.LightColor = Color3.fromRGB(255, 235, 210)
 	view.LightDirection = Vector3.new(-1, -1, -1)
 	view.Parent = card
