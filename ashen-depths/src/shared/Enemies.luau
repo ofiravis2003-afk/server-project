@@ -4,6 +4,8 @@
 --   Animations: published animation ids for the enemy's own 3D model (ServerStorage.EnemyModels.<name>).
 --               Any that are missing are skipped: no walk = it glides, no death = it just falls over.
 --   AnimationSpeeds: play some clips faster (Tripo made the attack and death 5 seconds long).
+--   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
+--             standing pose (the Tripo skeleton's animations face backwards: 180).
 
 export type EnemyDef = {
 	DisplayName: string,
@@ -19,6 +21,7 @@ export type EnemyDef = {
 	RespawnTime: number,
 	Animations: { Idle: string?, Walk: string?, Attack: string?, Hit: string?, Death: string? }?,
 	AnimationSpeeds: { [string]: number }?,
+	ModelYaw: number?,
 }
 
 local Enemies: { [string]: EnemyDef } = {
@@ -42,6 +45,7 @@ local Enemies: { [string]: EnemyDef } = {
 			Death = "rbxassetid://101347829567581",
 		},
 		AnimationSpeeds = { Attack = 2.8, Death = 1.8 },
+		ModelYaw = 180,
 	},
 }
 

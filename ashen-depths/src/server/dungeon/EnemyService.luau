@@ -184,7 +184,7 @@ local BUILDERS: { [string]: () -> Model } = {
 -- Turns an imported, rigged 3D model (ServerStorage.EnemyModels.<name>, e.g. from Tripo) into an enemy:
 -- an invisible root part the Humanoid walks with, the skinned mesh welded on top, an invisible "Head"
 -- for the health bar, and the eye glow on the model's head bone.
-local function buildFromModel(source: Model): Model
+local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 	local model = source:Clone()
 	for _, child in model:GetChildren() do
 		if child:IsA("AnimationController") or child.Name == "InitialPoses" or child.Name == "AnimSaves" then
@@ -209,6 +209,7 @@ local function buildFromModel(source: Model): Model
 			forward = along.Unit
 		end
 	end
+	forward = CFrame.Angles(0, math.rad(def.ModelYaw or 0), 0):VectorToWorldSpace(forward)
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
 	root.Size = Vector3.new(2, 2, 1)
@@ -294,7 +295,7 @@ local function getTemplate(name: string): Model
 	if not template then
 		local modelsFolder = ServerStorage:FindFirstChild("EnemyModels")
 		local source = modelsFolder and modelsFolder:FindFirstChild(name)
-		template = if source and source:IsA("Model") then buildFromModel(source) else BUILDERS[name]()
+		template = if source and source:IsA("Model") then buildFromModel(source, Enemies[name]) else BUILDERS[name]()
 		templates[name] = template
 	end
 	return template
