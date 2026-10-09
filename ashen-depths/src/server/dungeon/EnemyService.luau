@@ -11,6 +11,8 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
+local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
@@ -21,8 +23,8 @@ local SPAWN_TAG = "EnemySpawn"
 local ENEMY_TAG = "Enemy"
 local THINK_INTERVAL = 0.15
 
--- Roblox's own default R15 animations (idle, walk, tool slash).
-local ANIMATIONS = {
+-- Roblox's own default R15 animations (idle, walk, tool slash), for enemies built from a plain avatar body.
+local R15_ANIMATIONS = {
 	Idle = "rbxassetid://507766388",
 	Walk = "rbxassetid://507777826",
 	Attack = "rbxassetid://522635514",
@@ -55,6 +57,7 @@ export type Enemy = {
 	Flash: Highlight,
 	HealthFill: Frame,
 	Tracks: { [string]: AnimationTrack },
+	Custom: boolean, -- built from a real 3D model (not the plain avatar body)
 	Damagers: { [Player]: number },
 	LastAttack: number,
 	Attacking: boolean,
@@ -178,10 +181,105 @@ local BUILDERS: { [string]: () -> Model } = {
 	Skeleton = buildSkeleton,
 }
 
+-- Turns an imported, rigged 3D model (ServerStorage.EnemyModels.<name>, e.g. from Tripo) into an enemy:
+-- an invisible root part the Humanoid walks with, the skinned mesh welded on top, an invisible "Head"
+-- for the health bar, and the eye glow on the model's head bone.
+local function buildFromModel(source: Model): Model
+	local model = source:Clone()
+	for _, child in model:GetChildren() do
+		if child:IsA("AnimationController") or child.Name == "InitialPoses" or child.Name == "AnimSaves" then
+			child:Destroy()
+		end
+	end
+	local boxCFrame, boxSize = model:GetBoundingBox()
+	local height = boxSize.Y
+
+	local root = Instance.new("Part")
+	root.Name = "HumanoidRootPart"
+	root.Size = Vector3.new(2, 2, 1)
+	root.Transparency = 1
+	root.CanCollide = true
+	root.CFrame = CFrame.new(boxCFrame.Position)
+	root.Parent = model
+	model.PrimaryPart = root
+
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") and part ~= root then
+			part.Anchored = false
+			part.CanCollide = false
+			part.Massless = true
+			weld(root, part)
+		end
+	end
+
+	local head = Instance.new("Part")
+	head.Name = "Head"
+	head.Size = Vector3.new(1, 1, 1)
+	head.Transparency = 1
+	head.CanCollide = false
+	head.Massless = true
+	local headBone = model:FindFirstChild("mixamorig:Head", true) :: Bone?
+	head.CFrame = if headBone then CFrame.new(headBone.WorldPosition) else root.CFrame + Vector3.new(0, height / 2 - 0.5, 0)
+	weld(root, head)
+	head.Parent = model
+
+	local light = Instance.new("PointLight")
+	light.Name = "EyeLight"
+	light.Color = EYE
+	light.Range = 5
+	light.Brightness = 0.6
+	light.Parent = headBone or head
+
+	local humanoid = Instance.new("Humanoid")
+	humanoid.RigType = Enum.HumanoidRigType.R15
+	humanoid.HipHeight = height / 2 - root.Size.Y / 2
+	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	humanoid.BreakJointsOnDeath = false
+	Instance.new("Animator").Parent = humanoid
+	humanoid.Parent = model
+
+	local flash = Instance.new("Highlight")
+	flash.Name = "HitFlash"
+	flash.FillColor = Color3.new(1, 1, 1)
+	flash.FillTransparency = 0.4
+	flash.OutlineTransparency = 1
+	flash.Enabled = false
+	flash.Parent = model
+
+	local bar = Instance.new("BillboardGui")
+	bar.Name = "HealthBar"
+	bar.Size = UDim2.fromScale(3.2, 0.32)
+	bar.StudsOffset = Vector3.new(0, 1.6, 0)
+	bar.MaxDistance = 70
+	bar.Adornee = head
+	local back = Instance.new("Frame")
+	back.Size = UDim2.fromScale(1, 1)
+	back.BackgroundColor3 = Color3.fromRGB(20, 14, 14)
+	back.BorderSizePixel = 0
+	back.Parent = bar
+	local fill = Instance.new("Frame")
+	fill.Name = "Fill"
+	fill.Size = UDim2.fromScale(1, 1)
+	fill.BackgroundColor3 = Color3.fromRGB(200, 40, 35)
+	fill.BorderSizePixel = 0
+	fill.Parent = back
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(0, 0, 0)
+	stroke.Thickness = 1.5
+	stroke.Parent = back
+	bar.Parent = head
+
+	model:SetAttribute("Custom", true)
+	return model
+end
+
 local function getTemplate(name: string): Model
 	local template = templates[name]
 	if not template then
-		template = BUILDERS[name]()
+		local modelsFolder = ServerStorage:FindFirstChild("EnemyModels")
+		local source = modelsFolder and modelsFolder:FindFirstChild(name)
+		template = if source and source:IsA("Model") then buildFromModel(source) else BUILDERS[name]()
 		templates[name] = template
 	end
 	return template
@@ -213,10 +311,30 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	if bar then
 		bar:Destroy()
 	end
-	-- The bones fall apart and scatter on the floor.
-	for _, part in enemy.Model:GetDescendants() do
-		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-			part.CanCollide = true
+	if enemy.Custom then
+		-- Play the death animation if there is one; otherwise topple over. Then sink into the floor.
+		for _, track in enemy.Tracks do
+			track:Stop(0.1)
+		end
+		enemy.Root.Anchored = true
+		local death = enemy.Tracks.Death
+		if death then
+			death:Play(0.1)
+		else
+			local fallen = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight, 0) * CFrame.Angles(math.rad(-85), 0, 0)
+			TweenService:Create(enemy.Root, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = fallen }):Play()
+		end
+		task.delay(2.6, function()
+			if enemy.Root.Parent then
+				TweenService:Create(enemy.Root, TweenInfo.new(1.2), { CFrame = enemy.Root.CFrame - Vector3.new(0, 3, 0) }):Play()
+			end
+		end)
+	else
+		-- The bones fall apart and scatter on the floor.
+		for _, part in enemy.Model:GetDescendants() do
+			if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+				part.CanCollide = true
+			end
 		end
 	end
 
@@ -306,17 +424,28 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	model.Parent = folder
 	root:SetNetworkOwner(nil)
 
+	local custom = model:GetAttribute("Custom") == true
 	local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
-	local tracks = {}
-	for key, id in ANIMATIONS do
+	local tracks: { [string]: AnimationTrack } = {}
+	for key, id in (if custom then def.Animations or {} else R15_ANIMATIONS) :: { [string]: string } do
 		local animation = Instance.new("Animation")
 		animation.AnimationId = id
 		tracks[key] = animator:LoadAnimation(animation)
 	end
-	tracks.Idle.Looped = true
-	tracks.Walk.Looped = true
-	tracks.Attack.Priority = Enum.AnimationPriority.Action
-	tracks.Idle:Play()
+	if tracks.Idle then
+		tracks.Idle.Looped = true
+		tracks.Idle:Play()
+	end
+	if tracks.Walk then
+		tracks.Walk.Looped = true
+		tracks.Walk.Priority = Enum.AnimationPriority.Movement
+	end
+	for _, key in { "Attack", "Hit", "Death" } do
+		if tracks[key] then
+			tracks[key].Looped = false
+			tracks[key].Priority = Enum.AnimationPriority.Action
+		end
+	end
 
 	local barGui = head:FindFirstChild("HealthBar") :: BillboardGui
 	local enemy: Enemy = {
@@ -333,6 +462,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		Flash = model:FindFirstChild("HitFlash") :: Highlight,
 		HealthFill = (barGui:FindFirstChildOfClass("Frame") :: Frame):FindFirstChild("Fill") :: Frame,
 		Tracks = tracks,
+		Custom = custom,
 		Damagers = {},
 		LastAttack = 0,
 		Attacking = false,
@@ -342,12 +472,16 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	CollectionService:AddTag(model, ENEMY_TAG)
 
 	humanoid.Running:Connect(function(speed)
+		local walk = tracks.Walk
+		if not walk then
+			return
+		end
 		if speed > 0.5 then
-			if not tracks.Walk.IsPlaying then
-				tracks.Walk:Play()
+			if not walk.IsPlaying then
+				walk:Play()
 			end
-		elseif tracks.Walk.IsPlaying then
-			tracks.Walk:Stop()
+		elseif walk.IsPlaying then
+			walk:Stop()
 		end
 	end)
 	humanoid.HealthChanged:Connect(function(health)
@@ -400,7 +534,9 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
 	face(enemy, targetRoot.Position)
 	setEyes(enemy, true)
-	enemy.Tracks.Attack:Play(0.1, 1, 0.8)
+	if enemy.Tracks.Attack then
+		enemy.Tracks.Attack:Play(0.1, 1, 0.8)
+	end
 
 	task.wait(enemy.Def.Windup)
 	if not enemy.Dead then
@@ -452,6 +588,10 @@ function EnemyService.Damage(enemy: Enemy, amount: number, player: Player, kind:
 	enemy.Damagers[player] = (enemy.Damagers[player] or 0) + rounded
 	damageNumberRemote:FireAllClients(enemy.Root.Position + Vector3.new(0, 2.5, 0), rounded, kind)
 	if kind ~= "Poison" then
+		local hit = enemy.Tracks.Hit
+		if hit and not enemy.Attacking and enemy.Humanoid.Health > rounded then
+			hit:Play(0.05)
+		end
 		enemy.Flash.Enabled = true
 		task.delay(0.08, function()
 			enemy.Flash.Enabled = false

@@ -1,6 +1,8 @@
 --!strict
 -- Every enemy type: its stats and its rewards.
 --   Windup: seconds the enemy shows its attack coming before the hit lands (time to step away)
+--   Animations: published animation ids for the enemy's own 3D model (ServerStorage.EnemyModels.<name>).
+--               Any that are missing are skipped: no walk = it glides, no death = it just falls over.
 
 export type EnemyDef = {
 	DisplayName: string,
@@ -14,6 +16,7 @@ export type EnemyDef = {
 	XP: number,
 	Gold: { number },
 	RespawnTime: number,
+	Animations: { Idle: string?, Walk: string?, Attack: string?, Hit: string?, Death: string? }?,
 }
 
 local Enemies: { [string]: EnemyDef } = {
@@ -29,6 +32,9 @@ local Enemies: { [string]: EnemyDef } = {
 		XP = 12,
 		Gold = { 3, 6 },
 		RespawnTime = 5,
+		Animations = {
+			Idle = "rbxassetid://84669635179600",
+		},
 	},
 }
 
