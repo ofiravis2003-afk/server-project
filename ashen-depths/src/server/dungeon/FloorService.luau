@@ -12,6 +12,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Floors = require(ReplicatedStorage.Shared.Floors)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -208,19 +209,24 @@ local function activateRoom(room: CombatRoom, floor: number)
 			break
 		end
 		local spot = freeSpot(room.Built, rng, 6)
-		-- A spawn that fails must not leave the room waiting forever.
-		local ok, enemy = pcall(EnemyService.Spawn, Floors.PickEnemy(floor, rng), CFrame.lookAt(spot, room.Built.Center), {
-			HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
-			DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
-			Elite = i == eliteIndex,
-			OnDied = function(dead)
-				onEnemyDied(room, dead)
-			end,
-		})
-		if not ok then
-			warn(`[FloorService] Spawning an enemy failed: {enemy}`)
-		elseif enemy then
-			room.Enemies[enemy] = true
+		local name = Floors.PickEnemy(floor, rng)
+		local pack = Enemies[name].Pack
+		for member = 1, if pack then rng:NextInteger(pack[1], pack[2]) else 1 do
+			local at = spot + Vector3.new(rng:NextNumber(-2.5, 2.5), 0, rng:NextNumber(-2.5, 2.5))
+			-- A spawn that fails must not leave the room waiting forever.
+			local ok, enemy = pcall(EnemyService.Spawn, name, CFrame.lookAt(at, room.Built.Center), {
+				HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
+				DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
+				Elite = i == eliteIndex and member == 1,
+				OnDied = function(dead)
+					onEnemyDied(room, dead)
+				end,
+			})
+			if not ok then
+				warn(`[FloorService] Spawning an enemy failed: {enemy}`)
+			elseif enemy then
+				room.Enemies[enemy] = true
+			end
 		end
 		task.wait(0.15)
 	end

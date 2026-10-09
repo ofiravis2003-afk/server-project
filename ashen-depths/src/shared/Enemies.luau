@@ -18,6 +18,8 @@
 --   DeathStyle: "Splat" bursts into goo instead of falling over.
 --   SplitInto: on death, this many of that enemy pop out where it died (slimes split in two).
 --   Squishy: wobbles as it moves (drawn by the players' screens).
+--   Procedural: "Scurry" = no animation clips; the body is moved by code (bouncing run, lunging bite).
+--   Pack: comes in a group of this many (min, max) in one spawn.
 
 export type EnemyDef = {
 	DisplayName: string,
@@ -42,6 +44,8 @@ export type EnemyDef = {
 	DeathStyle: string?,
 	SplitInto: { Name: string, Count: number }?,
 	Squishy: boolean?,
+	Procedural: string?,
+	Pack: { number }?,
 }
 
 local SKELETON_ANIMATIONS = {
@@ -106,6 +110,23 @@ local Enemies: { [string]: EnemyDef } = {
 		DeathStyle = "Splat",
 		SplitInto = { Name = "SlimeSmall", Count = 2 },
 		Squishy = true,
+	},
+	Rat = {
+		DisplayName = "Giant Rat",
+		Health = 38,
+		Damage = 7,
+		WalkSpeed = 19,
+		AggroRange = 55,
+		AttackRange = 4.5,
+		AttackCooldown = 1.1,
+		Windup = 0.35,
+		XP = 6,
+		Gold = { 1, 3 },
+		RespawnTime = 5,
+		ModelYaw = 180,
+		Procedural = "Scurry",
+		DeathStyle = "Flip",
+		Pack = { 2, 3 },
 	},
 	SlimeSmall = {
 		DisplayName = "Slimeling",

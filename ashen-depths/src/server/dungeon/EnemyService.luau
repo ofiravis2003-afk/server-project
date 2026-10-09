@@ -245,12 +245,25 @@ local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 	root.Parent = model
 	model.PrimaryPart = root
 
+	-- Animals moved by code hang their body on a motor (in the root's directions) that players' screens turn.
+	local bodyMotor = nil
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") and part ~= root then
 			part.Anchored = false
 			part.CanCollide = false
 			part.Massless = true
-			weld(root, part)
+			if def.Procedural and not bodyMotor and part:IsA("MeshPart") then
+				local relative = root.CFrame:ToObjectSpace(part.CFrame)
+				bodyMotor = Instance.new("Motor6D")
+				bodyMotor.Name = "BodyMotor"
+				bodyMotor.Part0 = root
+				bodyMotor.Part1 = part
+				bodyMotor.C0 = CFrame.new(relative.Position)
+				bodyMotor.C1 = relative.Rotation:Inverse()
+				bodyMotor.Parent = root
+			else
+				weld(root, part)
+			end
 		end
 	end
 
@@ -483,7 +496,18 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		local crumble = enemy.Def.CrumbleInto
 		local death = enemy.Tracks.Death
 		local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
-		if enemy.Def.DeathStyle == "Splat" then
+		if enemy.Def.DeathStyle == "Flip" then
+			-- Rolls onto its back, then fades.
+			local onBack = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight * 0.4, 0) * CFrame.Angles(0, 0, math.pi)
+			TweenService:Create(enemy.Root, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { CFrame = onBack }):Play()
+			task.delay(1.4, function()
+				for _, part in enemy.Model:GetDescendants() do
+					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+						TweenService:Create(part, TweenInfo.new(0.8), { Transparency = 1 }):Play()
+					end
+				end
+			end)
+		elseif enemy.Def.DeathStyle == "Splat" then
 			-- Bursts into goo: a splash of green drops, and the body is gone.
 			local splash = Instance.new("Part")
 			splash.Anchored = true
@@ -772,6 +796,9 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	if def.Squishy then
 		CollectionService:AddTag(model, "Squishy")
 	end
+	if def.Procedural == "Scurry" then
+		CollectionService:AddTag(model, "Scurry")
+	end
 
 	humanoid.Running:Connect(function(speed)
 		local walk = tracks.Walk
@@ -839,6 +866,9 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 	if enemy.Tracks.Attack then
 		local speeds = enemy.Def.AnimationSpeeds or {}
 		enemy.Tracks.Attack:Play(0.1, 1, if enemy.Custom then speeds.Attack or 1 else 0.8)
+	end
+	if enemy.Def.Procedural then
+		enemy.Model:SetAttribute("LungeCount", (enemy.Model:GetAttribute("LungeCount") or 0) + 1)
 	end
 
 	task.wait(enemy.Def.Windup)
@@ -948,6 +978,9 @@ function EnemyService.Damage(enemy: Enemy, amount: number, player: Player, kind:
 		local hit = enemy.Tracks.Hit
 		if hit and not enemy.Attacking and enemy.Humanoid.Health > rounded then
 			hit:Play(0.05)
+		end
+		if enemy.Def.Procedural and enemy.Humanoid.Health > rounded then
+			enemy.Model:SetAttribute("FlinchCount", (enemy.Model:GetAttribute("FlinchCount") or 0) + 1)
 		end
 		enemy.Flash.Enabled = true
 		task.delay(0.08, function()
