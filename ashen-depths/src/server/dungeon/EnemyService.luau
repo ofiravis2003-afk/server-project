@@ -311,6 +311,68 @@ local function setEyes(enemy: Enemy, flaring: boolean)
 	enemy.EyeLight.Range = if flaring then 9 else 5
 end
 
+-- One flying piece of a shattered skeleton: the AI-made "Skull" / "Bone" dungeon props if they exist,
+-- otherwise a bone shape built from parts (a shaft with two round knobs at each end).
+-- Returns the piece (already in the world) and its main part, for setting its velocity.
+local function boneShard(isSkull: boolean, scale: number, cframe: CFrame): (Model, BasePart)
+	local folder = ServerStorage:FindFirstChild("DungeonProps")
+	local source = folder and folder:FindFirstChild(if isSkull then "Skull" else "Bone")
+	local model: Model
+	if source and source:IsA("Model") then
+		model = source:Clone()
+		local size = if isSkull then 1 else math.random(75, 115) / 100
+		model:ScaleTo(model:GetScale() * scale * size)
+	else
+		model = Instance.new("Model")
+		local color = Color3.fromRGB(196, 182, 150)
+		local function piece(shape: Enum.PartType, size: Vector3, offset: CFrame, pieceColor: Color3?): Part
+			local part = Instance.new("Part")
+			part.Shape = shape
+			part.Size = size * scale
+			part.CFrame = cframe * CFrame.new(offset.Position * scale) * offset.Rotation
+			part.Color = pieceColor or color
+			part.Material = Enum.Material.Limestone
+			part.Parent = model
+			return part
+		end
+		if isSkull then
+			piece(Enum.PartType.Ball, Vector3.new(0.9, 0.9, 0.9), CFrame.new())
+			piece(Enum.PartType.Block, Vector3.new(0.55, 0.3, 0.5), CFrame.new(0, -0.38, -0.12))
+			for _, side in { -1, 1 } do
+				piece(Enum.PartType.Ball, Vector3.new(0.22, 0.22, 0.22), CFrame.new(side * 0.18, 0.05, -0.37), Color3.fromRGB(25, 20, 18))
+			end
+		else
+			local length = math.random(9, 16) / 10
+			piece(Enum.PartType.Cylinder, Vector3.new(length, 0.2, 0.2), CFrame.new())
+			for _, x in { -length / 2, length / 2 } do
+				for _, y in { -0.08, 0.08 } do
+					piece(Enum.PartType.Ball, Vector3.new(0.24, 0.24, 0.24), CFrame.new(x, y, 0))
+				end
+			end
+		end
+	end
+	local parts = {}
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = false
+			part.CanQuery = false
+			part.CanTouch = false
+			table.insert(parts, part)
+		end
+	end
+	local main = parts[1]
+	for i = 2, #parts do
+		weld(main, parts[i])
+	end
+	model.Name = "BoneShard"
+	if source then
+		model:PivotTo(cframe)
+	end
+	model.Parent = workspace
+	main:SetNetworkOwner(nil)
+	return model, main
+end
+
 local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	if enemy.Dead then
 		return
@@ -398,29 +460,23 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				end
 				-- ...and its bones fly out, bounce and roll across the floor.
 				local chest = ground + Vector3.new(0, enemy.Humanoid.HipHeight + 1, 0)
-				local shards = {}
+				local shards: { Model } = {}
 				for i = 1, 11 do
-					local isSkull = i == 1
-					local shard = Instance.new("Part")
-					shard.Name = "BoneShard"
-					shard.Shape = if isSkull then Enum.PartType.Ball else Enum.PartType.Block
-					shard.Size = (if isSkull then Vector3.new(0.9, 0.9, 0.9) else Vector3.new(0.28, 0.28, math.random(8, 18) / 10)) * scale
-					shard.Color = Color3.fromRGB(196, 182, 150)
-					shard.Material = Enum.Material.Limestone
-					shard.CanQuery = false
-					shard.CanTouch = false
-					shard.CFrame = CFrame.new(chest + Vector3.new(math.random() - 0.5, (math.random() - 0.3) * 2, math.random() - 0.5))
+					local cf = CFrame.new(chest + Vector3.new(math.random() - 0.5, (math.random() - 0.3) * 2, math.random() - 0.5))
 						* CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
-					shard.Parent = workspace
-					shard:SetNetworkOwner(nil)
+					local shard, main = boneShard(i == 1, scale, cf)
 					local angle = math.random() * math.pi * 2
-					shard.AssemblyLinearVelocity = Vector3.new(math.cos(angle) * math.random(8, 16), math.random(12, 22), math.sin(angle) * math.random(8, 16))
-					shard.AssemblyAngularVelocity = Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
+					main.AssemblyLinearVelocity = Vector3.new(math.cos(angle) * math.random(8, 16), math.random(12, 22), math.sin(angle) * math.random(8, 16))
+					main.AssemblyAngularVelocity = Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
 					table.insert(shards, shard)
 				end
 				task.delay(4, function()
 					for _, shard in shards do
-						TweenService:Create(shard, TweenInfo.new(1.2), { Transparency = 1 }):Play()
+						for _, part in shard:GetDescendants() do
+							if part:IsA("BasePart") then
+								TweenService:Create(part, TweenInfo.new(1.2), { Transparency = 1 }):Play()
+							end
+						end
 					end
 					task.wait(1.3)
 					for _, shard in shards do
