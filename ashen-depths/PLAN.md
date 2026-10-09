@@ -267,7 +267,8 @@
 - ✅ **פריטים אמיתיים** (AI של Roblox, חינם, ב-`ServerStorage.DungeonProps`): Torch, Sarcophagus, Chest (Base+Lid), BrokenPillar, BonePile. `Props.luau` מציב אותם, וחוזר לחלקים פשוטים אם פריט חסר.
 - ✅ **שלד מ-Tripo** (Rig של Mixamo, 52 עצמות, טקסטורת PBR) ב-`ServerStorage.EnemyModels.Skeleton`. `EnemyService` בונה ממנו אויב: Humanoid, חלק שורש שקוף, ראש לפס החיים, ואור עיניים על עצם הראש.
 - ✅ **חלון "New item!"** (`ItemPopup`): כרטיס עם תצוגת תלת-ממד מסתובבת, שם בצבע הנדירות, ונזק. נשלח מ-`InventoryService.GiveItem`.
-- ⏳ **אנימציות השלד:** Idle = `84669635179600` ✅. חסרים Walk, Attack, Hit ו-Death. השחקן-מפתח מוריד מ-Tripo (FBX), מייבא ב-**Clip Editor** (Avatar ← Clip Editor ← ⋯ ← Import ← From FBX Animation), עושה Publish, ושולח ID. אז מוסיפים ל-`Enemies.luau` (`Animations`).
+- ✅ **אנימציות השלד** (מ-Tripo, כולן נבדקו במשחק): Idle `84669635179600`, Walk `138036023263764`, Attack `83535294193875`, Hit `132608517614379`, Death `101347829567581`. ההתקפה מתנגנת פי 2.8, והמוות פי 1.8, כי Tripo יצר אותן באורך 5 שניות.
+- 📝 **איך מכניסים אנימציה מ-Tripo (השיטה שעובדת):** מורידים כל אנימציה כ-**GLB** (לא FBX, כי ב-FBX הצירים הפוכים והדמות שוכבת). אחר כך File ← Import 3D, והאנימציה נשמרת ב-`ServerStorage.RBX_ANIMSAVES`. Claude מעביר אותה לשלד. אחר כך Clip Editor (Avatar ← Clip Editor), עם השלד מסומן: ⋯ ← Load ← Publish to Roblox, ואת ה-ID מעתיקים מ-Toolbox ← Inventory ← My Animations.
 - 📝 **איך מכניסים מודל מ-Tripo:** מורידים **GLB** (ב-FBX הטקסטורות לא נכנסות), ואז File ← Import 3D, ואז `ScaleTo` לגובה הנכון, ומעבירים ל-`ServerStorage`.
 - 📝 Tripo: לשחקן-מפתח יש כ-3000 קרדיטים באתר. ה-API (`breed-a-dragon/tools/tripo.py`) הוא חשבון נפרד, עם 105 קרדיטים.
 - 🧹 `workspace.StyleTest` (חדרי המבחן): למחוק כשלא צריך יותר.
