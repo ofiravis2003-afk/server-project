@@ -7,7 +7,7 @@
 local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 
-local LUNGE_TIME = 0.4
+local LUNGE_TIME = 0.32
 local FLINCH_TIME = 0.22
 
 local Scurry = {}
@@ -74,11 +74,20 @@ function Scurry.Start()
 			local velocity = runner.Root.AssemblyLinearVelocity
 			local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
 			local moving = speed > 1
-			runner.Phase += dt * (if moving then 10 + speed * 0.5 else 2)
+			runner.Phase += dt * (if moving then 16 + speed * 0.8 else 2.5)
 
-			-- Running: hop up and rock nose-down / nose-up. Standing: a slow breathing bob.
-			local lift = if moving then math.abs(math.sin(runner.Phase)) * 0.35 else math.sin(runner.Phase) * 0.04
-			local pitch = if moving then math.sin(runner.Phase * 2) * 0.1 else 0
+			-- Running: a low, quick skitter: small fast bobs, the body swishing side to side.
+			-- Standing: sniffing (a little nose bob) and a slow breath.
+			local lift, pitch, swish
+			if moving then
+				lift = math.abs(math.sin(runner.Phase)) * 0.12 - 0.08
+				pitch = math.sin(runner.Phase * 2) * 0.04
+				swish = math.sin(runner.Phase) * 0.12
+			else
+				lift = math.sin(runner.Phase) * 0.03
+				pitch = math.max(0, math.sin(runner.Phase * 3.1)) * 0.06
+				swish = math.sin(runner.Phase * 0.7) * 0.05
+			end
 			local push = 0
 
 			local sinceLunge = now - runner.LungeAt
@@ -105,7 +114,7 @@ function Scurry.Start()
 				pitch += 0.3 * out
 			end
 
-			runner.Motor.Transform = CFrame.new(0, lift, push) * CFrame.Angles(pitch, 0, 0)
+			runner.Motor.Transform = CFrame.new(0, lift, push) * CFrame.Angles(pitch, swish, 0)
 		end
 	end)
 end
