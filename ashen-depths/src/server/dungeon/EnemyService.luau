@@ -194,12 +194,24 @@ local function buildFromModel(source: Model): Model
 	local boxCFrame, boxSize = model:GetBoundingBox()
 	local height = boxSize.Y
 
+	-- The root part looks where the model's face looks (worked out from the toes, which point forward),
+	-- so turning the root to face a player turns the whole body toward them.
+	local forward = Vector3.new(0, 0, -1)
+	local foot = model:FindFirstChild("mixamorig:LeftFoot", true) :: Bone?
+	local toe = model:FindFirstChild("mixamorig:LeftToeBase", true) :: Bone?
+	if foot and toe then
+		local along = toe.WorldPosition - foot.WorldPosition
+		along = Vector3.new(along.X, 0, along.Z)
+		if along.Magnitude > 0.01 then
+			forward = along.Unit
+		end
+	end
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
 	root.Size = Vector3.new(2, 2, 1)
 	root.Transparency = 1
 	root.CanCollide = true
-	root.CFrame = CFrame.new(boxCFrame.Position)
+	root.CFrame = CFrame.lookAt(boxCFrame.Position, boxCFrame.Position + forward)
 	root.Parent = model
 	model.PrimaryPart = root
 
@@ -312,26 +324,35 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		bar:Destroy()
 	end
 	if enemy.Custom then
-		-- Play the death animation if there is one; otherwise topple over. Then sink into the floor.
+		-- Play the death animation and hold its last frame (lying on the floor), or topple over if
+		-- there is none. Then the body fades away.
 		for _, track in enemy.Tracks do
-			track:Stop(0.1)
+			if track ~= enemy.Tracks.Death then
+				track:Stop(0.1)
+			end
 		end
 		enemy.Root.Anchored = true
 		local death = enemy.Tracks.Death
-		local sinkAfter = 2.6
+		local fadeAfter = 1.2
 		if death then
 			local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
+			local duration = (if death.Length > 0 then death.Length else 5) / speed
 			death:Play(0.1, 1, speed)
-			if death.Length > 0 then
-				sinkAfter = death.Length / speed + 0.4
-			end
+			task.delay(math.max(duration - 0.1, 0), function()
+				if death.IsPlaying then
+					death:AdjustSpeed(0)
+				end
+			end)
+			fadeAfter = duration + 0.6
 		else
 			local fallen = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight, 0) * CFrame.Angles(math.rad(-85), 0, 0)
 			TweenService:Create(enemy.Root, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = fallen }):Play()
 		end
-		task.delay(sinkAfter, function()
-			if enemy.Root.Parent then
-				TweenService:Create(enemy.Root, TweenInfo.new(1.2), { CFrame = enemy.Root.CFrame - Vector3.new(0, 3, 0) }):Play()
+		task.delay(fadeAfter, function()
+			for _, part in enemy.Model:GetDescendants() do
+				if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+					TweenService:Create(part, TweenInfo.new(1), { Transparency = 1 }):Play()
+				end
 			end
 		end)
 	else
@@ -358,7 +379,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		task.spawn(options.OnDied, enemy)
 	end
 
-	task.delay(if enemy.Custom then 6 else 4, function()
+	task.delay(if enemy.Custom then 5.5 else 4, function()
 		enemy.Model:Destroy()
 	end)
 	if Config.TestMode and spawnPart and spawnPart.Parent then
