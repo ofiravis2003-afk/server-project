@@ -342,15 +342,20 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				gui.Enabled = false
 			end
 		end
+		local crumble = enemy.Def.CrumbleInto
 		local death = enemy.Tracks.Death
 		local speed = (enemy.Def.AnimationSpeeds or {}).Death or 1
-		if death then
+		if crumble then
+			local hit = enemy.Tracks.Hit
+			if hit then
+				hit:Play(0.05, 1, 1.4)
+			end
+		elseif death then
 			death:Play(0.1, 1, speed)
 		else
 			local fallen = enemy.Root.CFrame * CFrame.new(0, -enemy.Humanoid.HipHeight, 0) * CFrame.Angles(math.rad(-85), 0, 0)
 			TweenService:Create(enemy.Root, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = fallen }):Play()
 		end
-		local crumble = enemy.Def.CrumbleInto
 		if crumble then
 			task.delay(crumble.At, function()
 				if not enemy.Model.Parent then
@@ -385,12 +390,43 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				task.delay(2, function()
 					puff:Destroy()
 				end)
-				-- The body vanishes; the bones stay for a while, then fade too
+				-- The body vanishes at once...
 				for _, part in enemy.Model:GetDescendants() do
 					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
-						TweenService:Create(part, TweenInfo.new(0.25), { Transparency = 1 }):Play()
+						part.Transparency = 1
 					end
 				end
+				-- ...and its bones fly out, bounce and roll across the floor.
+				local chest = ground + Vector3.new(0, enemy.Humanoid.HipHeight + 1, 0)
+				local shards = {}
+				for i = 1, 11 do
+					local isSkull = i == 1
+					local shard = Instance.new("Part")
+					shard.Name = "BoneShard"
+					shard.Shape = if isSkull then Enum.PartType.Ball else Enum.PartType.Block
+					shard.Size = (if isSkull then Vector3.new(0.9, 0.9, 0.9) else Vector3.new(0.28, 0.28, math.random(8, 18) / 10)) * scale
+					shard.Color = Color3.fromRGB(196, 182, 150)
+					shard.Material = Enum.Material.Limestone
+					shard.CanQuery = false
+					shard.CanTouch = false
+					shard.CFrame = CFrame.new(chest + Vector3.new(math.random() - 0.5, (math.random() - 0.3) * 2, math.random() - 0.5))
+						* CFrame.Angles(math.random() * 6, math.random() * 6, math.random() * 6)
+					shard.Parent = workspace
+					shard:SetNetworkOwner(nil)
+					local angle = math.random() * math.pi * 2
+					shard.AssemblyLinearVelocity = Vector3.new(math.cos(angle) * math.random(8, 16), math.random(12, 22), math.sin(angle) * math.random(8, 16))
+					shard.AssemblyAngularVelocity = Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
+					table.insert(shards, shard)
+				end
+				task.delay(4, function()
+					for _, shard in shards do
+						TweenService:Create(shard, TweenInfo.new(1.2), { Transparency = 1 }):Play()
+					end
+					task.wait(1.3)
+					for _, shard in shards do
+						shard:Destroy()
+					end
+				end)
 				enemy.EyeLight.Enabled = false
 				local pile = Props.Place(crumble.Prop, workspace, CFrame.new(ground) * CFrame.Angles(0, math.random() * math.pi * 2, 0), scale * 0.6)
 				if pile then

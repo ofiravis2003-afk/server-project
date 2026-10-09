@@ -4,8 +4,9 @@
 --   Animations: published animation ids for the enemy's own 3D model (ServerStorage.EnemyModels.<name>).
 --               Any that are missing are skipped: no walk = it glides, no death = it just falls over.
 --   AnimationSpeeds: play some clips faster (Tripo made the attack and death 5 seconds long).
---   CrumbleInto: on death the body starts its death clip, then after `At` seconds bursts into dust and
---                leaves this dungeon prop behind (the skeleton falls apart into a pile of bones).
+--   CrumbleInto: on death the body flinches (its Hit clip) and after `At` seconds shatters: it vanishes in a
+--                burst of dust, bones fly out and tumble across the floor, and this dungeon prop stays behind.
+--                Its own death clip is skipped (Tripo's looked like a stumble).
 --   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
 --             standing pose (the Tripo skeleton's animations face backwards: 180).
 
@@ -49,7 +50,7 @@ local Enemies: { [string]: EnemyDef } = {
 		},
 		AnimationSpeeds = { Attack = 2.8, Death = 1.8 },
 		ModelYaw = 180,
-		CrumbleInto = { Prop = "BonePile", At = 0.75 },
+		CrumbleInto = { Prop = "BonePile", At = 0.22 },
 	},
 }
 
