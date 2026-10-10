@@ -58,6 +58,7 @@ export type Enemy = {
 	Flash: Highlight,
 	HealthFill: Frame,
 	Tracks: { [string]: AnimationTrack },
+	AttackTracks: { { Track: AnimationTrack, HitAt: number } },
 	Custom: boolean, -- built from a real 3D model (not the plain avatar body)
 	Damagers: { [Player]: number },
 	LastAttack: number,
@@ -499,6 +500,9 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				track:Stop(0.1)
 			end
 		end
+		for _, clip in enemy.AttackTracks do
+			clip.Track:Stop(0.1)
+		end
 		enemy.Root.Anchored = true
 		for _, gui in enemy.Model:GetDescendants() do
 			if gui:IsA("BillboardGui") then
@@ -824,6 +828,17 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 			tracks[key].Priority = Enum.AnimationPriority.Action
 		end
 	end
+	local attackTracks = {}
+	if custom then
+		for _, clip in (if elite and def.EliteAttackClips then def.EliteAttackClips else def.AttackClips) or {} do
+			local animation = Instance.new("Animation")
+			animation.AnimationId = clip.Id
+			local track = animator:LoadAnimation(animation)
+			track.Looped = false
+			track.Priority = Enum.AnimationPriority.Action
+			table.insert(attackTracks, { Track = track, HitAt = clip.HitAt })
+		end
+	end
 
 	local barGui = head:FindFirstChild("HealthBar") :: BillboardGui
 	local enemy: Enemy = {
@@ -840,6 +855,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		Flash = model:FindFirstChild("HitFlash") :: Highlight,
 		HealthFill = (barGui:FindFirstChildOfClass("Frame") :: Frame):FindFirstChild("Fill") :: Frame,
 		Tracks = tracks,
+		AttackTracks = attackTracks,
 		Custom = custom,
 		Damagers = {},
 		LastAttack = 0,
@@ -862,7 +878,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		end
 		if speed > 0.5 then
 			if not walk.IsPlaying then
-				walk:Play()
+				walk:Play(0.1, 1, (def.AnimationSpeeds or {}).Walk or 1)
 			end
 		elseif walk.IsPlaying then
 			walk:Stop()
@@ -918,7 +934,11 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
 	face(enemy, targetRoot.Position)
 	setEyes(enemy, true)
-	if enemy.Tracks.Attack then
+	if #enemy.AttackTracks > 0 then
+		-- A random blow from its set, timed so the weapon lands as the Windup ends.
+		local clip = enemy.AttackTracks[math.random(#enemy.AttackTracks)]
+		clip.Track:Play(0.1, 1, clip.HitAt / enemy.Def.Windup)
+	elseif enemy.Tracks.Attack then
 		local speeds = enemy.Def.AnimationSpeeds or {}
 		enemy.Tracks.Attack:Play(0.1, 1, if enemy.Custom then speeds.Attack or 1 else 0.8)
 	end

@@ -6,6 +6,9 @@
 --   Animations: published animation ids for the enemy's own 3D model (ServerStorage.EnemyModels.<name>).
 --               Any that are missing are skipped: no walk = it glides, no death = it just falls over.
 --   AnimationSpeeds: play some clips faster (Tripo made the attack and death 5 seconds long).
+--   AttackClips: several attack clips to pick from at random, each with HitAt = the second the blow lands in
+--                the clip; it is sped up or slowed so that moment meets the end of the Windup.
+--   EliteAttackClips: the elite's own attacks (a heavier blow).
 --   CrumbleInto: on death the body flinches (its Hit clip) and after `At` seconds shatters: it vanishes in a
 --                burst of dust, bones fly out and tumble across the floor, and this dungeon prop stays behind.
 --                Its own death clip is skipped (Tripo's looked like a stumble), unless AfterDeathClip: then it
@@ -46,6 +49,8 @@ export type EnemyDef = {
 	Scale: number?,
 	Animations: { Idle: string?, Walk: string?, Attack: string?, Hit: string?, Death: string? }?,
 	AnimationSpeeds: { [string]: number }?,
+	AttackClips: { { Id: string, HitAt: number } }?,
+	EliteAttackClips: { { Id: string, HitAt: number } }?,
 	ModelYaw: number?,
 	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
