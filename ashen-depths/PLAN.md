@@ -303,15 +303,14 @@
 - 🏹 הקשת: עכשיו יש קשת אחת (לא שתיים), תלויה אנכית ביד שמאל.
 - 🧪 **מצב בדיקה:** `Config.TestEnemyMix` שם הרבה עכברושים וקשתים כבר בקומה 1. **להחזיר ל-nil כשמסיימים לבדוק.**
 
-**אנימציות לקשת דרך Mixamo (באמצע):**
-- ✅ השלד עבר Rig מחדש ב-Mixamo (ייצוא OBJ מ-Studio, הוגדל פי 30 והועלה). ב-Studio: `workspace.SkeletonMixamoRig`, ו-`ServerStorage.EnemyModels.SkeletonMixamo`.
-- ✅ **ArcherShoot** ("Standing Draw Arrow") פורסמה: `rbxassetid://99143341242529`. נבדקה במשחק, והשלד עומד זקוף. (מה שנראה כמו "שוכב" היה רק מודל הבדיקה, שלא היה מקובע ונפל.)
-- ⏳ **👤 להוריד מ-Mixamo לדמות השלד שלנו** (FBX, **Without Skin**, ‏30 FPS) לתיקייה `שולחן העבודה\מודלים למשחק\אנימציות\להעלאה ל-mixamo\`:
-  1. **Standing Idle** (עמידה)
-  2. **Walking**, עם **In Place** מסומן (הליכה)
-  3. **Dying** (מוות)
-- ⏭️ אחר כך Claude: מייבא את הקבצים, 👤 מפרסמים כל אחת (קליק ימני ← Save to Roblox), מחברים את `SkeletonArcher` ל-`Model = "SkeletonMixamo"` עם 4 ה-IDs, בודקים במשחק, ועושים push ו-sync.
-- 🧹 ניקוי אחר כך (לשאול קודם): `SkeletonMixamoRig`, `workspace.shoot_test`, ו-`VarA`–`VarD` ב-ServerStorage.
+**✅ אנימציות לקשת דרך Mixamo (הושלם 2026-10-10):**
+- השלד עבר Rig מחדש ב-Mixamo (`ServerStorage.EnemyModels.SkeletonMixamo`), והאנימציות לקוחות מ-Longbow Aiming Pack, כשהן מותאמות לדמות שלנו (Pose: No Character).
+- IDs: Idle `101802276597443`, Walk `118727143513732`, Shoot `99143341242529`, Hit `79389710080744`, Death `114717097858899`.
+- `ModelYaw = 81`: הגוף מסובב כך שבשיא המתיחה החץ מכוון בדיוק אל השחקן (נמדד 1.00). הקשת עומדת זקופה ביד (`GripAngles`).
+- במוות הוא נופל על הגב, ואחרי 1.6 שניות מתפרק לעצמות 4.4 יחידות מאחורי המקום שבו עמד (`FallBack`).
+- ההכנה: ה-KeyframeSequences ב-ServerStorage (`ArcherIdle` ו-`ArcherWalk` וכו'). לכולן הוזזה תנועת ה-Hips כך שתתחיל מ-0, ואז חולקה ב-30. מההליכה הוסרה התזוזה קדימה.
+- 🧹 ניקוי (לשאול קודם): `SkeletonMixamoRig`, `workspace.shoot_test`, ומודלי הייבוא idle/walk/death/hit ב-Workspace, ו-9 קבצי `Scene_*`/`idle` ב-Workspace.
+- ℹ️ במשחק שפורסם השינויים יופיעו רק אחרי File ← Publish to Roblox.
 
 **אחרי הקשת:** עכברוש עם אנימציות, הבוסים (The Gravekeeper בקומה 5, The Bone Warden בקומה 10, Gold Key ונקודת שמירה), ואז שלב 4 (מסך מלאי) ושלב 5 (העיר).
 
