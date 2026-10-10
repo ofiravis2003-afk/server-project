@@ -330,7 +330,7 @@ local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 end
 
 -- Puts a dungeon prop (the archer's bow) in a hand: held to the hand bone so it follows the animations.
-local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAngles: { number }? })
+local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? })
 	local bone = model:FindFirstChild(held.Bone, true)
 	local props = ServerStorage:FindFirstChild("DungeonProps")
 	local source = props and props:FindFirstChild(held.Prop)
@@ -339,6 +339,9 @@ local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAn
 	end
 	local prop = source:Clone()
 	prop.Name = "Held" .. held.Prop
+	if held.Scale then
+		prop:ScaleTo(prop:GetScale() * held.Scale)
+	end
 	local parts = {}
 	for _, part in prop:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -358,10 +361,11 @@ local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAn
 	end
 	local grip = Instance.new("Attachment")
 	grip.Name = "Grip"
-	local angles = held.GripAngles
-	if angles then
-		grip.CFrame = CFrame.Angles(math.rad(angles[1]), math.rad(angles[2]), math.rad(angles[3]))
-	end
+	-- The bone is held at the grip, so the prop sits at bone * offset, turned by the angles.
+	local angles = held.GripAngles or { 0, 0, 0 }
+	local offset = held.GripOffset or { 0, 0, 0 }
+	grip.CFrame = CFrame.Angles(math.rad(angles[1]), math.rad(angles[2]), math.rad(angles[3]))
+		* CFrame.new(-offset[1], -offset[2], -offset[3])
 	grip.Parent = main
 	local hold = Instance.new("RigidConstraint")
 	hold.Attachment0 = bone
