@@ -63,12 +63,21 @@ export type EnemyDef = {
 	Pack: { number }?,
 }
 
-local SKELETON_ANIMATIONS = {
-	Idle = "rbxassetid://84669635179600",
-	Walk = "rbxassetid://138036023263764",
-	Attack = "rbxassetid://83535294193875",
-	Hit = "rbxassetid://132608517614379",
-	Death = "rbxassetid://101347829567581",
+-- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Sword and Shield pack.
+-- Each attack's HitAt is when its blade moves fastest (measured on the rig).
+local SWORD_ANIMATIONS = {
+	Idle = "rbxassetid://130119968374996",
+	Walk = "rbxassetid://126296910233652", -- a run, slowed to its walking pace
+	Hit = "rbxassetid://79389710080744", -- the archer's flinch: same rig
+	Death = "rbxassetid://125607566576486",
+}
+local SWORD_ATTACKS = {
+	{ Id = "rbxassetid://134558356329215", HitAt = 0.63 },
+	{ Id = "rbxassetid://136004950014332", HitAt = 0.77 },
+	{ Id = "rbxassetid://92859713701069", HitAt = 0.43 },
+}
+local ELITE_SWORD_ATTACKS = {
+	{ Id = "rbxassetid://95035207085273", HitAt = 1.17 }, -- leaps up and brings the axe down
 }
 
 -- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Longbow pack.
@@ -83,6 +92,7 @@ local ARCHER_ANIMATIONS = {
 local Enemies: { [string]: EnemyDef } = {
 	Skeleton = {
 		DisplayName = "Skeleton",
+		Model = "SkeletonMixamo",
 		Health = 85,
 		Damage = 11,
 		WalkSpeed = 11,
@@ -93,10 +103,13 @@ local Enemies: { [string]: EnemyDef } = {
 		XP = 12,
 		Gold = { 3, 6 },
 		RespawnTime = 5,
-		Animations = SKELETON_ANIMATIONS,
-		AnimationSpeeds = { Attack = 2.8, Death = 1.8 },
-		ModelYaw = 180,
-		CrumbleInto = { Prop = "BonePile", At = 0.22 },
+		Animations = SWORD_ANIMATIONS,
+		AnimationSpeeds = { Walk = 0.8 },
+		AttackClips = SWORD_ATTACKS,
+		EliteAttackClips = ELITE_SWORD_ATTACKS,
+		-- Its blows land facing this way (the guard stance stands a little side-on).
+		ModelYaw = 95,
+		CrumbleInto = { Prop = "BonePile", At = 1.7, AfterDeathClip = true, FallBack = 3.7 }, -- on the ground by 1.6s
 		HeldProps = {
 			{ Prop = "RustySword", Bone = "mixamorig:RightHand" },
 			{ Prop = "RoundShield", Bone = "mixamorig:LeftForeArm" },
