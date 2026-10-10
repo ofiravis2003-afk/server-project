@@ -8,7 +8,8 @@
 --   AnimationSpeeds: play some clips faster (Tripo made the attack and death 5 seconds long).
 --   CrumbleInto: on death the body flinches (its Hit clip) and after `At` seconds shatters: it vanishes in a
 --                burst of dust, bones fly out and tumble across the floor, and this dungeon prop stays behind.
---                Its own death clip is skipped (Tripo's looked like a stumble).
+--                Its own death clip is skipped (Tripo's looked like a stumble), unless AfterDeathClip: then it
+--                plays its death clip first and shatters `At` seconds in.
 --   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
 --             standing pose (the Tripo skeleton's animations face backwards: 180).
 --   Ranged: keeps its distance and shoots: backs off when a player is closer than KeepAway, shows a red
@@ -38,7 +39,7 @@ export type EnemyDef = {
 	Animations: { Idle: string?, Walk: string?, Attack: string?, Hit: string?, Death: string? }?,
 	AnimationSpeeds: { [string]: number }?,
 	ModelYaw: number?,
-	CrumbleInto: { Prop: string, At: number }?,
+	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
 	HeldProp: { Prop: string, Bone: string }?,
 	DeathStyle: string?,
@@ -54,6 +55,15 @@ local SKELETON_ANIMATIONS = {
 	Attack = "rbxassetid://83535294193875",
 	Hit = "rbxassetid://132608517614379",
 	Death = "rbxassetid://101347829567581",
+}
+
+-- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Longbow pack.
+local ARCHER_ANIMATIONS = {
+	Idle = "rbxassetid://101802276597443",
+	Walk = "rbxassetid://118727143513732",
+	Attack = "rbxassetid://99143341242529", -- Standing Draw Arrow, about 1 second
+	Hit = "rbxassetid://79389710080744",
+	Death = "rbxassetid://114717097858899",
 }
 
 local Enemies: { [string]: EnemyDef } = {
@@ -76,7 +86,7 @@ local Enemies: { [string]: EnemyDef } = {
 	},
 	SkeletonArcher = {
 		DisplayName = "Skeleton Archer",
-		Model = "Skeleton",
+		Model = "SkeletonMixamo",
 		Health = 60,
 		Damage = 10,
 		WalkSpeed = 10,
@@ -87,11 +97,10 @@ local Enemies: { [string]: EnemyDef } = {
 		XP = 14,
 		Gold = { 4, 7 },
 		RespawnTime = 5,
-		-- Until the bow-shooting clip arrives, the archer swings like the skeleton.
-		Animations = SKELETON_ANIMATIONS,
-		AnimationSpeeds = { Attack = 2.8, Death = 1.8 },
-		ModelYaw = 180,
-		CrumbleInto = { Prop = "BonePile", At = 0.22 },
+		Animations = ARCHER_ANIMATIONS,
+		-- Its clips stand side-on with the bow arm out; this turns the body so the arrow flies at the player.
+		ModelYaw = -39,
+		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true },
 		Ranged = { KeepAway = 12, ProjectileSpeed = 80, HitRadius = 3 },
 		HeldProp = { Prop = "Bow", Bone = "mixamorig:LeftHand" },
 	},

@@ -539,6 +539,8 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 					TweenService:Create(part, TweenInfo.new(0.15), { Transparency = 1 }):Play()
 				end
 			end
+		elseif crumble and crumble.AfterDeathClip and death then
+			death:Play(0.1, 1, speed)
 		elseif crumble then
 			local hit = enemy.Tracks.Hit
 			if hit then
@@ -557,6 +559,16 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				end
 				local scale = enemy.Model:GetScale() / getTemplate(enemy.Name):GetScale()
 				local ground = enemy.Root.Position - Vector3.new(0, enemy.Humanoid.HipHeight + enemy.Root.Size.Y / 2, 0)
+				local chestHeight = enemy.Humanoid.HipHeight + 1
+				if crumble.AfterDeathClip then
+					-- The death clip has carried the body away from the root: shatter where it fell.
+					local hips = enemy.Model:FindFirstChild("mixamorig:Hips", true) :: Bone?
+					if hips then
+						local fell = hips.TransformedWorldCFrame.Position
+						ground = Vector3.new(fell.X, ground.Y, fell.Z)
+						chestHeight = math.max(1, fell.Y - ground.Y)
+					end
+				end
 				-- A puff of grey bone dust
 				local puff = Instance.new("Part")
 				puff.Anchored = true
@@ -591,7 +603,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 					end
 				end
 				-- ...and its bones fly out, bounce and roll across the floor.
-				local chest = ground + Vector3.new(0, enemy.Humanoid.HipHeight + 1, 0)
+				local chest = ground + Vector3.new(0, chestHeight, 0)
 				local shards: { Model } = {}
 				for i = 1, 11 do
 					local cf = CFrame.new(chest + Vector3.new(math.random() - 0.5, (math.random() - 0.3) * 2, math.random() - 0.5))
