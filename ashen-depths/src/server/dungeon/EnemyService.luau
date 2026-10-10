@@ -330,7 +330,7 @@ local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 end
 
 -- Puts a dungeon prop (the archer's bow) in a hand: held to the hand bone so it follows the animations.
-local function holdProp(model: Model, held: { Prop: string, Bone: string })
+local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAngles: { number }? })
 	local bone = model:FindFirstChild(held.Bone, true)
 	local props = ServerStorage:FindFirstChild("DungeonProps")
 	local source = props and props:FindFirstChild(held.Prop)
@@ -358,6 +358,10 @@ local function holdProp(model: Model, held: { Prop: string, Bone: string })
 	end
 	local grip = Instance.new("Attachment")
 	grip.Name = "Grip"
+	local angles = held.GripAngles
+	if angles then
+		grip.CFrame = CFrame.Angles(math.rad(angles[1]), math.rad(angles[2]), math.rad(angles[3]))
+	end
 	grip.Parent = main
 	local hold = Instance.new("RigidConstraint")
 	hold.Attachment0 = bone

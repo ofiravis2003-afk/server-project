@@ -15,7 +15,8 @@
 --   Ranged: keeps its distance and shoots: backs off when a player is closer than KeepAway, shows a red
 --           aiming line for `Windup` seconds, then fires an arrow that hits whoever is still within
 --           HitRadius of where it was aimed. AttackRange is then the shooting range.
---   HeldProp: a dungeon prop held in a hand bone (the archer's bow).
+--   HeldProp: a dungeon prop held in a hand bone (the archer's bow). GripAngles (degrees, X/Y/Z) turn the prop
+--             in the hand; worked out so the bow stands upright, square to the arrow, at full draw.
 --   DeathStyle: "Splat" bursts into goo instead of falling over.
 --   SplitInto: on death, this many of that enemy pop out where it died (slimes split in two).
 --   Squishy: wobbles as it moves (drawn by the players' screens).
@@ -41,7 +42,7 @@ export type EnemyDef = {
 	ModelYaw: number?,
 	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
-	HeldProp: { Prop: string, Bone: string }?,
+	HeldProp: { Prop: string, Bone: string, GripAngles: { number }? }?,
 	DeathStyle: string?,
 	SplitInto: { Name: string, Count: number }?,
 	Squishy: boolean?,
@@ -99,10 +100,10 @@ local Enemies: { [string]: EnemyDef } = {
 		RespawnTime = 5,
 		Animations = ARCHER_ANIMATIONS,
 		-- Its clips stand side-on with the bow arm out; this turns the body so the arrow flies at the player.
-		ModelYaw = -39,
+		ModelYaw = 81,
 		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true },
 		Ranged = { KeepAway = 12, ProjectileSpeed = 80, HitRadius = 3 },
-		HeldProp = { Prop = "Bow", Bone = "mixamorig:LeftHand" },
+		HeldProp = { Prop = "Bow", Bone = "mixamorig:LeftHand", GripAngles = { -125.7, 41.3, -118.5 } },
 	},
 	Slime = {
 		DisplayName = "Slime",
