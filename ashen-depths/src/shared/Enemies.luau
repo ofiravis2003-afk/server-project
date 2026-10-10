@@ -108,7 +108,7 @@ local Enemies: { [string]: EnemyDef } = {
 		AttackClips = SWORD_ATTACKS,
 		EliteAttackClips = ELITE_SWORD_ATTACKS,
 		-- Its blows land facing this way (the guard stance stands a little side-on).
-		ModelYaw = 95,
+		ModelYaw = -92,
 		CrumbleInto = { Prop = "BonePile", At = 1.7, AfterDeathClip = true, FallBack = 3.7 }, -- on the ground by 1.6s
 		HeldProps = {
 			{ Prop = "RustySword", Bone = "mixamorig:RightHand" },
