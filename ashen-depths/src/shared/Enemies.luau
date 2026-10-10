@@ -9,7 +9,8 @@
 --   CrumbleInto: on death the body flinches (its Hit clip) and after `At` seconds shatters: it vanishes in a
 --                burst of dust, bones fly out and tumble across the floor, and this dungeon prop stays behind.
 --                Its own death clip is skipped (Tripo's looked like a stumble), unless AfterDeathClip: then it
---                plays its death clip first and shatters `At` seconds in.
+--                plays its death clip first and shatters `At` seconds in, FallBack studs behind where it stood
+--                (where the clip has laid the body; the server can't see the clip's bones once the body is still).
 --   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
 --             standing pose (the Tripo skeleton's animations face backwards: 180).
 --   Ranged: keeps its distance and shoots: backs off when a player is closer than KeepAway, shows a red
@@ -40,7 +41,7 @@ export type EnemyDef = {
 	Animations: { Idle: string?, Walk: string?, Attack: string?, Hit: string?, Death: string? }?,
 	AnimationSpeeds: { [string]: number }?,
 	ModelYaw: number?,
-	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean? }?,
+	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
 	HeldProp: { Prop: string, Bone: string, GripAngles: { number }? }?,
 	DeathStyle: string?,
@@ -101,7 +102,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Animations = ARCHER_ANIMATIONS,
 		-- Its clips stand side-on with the bow arm out; this turns the body so the arrow flies at the player.
 		ModelYaw = 81,
-		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true },
+		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true, FallBack = 4.4 },
 		Ranged = { KeepAway = 12, ProjectileSpeed = 80, HitRadius = 3 },
 		HeldProp = { Prop = "Bow", Bone = "mixamorig:LeftHand", GripAngles = { -125.7, 41.3, -118.5 } },
 	},
