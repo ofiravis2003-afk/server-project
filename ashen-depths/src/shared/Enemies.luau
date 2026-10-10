@@ -16,14 +16,19 @@
 --   Ranged: keeps its distance and shoots: backs off when a player is closer than KeepAway, shows a red
 --           aiming line for `Windup` seconds, then fires an arrow that hits whoever is still within
 --           HitRadius of where it was aimed. AttackRange is then the shooting range.
---   HeldProp: a dungeon prop held in a hand bone (the archer's bow). GripAngles (degrees, X/Y/Z) turn the prop
---             in the hand; worked out so the bow stands upright, square to the arrow, at full draw.
---             GripOffset moves it along the hand bone (which sits at the wrist) into the palm; Scale resizes it.
+--   HeldProps: dungeon props held on bones (a sword in the hand, a shield on the forearm, the archer's bow).
+--              A prop that carries its own "Grip" attachment (the Tripo weapons) is held by it as it is.
+--              Otherwise GripAngles (degrees, X/Y/Z) turn it in the hand (the bow: upright, square to the arrow
+--              at full draw), GripOffset moves it along the hand bone (which sits at the wrist) into the palm,
+--              and Scale resizes it.
+--   EliteHeldProps: what the elite version holds instead (a heavier weapon, so it stands out).
 --   DeathStyle: "Splat" bursts into goo instead of falling over.
 --   SplitInto: on death, this many of that enemy pop out where it died (slimes split in two).
 --   Squishy: wobbles as it moves (drawn by the players' screens).
 --   Procedural: "Scurry" = no animation clips; the body is moved by code (bouncing run, lunging bite).
 --   Pack: comes in a group of this many (min, max) in one spawn.
+
+export type HeldProp = { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }
 
 export type EnemyDef = {
 	DisplayName: string,
@@ -44,7 +49,8 @@ export type EnemyDef = {
 	ModelYaw: number?,
 	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
-	HeldProp: { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }?,
+	HeldProps: { HeldProp }?,
+	EliteHeldProps: { HeldProp }?,
 	DeathStyle: string?,
 	SplitInto: { Name: string, Count: number }?,
 	Squishy: boolean?,
@@ -86,6 +92,14 @@ local Enemies: { [string]: EnemyDef } = {
 		AnimationSpeeds = { Attack = 2.8, Death = 1.8 },
 		ModelYaw = 180,
 		CrumbleInto = { Prop = "BonePile", At = 0.22 },
+		HeldProps = {
+			{ Prop = "RustySword", Bone = "mixamorig:RightHand" },
+			{ Prop = "RoundShield", Bone = "mixamorig:LeftForeArm" },
+		},
+		EliteHeldProps = {
+			{ Prop = "WarAxe", Bone = "mixamorig:RightHand" },
+			{ Prop = "RoundShield", Bone = "mixamorig:LeftForeArm" },
+		},
 	},
 	SkeletonArcher = {
 		DisplayName = "Skeleton Archer",
@@ -105,12 +119,14 @@ local Enemies: { [string]: EnemyDef } = {
 		ModelYaw = 81,
 		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true, FallBack = 4.4 },
 		Ranged = { KeepAway = 12, ProjectileSpeed = 80, HitRadius = 3 },
-		HeldProp = {
-			Prop = "Bow",
-			Bone = "mixamorig:LeftHand",
-			GripAngles = { -125.7, 41.3, -118.5 },
-			GripOffset = { 0, 0.3, 0 },
-			Scale = 0.85,
+		HeldProps = {
+			{
+				Prop = "Bow",
+				Bone = "mixamorig:LeftHand",
+				GripAngles = { -125.7, 41.3, -118.5 },
+				GripOffset = { 0, 0.3, 0 },
+				Scale = 0.85,
+			},
 		},
 	},
 	Slime = {

@@ -330,7 +330,7 @@ local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 end
 
 -- Puts a dungeon prop (the archer's bow) in a hand: held to the hand bone so it follows the animations.
-local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? })
+local function holdProp(model: Model, held: Enemies.HeldProp)
 	local bone = model:FindFirstChild(held.Bone, true)
 	local props = ServerStorage:FindFirstChild("DungeonProps")
 	local source = props and props:FindFirstChild(held.Prop)
@@ -359,14 +359,18 @@ local function holdProp(model: Model, held: { Prop: string, Bone: string, GripAn
 	for i = 2, #parts do
 		weld(main, parts[i])
 	end
-	local grip = Instance.new("Attachment")
-	grip.Name = "Grip"
-	-- The bone is held at the grip, so the prop sits at bone * offset, turned by the angles.
-	local angles = held.GripAngles or { 0, 0, 0 }
-	local offset = held.GripOffset or { 0, 0, 0 }
-	grip.CFrame = CFrame.Angles(math.rad(angles[1]), math.rad(angles[2]), math.rad(angles[3]))
-		* CFrame.new(-offset[1], -offset[2], -offset[3])
-	grip.Parent = main
+	local grip = main:FindFirstChild("Grip") :: Attachment?
+	if not grip then
+		-- The bone is held at the grip, so the prop sits at bone * offset, turned by the angles.
+		local angles = held.GripAngles or { 0, 0, 0 }
+		local offset = held.GripOffset or { 0, 0, 0 }
+		local made = Instance.new("Attachment")
+		made.Name = "Grip"
+		made.CFrame = CFrame.Angles(math.rad(angles[1]), math.rad(angles[2]), math.rad(angles[3]))
+			* CFrame.new(-offset[1], -offset[2], -offset[3])
+		made.Parent = main
+		grip = made
+	end
 	local hold = Instance.new("RigidConstraint")
 	hold.Attachment0 = bone
 	hold.Attachment1 = grip
@@ -390,8 +394,8 @@ local function getTemplate(name: string): Model
 		if def.Scale and def.Scale ~= 1 then
 			template:ScaleTo(template:GetScale() * def.Scale)
 		end
-		if def.HeldProp then
-			holdProp(template, def.HeldProp)
+		for _, held in def.HeldProps or {} do
+			holdProp(template, held)
 		end
 		template.Name = name
 		templates[name] = template
@@ -600,7 +604,32 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				task.delay(2, function()
 					puff:Destroy()
 				end)
-				-- The body vanishes at once...
+				-- What it held clatters to the floor...
+				for _, child in enemy.Model:GetChildren() do
+					if child:IsA("Model") and child.Name:sub(1, 4) == "Held" then
+						child.Parent = workspace
+						for _, part in child:GetDescendants() do
+							if part:IsA("RigidConstraint") then
+								part:Destroy()
+							elseif part:IsA("BasePart") then
+								part.Massless = false
+								part.CanCollide = true
+								part.AssemblyLinearVelocity = Vector3.new(math.random(-6, 6), math.random(4, 9), math.random(-6, 6))
+								part.AssemblyAngularVelocity = Vector3.new(math.random(-8, 8), math.random(-8, 8), math.random(-8, 8))
+							end
+						end
+						task.delay(5, function()
+							for _, part in child:GetDescendants() do
+								if part:IsA("BasePart") then
+									TweenService:Create(part, TweenInfo.new(1.2), { Transparency = 1 }):Play()
+								end
+							end
+							task.wait(1.3)
+							child:Destroy()
+						end)
+					end
+				end
+				-- ...and the body vanishes at once...
 				for _, part in enemy.Model:GetDescendants() do
 					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
 						part.Transparency = 1
@@ -735,6 +764,16 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	eyeLight.Color = eyeColor
 	if elite then
 		model.Name = `Elite {def.DisplayName}`
+		if def.EliteHeldProps then
+			for _, child in model:GetChildren() do
+				if child:IsA("Model") and child.Name:sub(1, 4) == "Held" then
+					child:Destroy()
+				end
+			end
+			for _, held in def.EliteHeldProps do
+				holdProp(model, held)
+			end
+		end
 		model:ScaleTo(model:GetScale() * ELITE.Scale) -- relative: imported models are already scaled up
 		local aura = Instance.new("PointLight")
 		aura.Color = ELITE_EYE
