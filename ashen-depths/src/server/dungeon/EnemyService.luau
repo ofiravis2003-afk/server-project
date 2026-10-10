@@ -577,8 +577,9 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				local ground = enemy.Root.Position - Vector3.new(0, enemy.Humanoid.HipHeight + enemy.Root.Size.Y / 2, 0)
 				local chestHeight = enemy.Humanoid.HipHeight + 1
 				if crumble.AfterDeathClip then
-					-- The death clip has laid the body on its back behind the root: shatter there, low down.
-					ground -= enemy.Root.CFrame.LookVector * (crumble.FallBack or 0) * scale
+					-- The death clip has laid the body on its back away from the root: shatter there, low down.
+					local fall = CFrame.Angles(0, math.rad(crumble.FallAngle or 180), 0):VectorToWorldSpace(enemy.Root.CFrame.LookVector)
+					ground += fall * (crumble.FallBack or 0) * scale
 					chestHeight = 1
 				end
 				-- A puff of grey bone dust

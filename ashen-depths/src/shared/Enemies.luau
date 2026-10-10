@@ -12,8 +12,9 @@
 --   CrumbleInto: on death the body flinches (its Hit clip) and after `At` seconds shatters: it vanishes in a
 --                burst of dust, bones fly out and tumble across the floor, and this dungeon prop stays behind.
 --                Its own death clip is skipped (Tripo's looked like a stumble), unless AfterDeathClip: then it
---                plays its death clip first and shatters `At` seconds in, FallBack studs behind where it stood
---                (where the clip has laid the body; the server can't see the clip's bones once the body is still).
+--                plays its death clip first and shatters `At` seconds in, FallBack studs from where it stood
+--                (where the clip has laid the body; the server can't see the clip's bones once the body is still),
+--                FallAngle degrees turned from the way it faces (default 180: straight behind).
 --   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
 --             standing pose (the Tripo skeleton's animations face backwards: 180).
 --   Ranged: keeps its distance and shoots: backs off when a player is closer than KeepAway, shows a red
@@ -52,7 +53,7 @@ export type EnemyDef = {
 	AttackClips: { { Id: string, HitAt: number } }?,
 	EliteAttackClips: { { Id: string, HitAt: number } }?,
 	ModelYaw: number?,
-	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number? }?,
+	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number?, FallAngle: number? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
 	HeldProps: { HeldProp }?,
 	EliteHeldProps: { HeldProp }?,
@@ -109,7 +110,8 @@ local Enemies: { [string]: EnemyDef } = {
 		EliteAttackClips = ELITE_SWORD_ATTACKS,
 		-- Its blows land facing this way (the guard stance stands a little side-on).
 		ModelYaw = -92,
-		CrumbleInto = { Prop = "BonePile", At = 1.7, AfterDeathClip = true, FallBack = 3.7 }, -- on the ground by 1.6s
+		-- On the ground by 1.6s; it falls back from its guard stance, which stands side-on to its blows.
+		CrumbleInto = { Prop = "BonePile", At = 1.7, AfterDeathClip = true, FallBack = 3.7, FallAngle = 229 },
 		HeldProps = {
 			{ Prop = "RustySword", Bone = "mixamorig:RightHand" },
 			{ Prop = "RoundShield", Bone = "mixamorig:LeftForeArm" },
