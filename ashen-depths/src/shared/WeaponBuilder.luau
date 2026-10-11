@@ -8,6 +8,7 @@
 --
 -- Rarities share three looks: Common, Rare (also Epic) and Legendary (also Mythic). A missing look falls back to
 -- the nearest one there is. Epic, Legendary and Mythic weapons glow in their rarity's color; Mythic burns.
+-- A "Muzzle" attachment marks where shots leave the weapon (a staff's crystal).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -102,6 +103,10 @@ local builders: { [string]: (Part) -> () } = {
 			)
 		end
 		local orb = part(h, Vector3.new(0.6, 0.6, 0.6), CFrame.new(0, 4.05, 0), Color3.fromRGB(255, 120, 40), Enum.Material.Neon, Enum.PartType.Ball)
+		local muzzle = Instance.new("Attachment")
+		muzzle.Name = "Muzzle"
+		muzzle.Position = Vector3.new(0, 4.05, 0)
+		muzzle.Parent = h
 		local light = Instance.new("PointLight")
 		light.Color = Color3.fromRGB(255, 140, 60)
 		light.Range = 8

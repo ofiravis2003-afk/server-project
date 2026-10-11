@@ -43,6 +43,17 @@ local function playSwing(tool: Tool, anim: string?)
 	end)
 end
 
+-- Where a shot leaves the weapon: its "Muzzle" attachment (the staff's crystal, the bow, the book) if it has one
+-- and it's where the player is, otherwise the usual spot in front of the chest.
+local function muzzleOf(tool: Tool, fallback: Vector3): Vector3
+	local handle = tool:FindFirstChild("Handle")
+	local muzzle = handle and handle:FindFirstChild("Muzzle")
+	if muzzle and muzzle:IsA("Attachment") and (muzzle.WorldPosition - fallback).Magnitude < 8 then
+		return muzzle.WorldPosition
+	end
+	return fallback
+end
+
 local function onAttack(player: Player, itemId: unknown, direction: unknown, aimPoint: unknown)
 	if type(itemId) ~= "string" or typeof(direction) ~= "Vector3" then
 		return
@@ -123,7 +134,7 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 				target, targetAlong = enemy, along
 			end
 		end
-		local from = origin + Vector3.new(0, 1, 0) + aim * 1.5
+		local from = muzzleOf(tool, origin + Vector3.new(0, 1, 0) + aim * 1.5)
 		local to = if target then target.Root.Position else from + aim * weapon.Range
 		local travel = (to - from).Magnitude / (weapon.ProjectileSpeed or 140)
 		effectRemote:FireAllClients("Arrow", from, to, travel)
@@ -141,7 +152,7 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 		else
 			point = origin + aim * math.min(weapon.Range, 18) - Vector3.new(0, 2.5, 0)
 		end
-		local from = origin + Vector3.new(0, 1.5, 0) + aim * 2
+		local from = muzzleOf(tool, origin + Vector3.new(0, 1.5, 0) + aim * 2)
 		local travel = (point - from).Magnitude / (weapon.ProjectileSpeed or 70)
 		local radius = weapon.Radius or 8
 		effectRemote:FireAllClients("Fireball", from, point, travel)
@@ -167,7 +178,7 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 			end
 		end
 		if target then
-			local from = origin + Vector3.new(0, 1.5, 0) + aim * 1.5
+			local from = muzzleOf(tool, origin + Vector3.new(0, 1.5, 0) + aim * 1.5)
 			local to = target.Root.Position
 			local travel = (to - from).Magnitude / (weapon.ProjectileSpeed or 90)
 			effectRemote:FireAllClients("Bolt", from, to, travel)
