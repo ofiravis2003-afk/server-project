@@ -816,7 +816,10 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		tracks[key] = animator:LoadAnimation(animation)
 	end
 	if tracks.Idle then
+		-- Clips published from Studio come in at Action priority; left there, the idle would override
+		-- the walk and the body would glide with its legs still.
 		tracks.Idle.Looped = true
+		tracks.Idle.Priority = Enum.AnimationPriority.Idle
 		tracks.Idle:Play()
 	end
 	if tracks.Walk then
@@ -929,6 +932,13 @@ local function face(enemy: Enemy, point: Vector3)
 	end
 end
 
+-- Pace of a blow from an AttackClips set: the last STRIKE_CLIP_SECONDS of the clip before the hit play
+-- STRIKE_SPEED times as fast, so the blade snaps down; the raise before it never drops below MIN_RAISE_SPEED.
+local STRIKE_CLIP_SECONDS = 0.3
+local STRIKE_SPEED = 1.7
+local MIN_RAISE_SPEED = 0.8
+local RECOVER_SPEED = 1.3
+
 local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humanoid)
 	enemy.Attacking = true
 	enemy.LastAttack = os.clock()
@@ -936,9 +946,32 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 	face(enemy, targetRoot.Position)
 	setEyes(enemy, true)
 	if #enemy.AttackTracks > 0 then
-		-- A random blow from its set, timed so the weapon lands as the Windup ends.
+		-- A random blow from its set, timed so the weapon lands as the Windup ends: the raise plays at an
+		-- ordinary pace (starting a little late if the clip is short), the downswing snaps, the recovery is brisk.
+		-- Only the clip's pace changes; when the hit lands and how often it attacks stay the same.
 		local clip = enemy.AttackTracks[math.random(#enemy.AttackTracks)]
-		clip.Track:Play(0.1, 1, clip.HitAt / enemy.Def.Windup)
+		local windup = enemy.Def.Windup
+		local swing = math.min(STRIKE_CLIP_SECONDS, clip.HitAt * 0.6)
+		local swingTime = swing / STRIKE_SPEED
+		local raiseSpeed = math.max(MIN_RAISE_SPEED, (clip.HitAt - swing) / (windup - swingTime))
+		local startAfter = windup - swingTime - (clip.HitAt - swing) / raiseSpeed
+		local track = clip.Track
+		task.delay(startAfter, function()
+			if enemy.Dead then
+				return
+			end
+			track:Play(0.1, 1, raiseSpeed)
+			task.delay(windup - startAfter - swingTime, function()
+				if track.IsPlaying then
+					track:AdjustSpeed(STRIKE_SPEED)
+				end
+			end)
+			task.delay(windup - startAfter, function()
+				if track.IsPlaying then
+					track:AdjustSpeed(RECOVER_SPEED)
+				end
+			end)
+		end)
 	elseif enemy.Tracks.Attack then
 		local speeds = enemy.Def.AnimationSpeeds or {}
 		enemy.Tracks.Attack:Play(0.1, 1, if enemy.Custom then speeds.Attack or 1 else 0.8)

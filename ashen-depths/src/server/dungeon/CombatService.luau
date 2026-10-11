@@ -97,15 +97,6 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 	local function hit(enemy: EnemyService.Enemy)
 		local amount, kind = roll()
 		EnemyService.Damage(enemy, amount, player, kind)
-		local poison = weapon.Poison
-		if poison then
-			task.spawn(function()
-				for _ = 1, poison.Ticks do
-					task.wait(poison.Interval)
-					EnemyService.Damage(enemy, amount * poison.Fraction, player, "Poison")
-				end
-			end)
-		end
 	end
 
 	playSwing(tool, weapon.Anim)

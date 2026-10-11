@@ -9,7 +9,6 @@
 --   HealRange:  tome only, how far away a hurt player can be and still get healed
 --   SelfHeal:   tome only, healing yourself works at this fraction (so a healer alone isn't unbeatable)
 --   Combo:      every Nth hit in a row does `ComboBonus` times the damage
---   Poison:     daggers only, extra damage over time after a hit
 --   Anim:       the swing the character plays ("Slash", "Lunge" or none)
 
 export type WeaponType = {
@@ -26,7 +25,6 @@ export type WeaponType = {
 	CritMultiplier: number,
 	Combo: number?,
 	ComboBonus: number?,
-	Poison: { Ticks: number, Interval: number, Fraction: number }?,
 	Anim: string?,
 }
 
@@ -69,16 +67,6 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.05,
 		CritMultiplier = 1.75,
 		Anim = "Lunge",
-	},
-	Daggers = {
-		Kind = "Melee",
-		Cooldown = 0.28,
-		Range = 5.5,
-		Arc = 100,
-		CritChance = 0.15,
-		CritMultiplier = 1.75,
-		Poison = { Ticks = 3, Interval = 1, Fraction = 0.3 },
-		Anim = "Slash",
 	},
 	-- The healer: every cast throws a bolt of light at an enemy and heals the most hurt player nearby.
 	Tome = {

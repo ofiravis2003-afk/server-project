@@ -90,11 +90,6 @@ local builders: { [string]: (Part) -> () } = {
 		light.Brightness = 1.5
 		light.Parent = orb
 	end,
-	Daggers = function(h)
-		part(h, Vector3.new(0.7, 0.14, 0.26), CFrame.new(0, 0.42, 0), IRON, Enum.Material.Metal)
-		part(h, Vector3.new(0.26, 1.3, 0.08), CFrame.new(0, 1.14, 0), STEEL, Enum.Material.Metal)
-		part(h, Vector3.new(0.18, 0.18, 0.08), CFrame.new(0, 1.8, 0) * CFrame.Angles(0, 0, math.rad(45)), STEEL, Enum.Material.Metal)
-	end,
 	-- An open book held flat in front of the hand, its pages glowing softly.
 	Tome = function(h)
 		local cover = Color3.fromRGB(90, 24, 28)
@@ -112,15 +107,14 @@ local builders: { [string]: (Part) -> () } = {
 	end,
 }
 
--- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Daggers", "Tome").
+-- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Tome").
 function WeaponBuilder.Build(look: string): Tool
 	local tool = Instance.new("Tool")
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
 	tool.Grip = GRIP
 
-	local handleSize = if look == "Daggers" then Vector3.new(0.22, 0.7, 0.22) else Vector3.new(0.28, 1.1, 0.28)
-	local handle = makeHandle(handleSize, LEATHER, Enum.Material.Fabric)
+	local handle = makeHandle(Vector3.new(0.28, 1.1, 0.28), LEATHER, Enum.Material.Fabric)
 	local build = builders[look] or builders.Sword
 	build(handle)
 	handle.Parent = tool
