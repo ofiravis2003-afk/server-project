@@ -70,6 +70,16 @@ local function giveStarterItems(data: { [string]: any })
 	if next(data.Inventory) == nil then
 		data.Equipped.Weapon = InventoryService.AddItem(data, "RustySword")
 	end
+	if Config.TestMode and Config.TestLoadout then
+		-- Testing the special looks: exactly this set of weapons, nothing else.
+		data.Inventory = {}
+		data.Equipped = {}
+		for _, entry in Config.TestLoadout do
+			local id = InventoryService.AddItem(data, entry.Item, entry.Rarity)
+			data.Equipped.Weapon = data.Equipped.Weapon or id
+		end
+		return
+	end
 	if Config.TestMode then
 		for _, itemName in Items.StarterWeapons do
 			if not ownsItemNamed(data, itemName) then
