@@ -319,7 +319,7 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 		local itemName = Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
 		local rarity = rollRarity(rng, loot.Rarities)
 		InventoryService.GiveItem(player, itemName, rarity)
-		text ..= `   {rarity} {Items.Defs[itemName].DisplayName}!`
+		text ..= `   {rarity} {Items.NameFor(itemName, rarity)}!`
 	end
 	damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), text, "Reward")
 end

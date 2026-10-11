@@ -137,8 +137,9 @@ function InventoryService.RefreshTools(player: Player)
 		local item = data.Inventory[id]
 		local def = Items.Defs[item.Item]
 		local tool = WeaponBuilder.Build(def.Look or "Sword", item.Rarity)
-		tool.Name = def.DisplayName
-		tool.ToolTip = `{def.DisplayName} ({item.Rarity})`
+		local name = Items.NameFor(item.Item, item.Rarity)
+		tool.Name = name
+		tool.ToolTip = `{name} ({item.Rarity})`
 		tool:SetAttribute("ItemId", id)
 		tool:SetAttribute("WeaponType", def.WeaponType)
 		CollectionService:AddTag(tool, TOOL_TAG)

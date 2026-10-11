@@ -102,7 +102,7 @@ local function buildCard(gui: ScreenGui, received: Received): (Frame, () -> ())
 	name.Position = UDim2.fromOffset(122, 32)
 	name.Size = UDim2.fromOffset(228, 30)
 	name.TextScaled = true
-	name.Text = if def then def.DisplayName else received.Item
+	name.Text = Items.NameFor(received.Item, received.Rarity)
 	local nameLimit = Instance.new("UITextSizeConstraint")
 	nameLimit.MaxTextSize = 24
 	nameLimit.Parent = name
