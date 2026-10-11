@@ -155,6 +155,25 @@ end
 
 function FloorBuilder.Chest(parent: Instance, cframe: CFrame, tier: string): Model
 	local metal = FloorBuilder.TierColors[tier] or FloorBuilder.TierColors.Bronze
+	-- The Tripo chest is one closed piece (no lid to swing): it becomes the Base, and opening it bursts with light.
+	local closed = Props.Place("ChestClosed", parent, cframe)
+	if closed then
+		closed.Name = `{tier}Chest`
+		local base = closed:FindFirstChildWhichIsA("BasePart", true) :: BasePart
+		base.Name = "Base"
+		closed.PrimaryPart = base
+		local glow = Instance.new("PointLight")
+		glow.Name = "TierGlow"
+		glow.Color = metal
+		glow.Range = 7
+		glow.Brightness = 1.2
+		glow.Parent = base
+		local _, size = closed:GetBoundingBox()
+		local gem = block(closed, "TierGem", Vector3.new(0.4, 0.4, 0.15), cframe * CFrame.new(0, size.Y + 0.5, 0) * CFrame.Angles(0, 0, math.rad(45)), metal, Enum.Material.Neon)
+		gem.CanCollide = false
+		gem.CanQuery = false
+		return closed
+	end
 	local prop = Props.Place("Chest", parent, cframe)
 	if prop and prop:FindFirstChild("Base", true) and prop:FindFirstChild("Lid", true) then
 		-- The real chest, with a glow in its key's color so you can tell which key it takes.
@@ -198,6 +217,24 @@ function FloorBuilder.KeyPedestal(parent: Instance, position: Vector3, tier: str
 	model.Name = `{tier}KeyPedestal`
 	local stone = block(model, "Pedestal", Vector3.new(2.2, 3, 2.2), CFrame.new(position + Vector3.new(0, 1.5, 0)), Color3.fromRGB(70, 70, 74), Enum.Material.Slate)
 	local metal = FloorBuilder.TierColors[tier]
+	-- The Tripo key of this tier, standing on its tip above the pedestal.
+	local keyProp = Props.Place(`Key{tier}`, model, CFrame.new(position + Vector3.new(0, 3.4, 0)), 1.2)
+	if keyProp then
+		for _, d in keyProp:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+			end
+		end
+		local main = keyProp:FindFirstChildWhichIsA("BasePart", true) :: BasePart
+		local light = Instance.new("PointLight")
+		light.Color = metal:Lerp(Color3.new(1, 1, 1), 0.4)
+		light.Range = 10
+		light.Brightness = 1.5
+		light.Parent = main
+		model.Parent = parent
+		return model
+	end
 	local keyCenter = CFrame.new(position + Vector3.new(0, 4.3, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	local shaft = block(model, "Key", Vector3.new(1.6, 0.22, 0.22), keyCenter, metal, Enum.Material.Metal)
 	shaft.CanCollide = false

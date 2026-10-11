@@ -327,7 +327,7 @@ end
 local function placeChest(parent: Instance, cframe: CFrame, tier: string)
 	local chest = FloorBuilder.Chest(parent, cframe, tier)
 	local base = chest:FindFirstChild("Base", true) :: BasePart
-	local lid = chest:FindFirstChild("Lid", true) :: BasePart
+	local lid = chest:FindFirstChild("Lid", true) :: BasePart?
 	local openedBy: { [Player]: boolean } = {}
 	local lidOpen = false
 	local p = prompt(base, "Unlock", `{tier} Chest`, 0.6, 8)
@@ -346,7 +346,19 @@ local function placeChest(parent: Instance, cframe: CFrame, tier: string)
 		pushRun(player)
 		if not lidOpen then
 			lidOpen = true
-			TweenService:Create(lid, TweenInfo.new(0.5, Enum.EasingStyle.Back), { CFrame = FloorBuilder.ChestOpenCFrame(lid) }):Play()
+			if lid then
+				TweenService:Create(lid, TweenInfo.new(0.5, Enum.EasingStyle.Back), { CFrame = FloorBuilder.ChestOpenCFrame(lid) }):Play()
+			else
+				-- A closed chest with no lid: it jolts and flares with light in its key's color.
+				local rest = base.CFrame
+				TweenService:Create(base, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 1, true), { CFrame = rest * CFrame.new(0, 0.35, 0) * CFrame.Angles(math.rad(4), 0, 0) }):Play()
+				local glow = base:FindFirstChild("TierGlow") :: PointLight?
+				if glow then
+					glow.Brightness = 6
+					glow.Range = 16
+					TweenService:Create(glow, TweenInfo.new(1.6), { Brightness = 0.6, Range = 7 }):Play()
+				end
+			end
 		end
 		giveLoot(player, tier, base.Position)
 	end)

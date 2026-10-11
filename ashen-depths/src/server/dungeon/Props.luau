@@ -1,6 +1,7 @@
 --!strict
 -- Real 3D props for the dungeon (made with Studio's AI mesh generator, kept in ServerStorage.DungeonProps
--- and saved with the Depths place): Torch, Sarcophagus, Chest (with "Base" and "Lid"), BrokenPillar, BonePile.
+-- and saved with the Depths place): Torch, Sarcophagus, Chest (with "Base" and "Lid"), BrokenPillar, BonePile;
+-- and from Tripo: ChestClosed, KeyBronze/KeySilver/KeyGold, Coffin, Barrel, Banner, Candles, LeverProp.
 -- Every builder asks here first and falls back to its plain parts when a prop is missing.
 
 local ServerStorage = game:GetService("ServerStorage")

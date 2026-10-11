@@ -8,6 +8,7 @@
 --   Prison:    barred cells along a wall, chains and remains inside
 --   Vault:     heaps of gold coins and banners (treasure rooms)
 -- Big pieces only go along walls without a doorway, so paths and the middle of the room stay clear.
+-- Tripo-made props (Coffin, Barrel, Banner, Candles in ServerStorage.DungeonProps) are used when present.
 
 export type Context = {
 	Model: Model,
@@ -107,6 +108,42 @@ local function bonePile(ctx: Context, spot: Vector3, size: number)
 	end
 end
 
+-- A cluster of wax candles (the Tripo prop) standing at `position`, with a warm light.
+local function candleCluster(ctx: Context, position: Vector3, withLight: boolean): boolean
+	local prop = Props.Place("Candles", ctx.Model, CFrame.new(position) * CFrame.Angles(0, ctx.Rng:NextNumber(0, math.pi * 2), 0), ctx.Rng:NextNumber(0.8, 1.1))
+	if not prop then
+		return false
+	end
+	for _, d in prop:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanCollide = false
+			d.CanQuery = false
+		end
+	end
+	if withLight then
+		local glow = deco(ctx.Model, "CandleGlow", Vector3.new(0.2, 0.2, 0.2), CFrame.new(position + Vector3.new(0, 1.8, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+		glow.Transparency = 1
+		light(glow, Color3.fromRGB(255, 170, 90), 14, 0.9)
+	end
+	return true
+end
+
+-- One to three old barrels huddled at `spot`.
+local function barrels(ctx: Context, spot: Vector3)
+	local rng = ctx.Rng
+	for i = 1, rng:NextInteger(1, 3) do
+		local offset = if i == 1 then Vector3.zero else Vector3.new(rng:NextNumber(-2.4, 2.4), 0, rng:NextNumber(-2.4, 2.4))
+		local tipped = i > 1 and rng:NextNumber() < 0.3
+		local cf = CFrame.new(spot + offset) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
+		if tipped then
+			cf *= CFrame.Angles(0, 0, math.rad(90))
+		end
+		if not Props.Place("Barrel", ctx.Model, cf, rng:NextNumber(0.85, 1.05)) then
+			return
+		end
+	end
+end
+
 local function cornerSpot(ctx: Context): Vector3
 	local rng = ctx.Rng
 	local S = ctx.Size
@@ -124,6 +161,17 @@ end
 
 local function banner(ctx: Context, frame: CFrame, along: number)
 	local cf = onWall(ctx, frame, along, 0.3)
+	-- Hung clear of the wall: the rod sticks out about a stud.
+	local prop = Props.Place("Banner", ctx.Model, onWall(ctx, frame, along, 1.2) * CFrame.new(0, 5.5, 0), 1.25)
+	if prop then
+		for _, d in prop:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+			end
+		end
+		return
+	end
 	part(ctx.Model, "BannerRod", Vector3.new(4, 0.2, 0.2), cf * CFrame.new(0, 12.2, 0), IRON, Enum.Material.Metal).CanCollide = false
 	deco(ctx.Model, "Banner", Vector3.new(3.4, 7.5, 0.12), cf * CFrame.new(0, 8.3, 0), CLOTH, Enum.Material.Fabric)
 	deco(ctx.Model, "BannerEmblem", Vector3.new(1.1, 1.1, 0.14), cf * CFrame.new(0, 9.2, -0.02) * CFrame.Angles(0, 0, math.rad(45)), GOLD, Enum.Material.Metal)
@@ -141,7 +189,17 @@ themes.Crypt = function(ctx)
 		for _, along in positions do
 			local cf = onWall(ctx, frame, along, 2.5)
 			local top = 3.0
-			local prop = Props.Place("Sarcophagus", ctx.Model, cf)
+			-- Half of them the carved-knight coffin (it lies along its Z, so it's turned to run along the wall).
+			local useCoffin = Props.Has("Coffin") and rng:NextNumber() < 0.5
+			local prop = if useCoffin
+				then Props.Place("Coffin", ctx.Model, onWall(ctx, frame, along, 3) * CFrame.Angles(0, math.rad(90), 0))
+				else Props.Place("Sarcophagus", ctx.Model, cf)
+			if useCoffin and prop then
+				-- Its lid is a carved figure: the candles stand on the floor beside it instead.
+				candleCluster(ctx, (cf * CFrame.new(4.6, 0, 0)).Position, not lit)
+				lit = true
+				continue
+			end
 			if prop then
 				local _, size = prop:GetBoundingBox()
 				top = size.Y
@@ -159,6 +217,7 @@ themes.Crypt = function(ctx)
 	for _ = 1, 2 do
 		bonePile(ctx, cornerSpot(ctx), 1)
 	end
+	candleCluster(ctx, cornerSpot(ctx), false)
 end
 
 themes.Flooded = function(ctx)
@@ -206,6 +265,7 @@ themes.Ossuary = function(ctx)
 	for _ = 1, 4 do
 		bonePile(ctx, cornerSpot(ctx), 1.3)
 	end
+	candleCluster(ctx, cornerSpot(ctx), false)
 end
 
 themes.Collapsed = function(ctx)
@@ -251,6 +311,7 @@ themes.Collapsed = function(ctx)
 	spotLight.Brightness = 3
 	spotLight.Parent = lamp
 	rubble(ctx, spot, 5)
+	barrels(ctx, cornerSpot(ctx))
 end
 
 themes.Chapel = function(ctx)
@@ -265,8 +326,10 @@ themes.Chapel = function(ctx)
 	part(ctx.Model, "Altar", Vector3.new(7, 3.2, 3), altar * CFrame.new(0, 1.6, 0), Color3.fromRGB(96, 92, 86), Enum.Material.Limestone)
 	deco(ctx.Model, "AltarCloth", Vector3.new(7.2, 0.15, 3.2), altar * CFrame.new(0, 3.25, 0), CLOTH, Enum.Material.Fabric)
 	deco(ctx.Model, "AltarDrape", Vector3.new(3, 2.4, 0.12), altar * CFrame.new(0, 2.1, -1.6), CLOTH, Enum.Material.Fabric)
-	for i = 1, 7 do
-		candle(ctx, (altar * CFrame.new(rng:NextNumber(-3.2, 3.2), 3.3, rng:NextNumber(-1, 1))).Position, i == 1)
+	if not candleCluster(ctx, (altar * CFrame.new(0, 3.3, 0)).Position, true) then
+		for i = 1, 7 do
+			candle(ctx, (altar * CFrame.new(rng:NextNumber(-3.2, 3.2), 3.3, rng:NextNumber(-1, 1))).Position, i == 1)
+		end
 	end
 	banner(ctx, frame, -6)
 	banner(ctx, frame, 6)
@@ -328,6 +391,7 @@ themes.Prison = function(ctx)
 		end
 	end
 	rubble(ctx, cornerSpot(ctx), 2)
+	barrels(ctx, cornerSpot(ctx))
 end
 
 themes.Vault = function(ctx)
@@ -349,12 +413,14 @@ themes.Vault = function(ctx)
 	local glow = deco(ctx.Model, "GoldGlow", Vector3.new(1, 1, 1), CFrame.new(ctx.Center + Vector3.new(0, 3, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
 	glow.Transparency = 1
 	light(glow, Color3.fromRGB(255, 200, 110), 22, 0.5)
+	barrels(ctx, cornerSpot(ctx))
 end
 
 -- A lighter touch for rooms with no theme of their own (stairs, secret rooms).
 themes.Plain = function(ctx)
 	bonePile(ctx, cornerSpot(ctx), 1)
 	rubble(ctx, cornerSpot(ctx), 3)
+	barrels(ctx, cornerSpot(ctx))
 end
 
 function RoomDecor.Decorate(ctx: Context, theme: string)
