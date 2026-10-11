@@ -323,8 +323,7 @@
 
 **✅ מודלים מ-Tripo בתוך המשחק (2026-10-11):**
 - **קישוטים** (`DungeonProps`): `Coffin` (ארון קבורה עם אביר, בחצי מהחדרים מסוג Crypt), `Candles` (במזבח, ליד ארונות ובפינות), `Barrel` (1–3 בפינות), `Banner` (על הקירות במקום הדגלים מקוביות), `ChestClosed` (התיבה החדשה: נסגרת, ובפתיחה קופצת ומאירה בצבע המפתח), ו-`KeyBronze`/`KeySilver`/`KeyGold` על הכן. `LeverProp` נשמר אבל עדיין לא מחובר: הידית שבקוד צריכה לזוז.
-- **נשקי שחקן** (`ReplicatedStorage.WeaponModels`): לכל נשק יש מודל לפי רמה, `<Look>_<Common|Rare|Legendary>`. ‏Epic משתמש במראה של Rare, ו-Mythic במראה של Legendary. אם אין מודל לרמה, נלקח המודל הקרוב. לכל מודל יש `WeaponGrip`, שמסמן איפה היד אוחזת. ‏Epic, ‏Legendary ו-Mythic זוהרים, ו-Mythic גם בוער. כרגע קיימים: Sword ו-Axe ב-Common וב-Rare, ‏Bow ב-Common, ‏Staff ו-Tome ב-Rare.
-- ⏳ **👤 לייצר ב-Tripo:** `c_staff`, `c_tome`, `r_bow`, `l_sword`, `l_axe`, `l_bow`, `l_staff`, `l_tome` (התיאורים כבר נשלחו).
+- **נשקי שחקן** (`ReplicatedStorage.WeaponModels`): לכל נשק יש מודל לפי רמה, `<Look>_<Common|Rare|Legendary>`. ‏Epic משתמש במראה של Rare, ו-Mythic במראה של Legendary. אם אין מודל לרמה, נלקח המודל הקרוב. לכל מודל יש `WeaponGrip`, שמסמן איפה היד אוחזת. ‏Epic, ‏Legendary ו-Mythic זוהרים, ו-Mythic גם בוער. **הסט שלם (2026-10-11):** לכל 4 הנשקים יש Common, ‏Rare ו-Legendary. בכל תצורה כזו, ה-Grip הוא הלהב כלפי מעלה, הספר מונח על כף היד, ולמטה ולספר יש `Muzzle` (נקודת הירייה, למטה בקריסטל). הקשת של השחקן הוצאה (2026-10-11).
 - ⚠️ **העיר:** אין בה עדיין `WeaponModels`, ולכן שם הנשקים עדיין בנויים מקוביות. 👤 להעתיק עם Ctrl+C את `ReplicatedStorage.WeaponModels` מ-Depths, ולהדביק עם Ctrl+V ב-ReplicatedStorage של העיר.
 
 **אחרי הקשת:** עכברוש עם אנימציות, הבוסים (The Gravekeeper בקומה 5, The Bone Warden בקומה 10, Gold Key ונקודת שמירה), ואז שלב 4 (מסך מלאי) ושלב 5 (העיר).
