@@ -4,7 +4,7 @@
 --   Cooldown:   seconds between attacks
 --   Range:      reach in studs (melee) or max distance (ranged)
 --   Arc:        melee only, the width of the swing in degrees in front of the player
---   Width:      bow and tome, how wide the line of the arrow / bolt is
+--   Width:      tome only, how wide the line of the bolt is
 --   Radius:     staff only, the size of the blast where the fireball lands
 --   HealRange:  tome only, how far away a hurt player can be and still get healed
 --   SelfHeal:   tome only, healing yourself works at this fraction (so a healer alone isn't unbeatable)
@@ -14,7 +14,7 @@
 export type WeaponType = {
 	Cooldown: number,
 	Range: number,
-	Kind: "Melee" | "Arrow" | "Blast" | "Mend",
+	Kind: "Melee" | "Blast" | "Mend",
 	Arc: number?,
 	Width: number?,
 	Radius: number?,
@@ -48,15 +48,6 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.08,
 		CritMultiplier = 2,
 		Anim = "Slash",
-	},
-	Bow = {
-		Kind = "Arrow",
-		Cooldown = 0.7,
-		Range = 70,
-		Width = 2.5,
-		ProjectileSpeed = 140,
-		CritChance = 0.25,
-		CritMultiplier = 2.2,
 	},
 	Staff = {
 		Kind = "Blast",

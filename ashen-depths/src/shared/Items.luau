@@ -18,13 +18,12 @@ local Items = {}
 Items.Defs = {
 	RustySword = { DisplayName = "Rusty Sword", Slot = "Weapon", WeaponType = "Sword", Damage = 12, Look = "Sword" },
 	WoodcutterAxe = { DisplayName = "Woodcutter's Axe", Slot = "Weapon", WeaponType = "Axe", Damage = 26, Look = "Axe" },
-	HuntingBow = { DisplayName = "Hunting Bow", Slot = "Weapon", WeaponType = "Bow", Damage = 11, Look = "Bow" },
 	ApprenticeStaff = { DisplayName = "Apprentice Staff", Slot = "Weapon", WeaponType = "Staff", Damage = 15, Look = "Staff" },
 	AcolyteTome = { DisplayName = "Acolyte's Tome", Slot = "Weapon", WeaponType = "Tome", Damage = 7, Heal = 13, Look = "Tome" },
 } :: { [string]: ItemDef }
 
 -- One starter weapon of each type, in hotbar order.
-Items.StarterWeapons = { "RustySword", "WoodcutterAxe", "HuntingBow", "ApprenticeStaff", "AcolyteTome" }
+Items.StarterWeapons = { "RustySword", "WoodcutterAxe", "ApprenticeStaff", "AcolyteTome" }
 
 -- Each upgrade level (+1 .. +10) adds 10% to the base stats.
 local function scaled(base: number, rarity: string, upgrade: number): number

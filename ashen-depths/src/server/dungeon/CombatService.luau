@@ -43,7 +43,7 @@ local function playSwing(tool: Tool, anim: string?)
 	end)
 end
 
--- Where a shot leaves the weapon: its "Muzzle" attachment (the staff's crystal, the bow, the book) if it has one
+-- Where a shot leaves the weapon: its "Muzzle" attachment (the staff's crystal, the book) if it has one
 -- and it's where the player is, otherwise the usual spot in front of the chest.
 local function muzzleOf(tool: Tool, fallback: Vector3): Vector3
 	local handle = tool:FindFirstChild("Handle")
@@ -121,28 +121,6 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 			if distance <= weapon.Range + ENEMY_RADIUS and (distance < 2 or aim:Dot(offset.Unit) >= minDot) then
 				hit(enemy)
 			end
-		end
-	elseif weapon.Kind == "Arrow" then
-		local width = weapon.Width or 2.5
-		local target: EnemyService.Enemy? = nil
-		local targetAlong = weapon.Range
-		for _, enemy in EnemyService.GetAlive() do
-			local offset = flat(enemy.Root.Position - origin)
-			local along = offset:Dot(aim)
-			local across = (offset - aim * along).Magnitude
-			if along > 0 and along < targetAlong and across <= width then
-				target, targetAlong = enemy, along
-			end
-		end
-		local from = muzzleOf(tool, origin + Vector3.new(0, 1, 0) + aim * 1.5)
-		local to = if target then target.Root.Position else from + aim * weapon.Range
-		local travel = (to - from).Magnitude / (weapon.ProjectileSpeed or 140)
-		effectRemote:FireAllClients("Arrow", from, to, travel)
-		if target then
-			local struck = target
-			task.delay(travel, function()
-				hit(struck)
-			end)
 		end
 	elseif weapon.Kind == "Blast" then
 		local point: Vector3

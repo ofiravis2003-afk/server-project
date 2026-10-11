@@ -4,11 +4,11 @@
 -- Every weapon is built standing up: the grip is at the origin and the weapon extends along +Y.
 -- `GRIP` turns a part-built weapon so it points forward out of the player's hand. A model's "WeaponGrip"
 -- attachment is the whole hold: its Y is the blade, standing up out of the fist (a sword held up, ready),
--- its -Z faces forward (an axe's blade); the bow's frame is turned so it stands upright with its string back.
+-- its -Z faces forward (an axe's blade).
 --
 -- Rarities share three looks: Common, Rare (also Epic) and Legendary (also Mythic). A missing look falls back to
 -- the nearest one there is. Epic, Legendary and Mythic weapons glow in their rarity's color; Mythic burns.
--- A "Muzzle" attachment marks where shots leave the weapon (a staff's crystal).
+-- A "Muzzle" attachment marks where shots leave the weapon (a staff's crystal, the tome).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -84,11 +84,6 @@ local builders: { [string]: (Part) -> () } = {
 		part(h, Vector3.new(0.18, 1.5, 1.2), CFrame.new(0, 2.7, -0.75), IRON, Enum.Material.Metal)
 		part(h, Vector3.new(0.12, 1.8, 0.3), CFrame.new(0, 2.7, -1.4), STEEL, Enum.Material.Metal)
 		part(h, Vector3.new(0.3, 0.6, 0.5), CFrame.new(0, 2.7, 0.3), IRON, Enum.Material.Metal)
-	end,
-	Bow = function(h)
-		part(h, Vector3.new(0.2, 2.2, 0.22), CFrame.new(0, 1.4, 0.25) * CFrame.Angles(math.rad(-14), 0, 0), WOOD, Enum.Material.Wood)
-		part(h, Vector3.new(0.2, 2.2, 0.22), CFrame.new(0, -1.4, 0.25) * CFrame.Angles(math.rad(14), 0, 0), WOOD, Enum.Material.Wood)
-		part(h, Vector3.new(0.04, 5.1, 0.04), CFrame.new(0, 0, 0.78), Color3.fromRGB(225, 215, 190), Enum.Material.Fabric)
 	end,
 	Staff = function(h)
 		part(h, Vector3.new(0.24, 4.8, 0.24), CFrame.new(0, 1.2, 0), WOOD, Enum.Material.Wood)
@@ -184,7 +179,7 @@ local function addAura(handle: BasePart, rarity: string)
 	end
 end
 
--- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Tome") and rarity.
+-- Returns a ready Tool for the given look ("Sword", "Axe", "Staff", "Tome") and rarity.
 function WeaponBuilder.Build(look: string, rarity: string?): Tool
 	local tool = Instance.new("Tool")
 	tool.CanBeDropped = false
