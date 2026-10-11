@@ -288,7 +288,7 @@ local function buildFromModel(source: Model, def: Enemies.EnemyDef): Model
 
 	local humanoid = Instance.new("Humanoid")
 	humanoid.RigType = Enum.HumanoidRigType.R15
-	humanoid.HipHeight = height / 2 - root.Size.Y / 2
+	humanoid.HipHeight = height / 2 - root.Size.Y / 2 - (def.Sink or 0)
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	humanoid.BreakJointsOnDeath = false

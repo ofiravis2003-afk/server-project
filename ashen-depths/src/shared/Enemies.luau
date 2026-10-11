@@ -15,6 +15,8 @@
 --                plays its death clip first and shatters `At` seconds in, FallBack studs from where it stood
 --                (where the clip has laid the body; the server can't see the clip's bones once the body is still),
 --                FallAngle degrees turned from the way it faces (default 180: straight behind).
+--   Sink: studs to lower the body (at the model's own size), for clips that crouch below the standing pose
+--         (the Mixamo clips lost their crouch when their hips were zeroed, so the feet hovered).
 --   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
 --             standing pose (the Tripo skeleton's animations face backwards: 180).
 --   Ranged: keeps its distance and shoots: backs off when a player is closer than KeepAway, shows a red
@@ -53,6 +55,7 @@ export type EnemyDef = {
 	AttackClips: { { Id: string, HitAt: number } }?,
 	EliteAttackClips: { { Id: string, HitAt: number } }?,
 	ModelYaw: number?,
+	Sink: number?,
 	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number?, FallAngle: number? }?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
 	HeldProps: { HeldProp }?,
@@ -111,6 +114,7 @@ local Enemies: { [string]: EnemyDef } = {
 		-- Turned so its head and chest face the player (measured in play).
 		ModelYaw = -7,
 		Scale = 1.3, -- crouched in its guard it stood shorter than a player
+		Sink = 0.8,
 		-- On the ground by 1.6s; it falls back from its guard stance, which stands side-on to its blows.
 		CrumbleInto = { Prop = "BonePile", At = 1.7, AfterDeathClip = true, FallBack = 3.7, FallAngle = 229 },
 		HeldProps = {
@@ -139,6 +143,7 @@ local Enemies: { [string]: EnemyDef } = {
 		-- Its clips stand side-on with the bow arm out; this turns the body so the arrow flies at the player.
 		ModelYaw = 81,
 		Scale = 1.3,
+		Sink = 0.42,
 		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true, FallBack = 4.4 },
 		Ranged = { KeepAway = 12, ProjectileSpeed = 80, HitRadius = 3 },
 		HeldProps = {
