@@ -392,11 +392,12 @@ local function getTemplate(name: string): Model
 		else
 			template = buildFromModel(slimeBlob(), def)
 		end
-		if def.Scale and def.Scale ~= 1 then
-			template:ScaleTo(template:GetScale() * def.Scale)
-		end
+		-- Props first, so a bigger enemy holds a bigger weapon.
 		for _, held in def.HeldProps or {} do
 			holdProp(template, held)
+		end
+		if def.Scale and def.Scale ~= 1 then
+			template:ScaleTo(template:GetScale() * def.Scale)
 		end
 		template.Name = name
 		templates[name] = template

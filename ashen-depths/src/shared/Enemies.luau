@@ -108,8 +108,9 @@ local Enemies: { [string]: EnemyDef } = {
 		AnimationSpeeds = { Walk = 0.8 },
 		AttackClips = SWORD_ATTACKS,
 		EliteAttackClips = ELITE_SWORD_ATTACKS,
-		-- Its blows land facing this way (the guard stance stands a little side-on).
-		ModelYaw = -92,
+		-- Turned so its head and chest face the player (measured in play).
+		ModelYaw = -7,
+		Scale = 1.3, -- crouched in its guard it stood shorter than a player
 		-- On the ground by 1.6s; it falls back from its guard stance, which stands side-on to its blows.
 		CrumbleInto = { Prop = "BonePile", At = 1.7, AfterDeathClip = true, FallBack = 3.7, FallAngle = 229 },
 		HeldProps = {
@@ -137,6 +138,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Animations = ARCHER_ANIMATIONS,
 		-- Its clips stand side-on with the bow arm out; this turns the body so the arrow flies at the player.
 		ModelYaw = 81,
+		Scale = 1.3,
 		CrumbleInto = { Prop = "BonePile", At = 1.6, AfterDeathClip = true, FallBack = 4.4 },
 		Ranged = { KeepAway = 12, ProjectileSpeed = 80, HitRadius = 3 },
 		HeldProps = {
