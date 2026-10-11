@@ -2,8 +2,9 @@
 -- Builds a weapon Tool. With a Tripo model in ReplicatedStorage.WeaponModels ("<Look>_<Tier>", e.g. "Sword_Rare")
 -- the Tool is that mesh; otherwise it's made out of plain parts.
 -- Every weapon is built standing up: the grip is at the origin and the weapon extends along +Y.
--- `GRIP` turns it so it points forward out of the player's hand. A model's "WeaponGrip" attachment marks that
--- standing-up frame inside its mesh (worked out from where its handle is and which way its blade faces).
+-- `GRIP` turns a part-built weapon so it points forward out of the player's hand. A model's "WeaponGrip"
+-- attachment is the whole hold: its Y is the blade, standing up out of the fist (a sword held up, ready),
+-- its -Z faces forward (an axe's blade); the bow's frame is turned so it stands upright with its string back.
 --
 -- Rarities share three looks: Common, Rare (also Epic) and Legendary (also Mythic). A missing look falls back to
 -- the nearest one there is. Epic, Legendary and Mythic weapons glow in their rarity's color; Mythic burns.
@@ -193,8 +194,7 @@ function WeaponBuilder.Build(look: string, rarity: string?): Tool
 		handle.CanCollide = false
 		handle.CanQuery = false
 		handle.Massless = true
-		-- The hand holds the mesh at its WeaponGrip frame, turned the same way as the part-built weapons.
-		tool.Grip = (handle:FindFirstChild("WeaponGrip") :: Attachment).CFrame * GRIP
+		tool.Grip = (handle:FindFirstChild("WeaponGrip") :: Attachment).CFrame
 		addAura(handle, rarity or "Common")
 		handle.Parent = tool
 		return tool
