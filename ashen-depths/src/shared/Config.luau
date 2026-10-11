@@ -21,19 +21,13 @@ return {
 	-- instead of on floor 1 of the dungeon.
 	StartInTestArena = false,
 
-	-- While testing: when set, a player's weapons are replaced by exactly these on joining (to try the special looks).
-	-- Set to nil to go back to the normal starter weapons.
+	-- While testing: a player's weapons are replaced by exactly these, once per different list (later loot stays).
+	-- Now: back to the plain starter weapons after trying the special looks (2026-10-11).
 	TestLoadout = {
-		{ Item = "RustySword", Rarity = "Epic" },
-		{ Item = "RustySword", Rarity = "Legendary" },
-		{ Item = "RustySword", Rarity = "Mythic" },
-		{ Item = "WoodcutterAxe", Rarity = "Legendary" },
-		{ Item = "WoodcutterAxe", Rarity = "Mythic" },
-		{ Item = "ApprenticeStaff", Rarity = "Epic" },
-		{ Item = "ApprenticeStaff", Rarity = "Legendary" },
-		{ Item = "ApprenticeStaff", Rarity = "Mythic" },
-		{ Item = "AcolyteTome", Rarity = "Legendary" },
-		{ Item = "AcolyteTome", Rarity = "Mythic" },
+		{ Item = "RustySword", Rarity = "Common" },
+		{ Item = "WoodcutterAxe", Rarity = "Common" },
+		{ Item = "ApprenticeStaff", Rarity = "Common" },
+		{ Item = "AcolyteTome", Rarity = "Common" },
 	} :: { { Item: string, Rarity: string } }?,
 
 	-- While testing: when set, every floor's monsters are picked from this list instead of the normal mix.

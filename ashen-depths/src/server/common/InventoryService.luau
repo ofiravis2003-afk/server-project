@@ -71,14 +71,22 @@ local function giveStarterItems(data: { [string]: any })
 		data.Equipped.Weapon = InventoryService.AddItem(data, "RustySword")
 	end
 	if Config.TestMode and Config.TestLoadout then
-		-- Testing the special looks: exactly this set of weapons, nothing else.
-		data.Inventory = {}
-		data.Equipped = {}
+		-- A test set of weapons replaces everything, once for each different set (so loot found afterwards stays).
+		local parts = {}
 		for _, entry in Config.TestLoadout do
-			local id = InventoryService.AddItem(data, entry.Item, entry.Rarity)
-			data.Equipped.Weapon = data.Equipped.Weapon or id
+			table.insert(parts, `{entry.Item}:{entry.Rarity}`)
 		end
-		return
+		local key = table.concat(parts, ",")
+		if data.AppliedTestLoadout ~= key then
+			data.AppliedTestLoadout = key
+			data.Inventory = {}
+			data.Equipped = {}
+			for _, entry in Config.TestLoadout do
+				local id = InventoryService.AddItem(data, entry.Item, entry.Rarity)
+				data.Equipped.Weapon = data.Equipped.Weapon or id
+			end
+			return
+		end
 	end
 	if Config.TestMode then
 		for _, itemName in Items.StarterWeapons do
