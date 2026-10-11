@@ -326,6 +326,15 @@
 - **נשקי שחקן** (`ReplicatedStorage.WeaponModels`): לכל נשק יש מודל לפי רמה, `<Look>_<Common|Rare|Legendary>`. ‏Epic משתמש במראה של Rare, ו-Mythic במראה של Legendary. אם אין מודל לרמה, נלקח המודל הקרוב. לכל מודל יש `WeaponGrip`, שמסמן איפה היד אוחזת. ‏Epic, ‏Legendary ו-Mythic זוהרים, ו-Mythic גם בוער. **הסט שלם (2026-10-11):** לכל 4 הנשקים יש Common, ‏Rare ו-Legendary. בכל תצורה כזו, ה-Grip הוא הלהב כלפי מעלה, הספר מונח על כף היד, ולמטה ולספר יש `Muzzle` (נקודת הירייה, למטה בקריסטל). הקשת של השחקן הוצאה (2026-10-11).
 - ⚠️ **העיר:** אין בה עדיין `WeaponModels`, ולכן שם הנשקים עדיין בנויים מקוביות. 👤 להעתיק עם Ctrl+C את `ReplicatedStorage.WeaponModels` מ-Depths, ולהדביק עם Ctrl+V ב-ReplicatedStorage של העיר.
 
+**✅ שמות לפי רמה (2026-10-11):** הפונקציה `Items.NameFor` נותנת לכל נשק שם לפי הרמה שלו, למשל Rusty Sword ← Steel Longsword ← Duskblade ← Sunforged Blade ← Emberfall. השמות מופיעים בסרגל, בחלון "New item!" ובהודעת השלל.
+
+**🎬 הבא: אנימציות התקפה לשחקן, דרך Mixamo ו-Blender (מתוכנן ליום אחר):**
+- 👤 להוריד מ-Mixamo על הדמות **X Bot** (לא על השלד שלנו): `Sword And Shield Pack` ו-`Great Sword Pack` (חבילות, Pose: No Character), ו-`Standing 2H Magic Attack 01`, ‏`Standing 1H Magic Attack 01`, ‏`Standing 1H Cast Spell 01` (בודדות, Without Skin). הכל ב-FBX ‏30 FPS, לתיקייה `מודלים למשחק\אנימציות\שחקן\`.
+- 🤖 Blender מותקן מ-Microsoft Store, ואפשר להריץ אותו ברקע: `blender-launcher.exe -b --python-expr ...` (הפלט נכתב לקובץ). התוכנית: לקרוא את ה-FBX ב-Blender, להעביר את הסיבובים לעצמות של R15 (Hips←LowerTorso, Spine←UpperTorso, Arm/ForeArm/Hand←Upper/Lower/Hand וכו', עם תיקון בין תנוחת T של Mixamo לתנוחת המנוחה של R15), לייצא JSON של `Motor6D.Transform` לכל פריים, לבנות מזה KeyframeSequence ב-Studio, ואז 👤 לפרסם.
+- לכל נשק: עמידה, ומכה או הטלה. לחרב: קומבו של 3 מכות.
+
+**⏸️ נדחה:** ידית הקיר (`LeverProp`): המודל הוא חתיכה אחת, אז הידית לא יכולה לזוז. רעיון: לסובב את כל המודל 180° סביב הציר של הלוח.
+
 **אחרי הקשת:** עכברוש עם אנימציות, הבוסים (The Gravekeeper בקומה 5, The Bone Warden בקומה 10, Gold Key ונקודת שמירה), ואז שלב 4 (מסך מלאי) ושלב 5 (העיר).
 
 ## 📍 איפה עצרנו
