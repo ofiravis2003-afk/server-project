@@ -76,7 +76,7 @@ local function buildCard(gui: ScreenGui, received: Received): (Frame, () -> ())
 	view.CurrentCamera = camera
 	local spin: RBXScriptConnection? = nil
 	if def and def.Look then
-		local tool = WeaponBuilder.Build(def.Look)
+		local tool = WeaponBuilder.Build(def.Look, received.Rarity)
 		local model = Instance.new("Model")
 		for _, child in tool:GetChildren() do
 			child.Parent = model

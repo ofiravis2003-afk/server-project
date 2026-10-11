@@ -110,7 +110,7 @@ end
 
 -- A cluster of wax candles (the Tripo prop) standing at `position`, with a warm light.
 local function candleCluster(ctx: Context, position: Vector3, withLight: boolean): boolean
-	local prop = Props.Place("Candles", ctx.Model, CFrame.new(position) * CFrame.Angles(0, ctx.Rng:NextNumber(0, math.pi * 2), 0), ctx.Rng:NextNumber(0.8, 1.1))
+	local prop = Props.Place("Candles", ctx.Model, CFrame.new(position) * CFrame.Angles(0, ctx.Rng:NextNumber(0, math.pi * 2), 0), ctx.Rng:NextNumber(1.2, 1.5))
 	if not prop then
 		return false
 	end

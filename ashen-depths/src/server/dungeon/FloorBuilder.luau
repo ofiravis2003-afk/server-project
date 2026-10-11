@@ -218,7 +218,7 @@ function FloorBuilder.KeyPedestal(parent: Instance, position: Vector3, tier: str
 	local stone = block(model, "Pedestal", Vector3.new(2.2, 3, 2.2), CFrame.new(position + Vector3.new(0, 1.5, 0)), Color3.fromRGB(70, 70, 74), Enum.Material.Slate)
 	local metal = FloorBuilder.TierColors[tier]
 	-- The Tripo key of this tier, standing on its tip above the pedestal.
-	local keyProp = Props.Place(`Key{tier}`, model, CFrame.new(position + Vector3.new(0, 3.4, 0)), 1.2)
+	local keyProp = Props.Place(`Key{tier}`, model, CFrame.new(position + Vector3.new(0, 3.4, 0)), 1.6)
 	if keyProp then
 		for _, d in keyProp:GetDescendants() do
 			if d:IsA("BasePart") then

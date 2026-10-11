@@ -126,7 +126,7 @@ function InventoryService.RefreshTools(player: Player)
 	for _, id in hotbarIds(data) do
 		local item = data.Inventory[id]
 		local def = Items.Defs[item.Item]
-		local tool = WeaponBuilder.Build(def.Look or "Sword")
+		local tool = WeaponBuilder.Build(def.Look or "Sword", item.Rarity)
 		tool.Name = def.DisplayName
 		tool.ToolTip = `{def.DisplayName} ({item.Rarity})`
 		tool:SetAttribute("ItemId", id)

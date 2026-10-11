@@ -1,9 +1,26 @@
 --!strict
--- Builds a weapon Tool out of plain parts, until the real models (KayKit / Tripo) arrive.
--- Every weapon is built standing up: the grip (the Tool's Handle) is at the origin and the
--- weapon extends along +Y. `GRIP` turns it so it points forward out of the player's hand.
+-- Builds a weapon Tool. With a Tripo model in ReplicatedStorage.WeaponModels ("<Look>_<Tier>", e.g. "Sword_Rare")
+-- the Tool is that mesh; otherwise it's made out of plain parts.
+-- Every weapon is built standing up: the grip is at the origin and the weapon extends along +Y.
+-- `GRIP` turns it so it points forward out of the player's hand. A model's "WeaponGrip" attachment marks that
+-- standing-up frame inside its mesh (worked out from where its handle is and which way its blade faces).
+--
+-- Rarities share three looks: Common, Rare (also Epic) and Legendary (also Mythic). A missing look falls back to
+-- the nearest one there is. Epic, Legendary and Mythic weapons glow in their rarity's color; Mythic burns.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Rarity = require(script.Parent.Rarity)
 
 local WeaponBuilder = {}
+
+local TIER_LOOKS: { [string]: { string } } = {
+	Common = { "Common", "Rare", "Legendary" },
+	Rare = { "Rare", "Common", "Legendary" },
+	Epic = { "Rare", "Legendary", "Common" },
+	Legendary = { "Legendary", "Rare", "Common" },
+	Mythic = { "Legendary", "Rare", "Common" },
+}
 
 local GRIP = CFrame.Angles(math.rad(90), 0, 0)
 
@@ -107,16 +124,86 @@ local builders: { [string]: (Part) -> () } = {
 	end,
 }
 
--- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Tome").
-function WeaponBuilder.Build(look: string): Tool
+local function findModel(look: string, rarity: string): BasePart?
+	local folder = ReplicatedStorage:FindFirstChild("WeaponModels")
+	if not folder then
+		return nil
+	end
+	for _, tier in TIER_LOOKS[rarity] or TIER_LOOKS.Common do
+		local model = folder:FindFirstChild(`{look}_{tier}`)
+		local handle = model and model:FindFirstChild("Handle")
+		if handle and handle:IsA("BasePart") and handle:FindFirstChild("WeaponGrip") then
+			return handle
+		end
+	end
+	return nil
+end
+
+-- A glow (and for Mythic, flames) in the rarity's color, so a better weapon shows from across the room.
+local function addAura(handle: BasePart, rarity: string)
+	if rarity ~= "Epic" and rarity ~= "Legendary" and rarity ~= "Mythic" then
+		return
+	end
+	local color = (Rarity.Info[rarity] or Rarity.Info.Common).Color
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = if rarity == "Epic" then 6 else 9
+	light.Brightness = if rarity == "Epic" then 0.8 else 1.4
+	light.Parent = handle
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Name = "Aura"
+	sparks.Color = ColorSequence.new(color)
+	sparks.LightEmission = 1
+	sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.18), NumberSequenceKeypoint.new(1, 0) })
+	sparks.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+	sparks.Lifetime = NumberRange.new(0.6, 1.2)
+	sparks.Speed = NumberRange.new(0.3, 1)
+	sparks.SpreadAngle = Vector2.new(180, 180)
+	sparks.Rate = if rarity == "Epic" then 6 else 14
+	sparks.Shape = Enum.ParticleEmitterShape.Box
+	sparks.Parent = handle
+	if rarity == "Mythic" then
+		local fire = Instance.new("ParticleEmitter")
+		fire.Name = "Flames"
+		fire.Color = ColorSequence.new(Color3.fromRGB(255, 120, 40), color)
+		fire.LightEmission = 1
+		fire.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 0.1) })
+		fire.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+		fire.Lifetime = NumberRange.new(0.3, 0.6)
+		fire.Speed = NumberRange.new(1, 2.5)
+		fire.Acceleration = Vector3.new(0, 4, 0)
+		fire.Rate = 30
+		fire.Shape = Enum.ParticleEmitterShape.Box
+		fire.Parent = handle
+	end
+end
+
+-- Returns a ready Tool for the given look ("Sword", "Axe", "Bow", "Staff", "Tome") and rarity.
+function WeaponBuilder.Build(look: string, rarity: string?): Tool
 	local tool = Instance.new("Tool")
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
 	tool.Grip = GRIP
 
+	local source = findModel(look, rarity or "Common")
+	if source then
+		local handle = source:Clone()
+		handle.Name = "Handle"
+		handle.Anchored = false
+		handle.CanCollide = false
+		handle.CanQuery = false
+		handle.Massless = true
+		-- The hand holds the mesh at its WeaponGrip frame, turned the same way as the part-built weapons.
+		tool.Grip = (handle:FindFirstChild("WeaponGrip") :: Attachment).CFrame * GRIP
+		addAura(handle, rarity or "Common")
+		handle.Parent = tool
+		return tool
+	end
+
 	local handle = makeHandle(Vector3.new(0.28, 1.1, 0.28), LEATHER, Enum.Material.Fabric)
 	local build = builders[look] or builders.Sword
 	build(handle)
+	addAura(handle, rarity or "Common")
 	handle.Parent = tool
 	return tool
 end
