@@ -39,7 +39,7 @@ export type WeaponType = {
 local Weapons: { [string]: WeaponType } = {
 	Sword = {
 		Kind = "Melee",
-		Cooldown = 0.45,
+		Cooldown = 0.6,
 		Range = 7,
 		Arc = 110,
 		CritChance = 0.1,
@@ -52,20 +52,20 @@ local Weapons: { [string]: WeaponType } = {
 			"rbxassetid://116737029091929", -- backhand
 			"rbxassetid://119892078524903", -- down: the combo's strong third blow
 		},
-		SwingSpeed = 1.4,
-		Release = 0.2,
+		SwingSpeed = 1.0,
+		Release = 0.3,
 	},
 	Axe = {
 		Kind = "Melee",
-		Cooldown = 1.05,
+		Cooldown = 0.9,
 		Range = 7.5,
 		Arc = 150,
 		CritChance = 0.08,
 		CritMultiplier = 2,
 		Anim = "Slash",
 		Swings = { "rbxassetid://137786755838962" },
-		SwingSpeed = 1.05,
-		Release = 0.5,
+		SwingSpeed = 1.35,
+		Release = 0.4,
 	},
 	Staff = {
 		Kind = "Blast",

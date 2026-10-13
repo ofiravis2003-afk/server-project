@@ -21,7 +21,7 @@ Items.Defs = {
 		DisplayName = "Rusty Sword",
 		Slot = "Weapon",
 		WeaponType = "Sword",
-		Damage = 12,
+		Damage = 15, -- slower swings since 2026-10-13 (0.6s): same damage per second
 		Look = "Sword",
 		Names = { Rare = "Steel Longsword", Epic = "Duskblade", Legendary = "Sunforged Blade", Mythic = "Emberfall" },
 	},
@@ -29,7 +29,7 @@ Items.Defs = {
 		DisplayName = "Woodcutter's Axe",
 		Slot = "Weapon",
 		WeaponType = "Axe",
-		Damage = 26,
+		Damage = 22, -- faster chops since 2026-10-13 (0.9s): same damage per second
 		Look = "Axe",
 		Names = { Rare = "Iron Waraxe", Epic = "Gravecleaver", Legendary = "Twinfang Axe", Mythic = "Ashen Executioner" },
 	},
