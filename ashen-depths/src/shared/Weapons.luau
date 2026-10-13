@@ -55,7 +55,7 @@ local Weapons: { [string]: WeaponType } = {
 			"rbxassetid://119892078524903", -- down: the combo's strong third blow
 		},
 		SwingSpeed = 1.0,
-		SwingLength = 0.45,
+		SwingLength = 0.38, -- the first blow's follow-through would wrap the blade into the body
 		Release = 0.3,
 	},
 	Axe = {
@@ -66,8 +66,9 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.08,
 		CritMultiplier = 2,
 		Anim = "Slash",
-		Swings = { "rbxassetid://137786755838962" },
-		SwingSpeed = 1.35,
+		-- The overhead chop (the sword's third blow, slower here); the combo chop it had cut through the body.
+		Swings = { "rbxassetid://119892078524903" },
+		SwingSpeed = 0.95,
 		Release = 0.4,
 	},
 	Staff = {
