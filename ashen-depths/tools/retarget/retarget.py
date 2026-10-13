@@ -70,6 +70,7 @@ for part, (bone, child, rdir, _) in MAP.items():
 
 frames = []
 first_hips = None
+hand_track = {"R": [], "L": []}
 for f in range(f0, f1 + 1):
     scene.frame_set(f)
     world = {}
@@ -92,6 +93,18 @@ for f in range(f0, f1 + 1):
         offset.z = 0
     poses["LowerTorso"][0:3] = [offset.x, offset.y, offset.z]
     frames.append({"t": (f - f0) / fps, "poses": poses})
+    for side, bone in (("R", "RightHand"), ("L", "LeftHand")):
+        hand_track[side].append(pos_r(mw @ arm.pose.bones[B(bone)].head))
+
+# When each hand moves fastest (the moment a blow lands or a spell is thrown), in seconds.
+peaks = {}
+for side, track in hand_track.items():
+    best, best_t = 0, 0
+    for i in range(1, len(track)):
+        speed = (track[i] - track[i - 1]).length * fps
+        if speed > best:
+            best, best_t = speed, i / fps
+    peaks[side] = {"t": best_t, "speed": best * SCALE}
 
 with open(out, "w") as fh:
-    json.dump({"fps": fps, "length": (f1 - f0) / fps, "frames": frames}, fh)
+    json.dump({"fps": fps, "length": (f1 - f0) / fps, "peaks": peaks, "frames": frames}, fh)
