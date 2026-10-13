@@ -13,6 +13,7 @@
 --   Swings:     the character's attack clips (Mixamo moves on the R15 body, upper body only); a weapon with
 --               several plays them in turn (the sword's three-blow combo)
 --   SwingSpeed: how fast the clips play
+--   SwingLength: seconds of each clip to play before easing back (cuts a follow-through that wraps into the body)
 --   Release:    seconds from the click to the moment the blow lands / the spell leaves the hand: the hit
 --               (or the projectile) waits for it, so it matches the swing
 
@@ -33,6 +34,7 @@ export type WeaponType = {
 	Anim: string?,
 	Swings: { string }?,
 	SwingSpeed: number?,
+	SwingLength: number?,
 	Release: number?,
 }
 
@@ -53,6 +55,7 @@ local Weapons: { [string]: WeaponType } = {
 			"rbxassetid://119892078524903", -- down: the combo's strong third blow
 		},
 		SwingSpeed = 1.0,
+		SwingLength = 0.45,
 		Release = 0.3,
 	},
 	Axe = {

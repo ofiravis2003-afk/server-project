@@ -57,7 +57,17 @@ local function playSwing(weapon: Weapons.WeaponType, sinceLast: number)
 	for _, track in swingTracks do
 		track:Stop(0.08)
 	end
-	swingTracks[swingIndex]:Play(0.06, 1, weapon.SwingSpeed or 1)
+	local track = swingTracks[swingIndex]
+	local speed = weapon.SwingSpeed or 1
+	track:Play(0.06, 1, speed)
+	local length = weapon.SwingLength
+	if length then
+		task.delay(length / speed, function()
+			if track.IsPlaying and track.TimePosition >= length - 0.05 then
+				track:Stop(0.15)
+			end
+		end)
+	end
 end
 
 local function findTarget(root: BasePart, range: number): BasePart?
