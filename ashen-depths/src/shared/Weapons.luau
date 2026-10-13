@@ -9,7 +9,12 @@
 --   HealRange:  tome only, how far away a hurt player can be and still get healed
 --   SelfHeal:   tome only, healing yourself works at this fraction (so a healer alone isn't unbeatable)
 --   Combo:      every Nth hit in a row does `ComboBonus` times the damage
---   Anim:       the swing the character plays ("Slash", "Lunge" or none)
+--   Anim:       Roblox's default swing ("Slash", "Lunge"), used only when the weapon has no Swings
+--   Swings:     the character's attack clips (Mixamo moves on the R15 body, upper body only); a weapon with
+--               several plays them in turn (the sword's three-blow combo)
+--   SwingSpeed: how fast the clips play
+--   Release:    seconds from the click to the moment the blow lands / the spell leaves the hand: the hit
+--               (or the projectile) waits for it, so it matches the swing
 
 export type WeaponType = {
 	Cooldown: number,
@@ -26,6 +31,9 @@ export type WeaponType = {
 	Combo: number?,
 	ComboBonus: number?,
 	Anim: string?,
+	Swings: { string }?,
+	SwingSpeed: number?,
+	Release: number?,
 }
 
 local Weapons: { [string]: WeaponType } = {
@@ -39,6 +47,13 @@ local Weapons: { [string]: WeaponType } = {
 		Combo = 3,
 		ComboBonus = 1.6,
 		Anim = "Slash",
+		Swings = {
+			"rbxassetid://100735522519568", -- across
+			"rbxassetid://116737029091929", -- backhand
+			"rbxassetid://119892078524903", -- down: the combo's strong third blow
+		},
+		SwingSpeed = 1.4,
+		Release = 0.2,
 	},
 	Axe = {
 		Kind = "Melee",
@@ -48,6 +63,9 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.08,
 		CritMultiplier = 2,
 		Anim = "Slash",
+		Swings = { "rbxassetid://137786755838962" },
+		SwingSpeed = 1.05,
+		Release = 0.5,
 	},
 	Staff = {
 		Kind = "Blast",
@@ -58,6 +76,9 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.05,
 		CritMultiplier = 1.75,
 		Anim = "Lunge",
+		Swings = { "rbxassetid://97678834400911" },
+		SwingSpeed = 1.2,
+		Release = 0.44,
 	},
 	-- The healer: every cast throws a bolt of light at an enemy and heals the most hurt player nearby.
 	Tome = {
@@ -70,6 +91,9 @@ local Weapons: { [string]: WeaponType } = {
 		SelfHeal = 0.5,
 		CritChance = 0.05,
 		CritMultiplier = 1.5,
+		Swings = { "rbxassetid://113730551682697" },
+		SwingSpeed = 1.05,
+		Release = 0.38,
 	},
 }
 

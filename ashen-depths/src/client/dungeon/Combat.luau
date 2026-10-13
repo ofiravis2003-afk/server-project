@@ -24,6 +24,41 @@ local Combat = {}
 local heldTool: Tool? = nil
 local holding = false
 local lastFire = 0
+local swingTracks: { AnimationTrack } = {}
+local swingIndex = 0
+
+-- Loads the held weapon's attack clips onto the character (played here; Roblox shares them with everyone).
+local function loadSwings(humanoid: Humanoid, weapon: Weapons.WeaponType)
+	for _, track in swingTracks do
+		track:Destroy()
+	end
+	swingTracks = {}
+	swingIndex = 0
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		return
+	end
+	for _, id in weapon.Swings or {} do
+		local animation = Instance.new("Animation")
+		animation.AnimationId = id
+		local track = animator:LoadAnimation(animation)
+		track.Priority = Enum.AnimationPriority.Action
+		track.Looped = false
+		table.insert(swingTracks, track)
+	end
+end
+
+-- The next swing: in turn for a combo, starting over after a pause.
+local function playSwing(weapon: Weapons.WeaponType, sinceLast: number)
+	if #swingTracks == 0 then
+		return
+	end
+	swingIndex = if sinceLast > weapon.Cooldown * 2.5 then 1 else swingIndex % #swingTracks + 1
+	for _, track in swingTracks do
+		track:Stop(0.08)
+	end
+	swingTracks[swingIndex]:Play(0.06, 1, weapon.SwingSpeed or 1)
+end
 
 local function findTarget(root: BasePart, range: number): BasePart?
 	local best, bestScore = nil, math.huge
@@ -63,6 +98,7 @@ local function tryAttack()
 	if now - lastFire < weapon.Cooldown then
 		return
 	end
+	local sinceLast = now - lastFire
 	lastFire = now
 
 	local reach = if weapon.Kind == "Melee" then weapon.Range * AUTO_AIM_REACH else weapon.Range
@@ -88,6 +124,7 @@ local function tryAttack()
 	if not humanoid.Sit then
 		root.CFrame = CFrame.lookAt(root.Position, root.Position + flat)
 	end
+	playSwing(weapon, sinceLast)
 	attackRemote:FireServer(tool:GetAttribute("ItemId"), flat, aimPoint)
 end
 
@@ -119,6 +156,11 @@ local function onToolEquipped(tool: Tool)
 		return
 	end
 	heldTool = tool
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	local weapon = Weapons[tool:GetAttribute("WeaponType") :: string]
+	if humanoid and weapon then
+		loadSwings(humanoid, weapon)
+	end
 	local activated = tool.Activated:Connect(startHolding)
 	local deactivated = tool.Deactivated:Connect(function()
 		holding = false

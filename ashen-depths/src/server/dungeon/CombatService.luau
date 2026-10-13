@@ -110,7 +110,17 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 		EnemyService.Damage(enemy, amount, player, kind)
 	end
 
-	playSwing(tool, weapon.Anim)
+	if not weapon.Swings then
+		playSwing(tool, weapon.Anim)
+	end
+	-- The player's screen plays the swing; the blow lands (or the spell leaves) when the swing gets there.
+	local release = weapon.Release or 0
+	if release > 0 then
+		task.wait(release)
+		if humanoid.Health <= 0 or tool.Parent ~= character then
+			return
+		end
+	end
 	local origin = root.Position
 
 	if weapon.Kind == "Melee" then
