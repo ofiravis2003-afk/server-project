@@ -2,12 +2,14 @@
 # Usage: python to_lua.py <in.json> <name> <out.luau> [step] [loop|once] [start end] [upper]
 #   step:  keep every n-th frame;  start/end: cut the clip to this window (seconds, re-timed from 0)
 #   upper: arms, head and torso only (the legs keep walking); the torso keeps the hips' turn
+#   upper-right: the same, without the left arm too (a one-handed version of a two-handed move)
 import json, sys
 src, name, out = sys.argv[1], sys.argv[2], sys.argv[3]
 step = int(sys.argv[4]) if len(sys.argv) > 4 else 2
 loop = len(sys.argv) > 5 and sys.argv[5] == "loop"
 cut = (float(sys.argv[6]), float(sys.argv[7])) if len(sys.argv) > 7 else None
-upper = len(sys.argv) > 8 and sys.argv[8] == "upper"
+upper = len(sys.argv) > 8 and sys.argv[8] in ("upper", "upper-right")
+right_only = len(sys.argv) > 8 and sys.argv[8] == "upper-right"
 j = json.load(open(src))
 allf = j["frames"]
 if cut:
@@ -27,6 +29,9 @@ if upper:
         p["UpperTorso"] = [0, 0, 0] + qmul(p["LowerTorso"][3:], p["UpperTorso"][3:])
         for k in LEGS:
             p.pop(k, None)
+        if right_only:
+            for k in ("LeftUpperArm", "LeftLowerArm", "LeftHand"):
+                p.pop(k, None)
 frames = allf[::step]
 if allf[-1] is not frames[-1]:
     frames.append(allf[-1])
