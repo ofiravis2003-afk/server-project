@@ -26,6 +26,7 @@ local holding = false
 local lastFire = 0
 local swingTracks: { AnimationTrack } = {}
 local swingIndex = 0
+local holdTrack: AnimationTrack? = nil
 
 -- Loads the held weapon's attack clips onto the character (played here; Roblox shares them with everyone).
 local function loadSwings(humanoid: Humanoid, weapon: Weapons.WeaponType)
@@ -37,6 +38,21 @@ local function loadSwings(humanoid: Humanoid, weapon: Weapons.WeaponType)
 	local animator = humanoid:FindFirstChildOfClass("Animator")
 	if not animator then
 		return
+	end
+	if holdTrack then
+		holdTrack:Stop(0.2)
+		holdTrack:Destroy()
+		holdTrack = nil
+	end
+	if weapon.Hold then
+		-- Above the default walk and tool pose (so the arms keep the stance), below the swings.
+		local animation = Instance.new("Animation")
+		animation.AnimationId = weapon.Hold
+		local track = animator:LoadAnimation(animation)
+		track.Priority = Enum.AnimationPriority.Movement
+		track.Looped = true
+		track:Play(0.25)
+		holdTrack = track
 	end
 	for _, id in weapon.Swings or {} do
 		local animation = Instance.new("Animation")
@@ -186,6 +202,10 @@ local function onToolEquipped(tool: Tool)
 			heldTool = nil
 			holding = false
 			ContextActionService:UnbindAction(ACTION)
+			if holdTrack then
+				holdTrack:Stop(0.2)
+				holdTrack = nil
+			end
 		end
 	end)
 end

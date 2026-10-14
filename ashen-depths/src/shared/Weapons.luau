@@ -12,6 +12,7 @@
 --   Anim:       Roblox's default swing ("Slash", "Lunge"), used only when the weapon has no Swings
 --   Swings:     the character's attack clips (Mixamo moves on the R15 body, upper body only); a weapon with
 --               several plays them in turn (the sword's three-blow combo)
+--   Hold:       a looping stance for the upper body while the weapon is out (the legs keep walking)
 --   SwingSpeed: how fast the clips play
 --   SwingLength: seconds of each clip to play before easing back (cuts a follow-through that wraps into the body)
 --   Release:    seconds from the click to the moment the blow lands / the spell leaves the hand: the hit
@@ -33,10 +34,15 @@ export type WeaponType = {
 	ComboBonus: number?,
 	Anim: string?,
 	Swings: { string }?,
+	Hold: string?,
 	SwingSpeed: number?,
 	SwingLength: number?,
 	Release: number?,
 }
+
+-- Upper-body stances while a weapon is out (Mixamo idles on the R15 body).
+local MELEE_HOLD = "rbxassetid://115142381895123"
+local MAGIC_HOLD = "rbxassetid://137628600957789"
 
 local Weapons: { [string]: WeaponType } = {
 	Sword = {
@@ -49,6 +55,7 @@ local Weapons: { [string]: WeaponType } = {
 		Combo = 3,
 		ComboBonus = 1.6,
 		Anim = "Slash",
+		Hold = MELEE_HOLD,
 		Swings = {
 			"rbxassetid://100735522519568", -- across
 			"rbxassetid://116737029091929", -- backhand
@@ -67,6 +74,7 @@ local Weapons: { [string]: WeaponType } = {
 		CritMultiplier = 2,
 		Anim = "Slash",
 		-- The overhead chop (the sword's third blow, slower here); the combo chop it had cut through the body.
+		Hold = MELEE_HOLD,
 		Swings = { "rbxassetid://119892078524903" },
 		SwingSpeed = 0.95,
 		Release = 0.4,
@@ -80,6 +88,7 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.05,
 		CritMultiplier = 1.75,
 		Anim = "Lunge",
+		Hold = MAGIC_HOLD,
 		Swings = { "rbxassetid://80084184740105" }, -- the two-handed cast with only the staff hand moving
 		SwingSpeed = 1.2,
 		Release = 0.44,
@@ -95,6 +104,7 @@ local Weapons: { [string]: WeaponType } = {
 		SelfHeal = 0.5,
 		CritChance = 0.05,
 		CritMultiplier = 1.5,
+		Hold = MAGIC_HOLD,
 		Swings = { "rbxassetid://113730551682697" },
 		SwingSpeed = 1.05,
 		Release = 0.38,
