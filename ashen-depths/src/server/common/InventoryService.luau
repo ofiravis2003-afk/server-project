@@ -151,6 +151,30 @@ function InventoryService.RefreshTools(player: Player)
 		tool:SetAttribute("ItemId", id)
 		tool:SetAttribute("WeaponType", def.WeaponType)
 		CollectionService:AddTag(tool, TOOL_TAG)
+		local offHand = tool:FindFirstChild("OffHand") :: BasePart?
+		if offHand then
+			-- Held in the left hand: welded there while the weapon is out.
+			tool.Equipped:Connect(function()
+				local hand = character:FindFirstChild("LeftHand") :: BasePart?
+				local grip = hand and hand:FindFirstChild("LeftGripAttachment") :: Attachment?
+				local frame = offHand:FindFirstChild("WeaponGrip") :: Attachment?
+				if hand and grip and frame then
+					local weld = Instance.new("Weld")
+					weld.Name = "OffHandGrip"
+					weld.Part0 = hand
+					weld.Part1 = offHand
+					weld.C0 = grip.CFrame
+					weld.C1 = frame.CFrame
+					weld.Parent = offHand
+				end
+			end)
+			tool.Unequipped:Connect(function()
+				local weld = offHand:FindFirstChild("OffHandGrip")
+				if weld then
+					weld:Destroy()
+				end
+			end)
+		end
 		tool.Parent = backpack
 	end
 end

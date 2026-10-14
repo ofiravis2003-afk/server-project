@@ -16,6 +16,10 @@ local Rarity = require(script.Parent.Rarity)
 
 local WeaponBuilder = {}
 
+-- Weapons carried in the left hand: the Tool's Handle (always in the right hand) is an invisible point the
+-- spell leaves from, and the model itself is an "OffHand" part the server welds to the left hand on equip.
+WeaponBuilder.LeftHanded = { Tome = true }
+
 local TIER_LOOKS: { [string]: { string } } = {
 	Common = { "Common", "Rare", "Legendary" },
 	Rare = { "Rare", "Common", "Legendary" },
@@ -196,6 +200,24 @@ function WeaponBuilder.Build(look: string, rarity: string?): Tool
 		handle.Massless = true
 		tool.Grip = (handle:FindFirstChild("WeaponGrip") :: Attachment).CFrame
 		addAura(handle, rarity or "Common")
+		if WeaponBuilder.LeftHanded[look] then
+			local offHand = handle
+			offHand.Name = "OffHand"
+			local muzzle = offHand:FindFirstChild("Muzzle")
+			if muzzle then
+				muzzle:Destroy()
+			end
+			offHand.Parent = tool
+			local point = makeHandle(Vector3.new(0.2, 0.2, 0.2), LEATHER, Enum.Material.SmoothPlastic)
+			point.Transparency = 1
+			local castFrom = Instance.new("Attachment")
+			castFrom.Name = "Muzzle"
+			castFrom.Position = Vector3.new(0, 0.3, 0)
+			castFrom.Parent = point
+			point.Parent = tool
+			tool.Grip = CFrame.new()
+			return tool
+		end
 		handle.Parent = tool
 		return tool
 	end
