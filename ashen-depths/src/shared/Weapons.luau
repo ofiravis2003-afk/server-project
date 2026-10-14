@@ -80,7 +80,7 @@ local Weapons: { [string]: WeaponType } = {
 		CritChance = 0.05,
 		CritMultiplier = 1.75,
 		Anim = "Lunge",
-		Swings = { "rbxassetid://97678834400911" },
+		Swings = { "rbxassetid://80084184740105" }, -- the two-handed cast with only the staff hand moving
 		SwingSpeed = 1.2,
 		Release = 0.44,
 	},
