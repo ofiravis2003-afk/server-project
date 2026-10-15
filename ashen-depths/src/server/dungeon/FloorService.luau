@@ -57,6 +57,7 @@ type CombatRoom = {
 	Enemies: { [EnemyService.Enemy]: boolean },
 	EmptySince: number?,
 	HasElite: boolean,
+	KeyBearer: boolean?, -- this room's elite carries the Stairs Key
 	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
 	IntroShown: boolean?,
 }
@@ -87,12 +88,32 @@ local function keysOf(player: Player): Keys
 	return k
 end
 
+-- From floor 2 the stairs down are sealed until someone finds this floor's Stairs Key: an elite in one of
+-- the combat rooms carries it, or it waits on a pedestal in the treasure room. One key opens the way for everyone.
+-- (Boss floors need none: the lair stands before the stairs.)
+local stairsKey: { Needed: boolean, Found: boolean, Where: string } = { Needed = false, Found = false, Where = "" }
+
 local function pushRun(player: Player)
 	runRemote:FireClient(player, {
 		Floor = currentFloor,
 		Chapter = Floors.ChapterName(currentFloor),
 		Keys = keysOf(player),
+		StairsKey = if stairsKey.Needed then (if stairsKey.Found then "Found" else stairsKey.Where) else nil,
 	})
+end
+
+local function findStairsKey(player: Player, position: Vector3?)
+	if stairsKey.Found then
+		return
+	end
+	stairsKey.Found = true
+	notifyRemote:FireAllClients(`{player.DisplayName} found the Stairs Key! The way down is open.`)
+	if position then
+		damageNumberRemote:FireAllClients(position + Vector3.new(0, 4, 0), "Stairs Key!", "Reward")
+	end
+	for _, other in Players:GetPlayers() do
+		pushRun(other)
+	end
 end
 
 local function giveKey(player: Player, tier: string, position: Vector3?)
@@ -203,6 +224,13 @@ local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 		for player in enemy.Damagers do
 			if player.Parent then
 				giveKey(player, "Bronze", enemy.Root.Position)
+			end
+		end
+		if room.KeyBearer then
+			room.KeyBearer = false
+			local finder = next(enemy.Damagers)
+			if finder then
+				findStairsKey(finder, enemy.Root.Position)
 			end
 		end
 	end
@@ -614,9 +642,15 @@ local function setupStairs(room: FloorBuilder.BuiltRoom)
 	end
 	local last = currentFloor >= Floors.MaxFloor
 	local p = prompt(part, "Descend", if last then "Sealed" else `Floor {currentFloor + 1}`, 1, 10)
-	p.Triggered:Connect(function(_player)
+	p.Triggered:Connect(function(player)
 		if last then
 			notifyRemote:FireAllClients("The way down is sealed... for now.")
+			return
+		end
+		if stairsKey.Needed and not stairsKey.Found then
+			notifyRemote:FireClient(player, if stairsKey.Where == "Elite"
+				then "The stairs are sealed. An elite on this floor carries the Stairs Key."
+				else "The stairs are sealed. The Stairs Key lies in this floor's treasure room.")
 			return
 		end
 		if not changingFloor then
@@ -646,6 +680,17 @@ startFloor = function(floor: number)
 	local previousRooms = combatRooms
 	currentFloor = floor
 	combatRooms = {}
+	local hasTreasure = false
+	for _, room in rooms do
+		if room.Plan.Type == "Treasure" then
+			hasTreasure = true
+		end
+	end
+	stairsKey = {
+		Needed = floor >= 2 and not Floors.Bosses[floor],
+		Found = false,
+		Where = if hasTreasure and rng:NextNumber() < 0.5 then "Treasure" else "Elite",
+	}
 
 	for _, room in rooms do
 		local plan = room.Plan
@@ -688,6 +733,21 @@ startFloor = function(floor: number)
 				end
 			end
 		elseif plan.Type == "Treasure" then
+			if stairsKey.Needed and stairsKey.Where == "Treasure" then
+				local pedestal = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, -7), "Silver")
+				pedestal.Name = "StairsKeyPedestal"
+				for _, light in pedestal:GetDescendants() do
+					if light:IsA("PointLight") then
+						light.Color = Color3.fromRGB(120, 255, 170)
+						light.Brightness = 2.5
+					end
+				end
+				local take = prompt(pedestal:FindFirstChild("Pedestal") :: BasePart, "Take", "Stairs Key", 0.4, 8)
+				take.Triggered:Connect(function(player)
+					findStairsKey(player, room.Center)
+					take.Enabled = false
+				end)
+			end
 			local count = if floor >= 3 and rng:NextNumber() < 0.35 then 3 else 2
 			for i = 1, count do
 				local tier = if i == 3 then "Silver" else "Bronze"
@@ -699,6 +759,25 @@ startFloor = function(floor: number)
 			placeChest(room.Model, CFrame.new(room.Center + Vector3.new(0, 0, 6)), "Bronze")
 		elseif plan.Type == "Stairs" then
 			setupStairs(room)
+		end
+	end
+
+	if stairsKey.Needed and stairsKey.Where == "Elite" then
+		local candidates = {}
+		for i, room in combatRooms do
+			if not room.Boss and i > 1 then
+				table.insert(candidates, room)
+			end
+		end
+		if #candidates == 0 then
+			candidates = combatRooms
+		end
+		local bearer = candidates[rng:NextInteger(1, #candidates)]
+		if bearer then
+			bearer.HasElite = true
+			bearer.KeyBearer = true
+		else
+			stairsKey.Needed = false
 		end
 	end
 

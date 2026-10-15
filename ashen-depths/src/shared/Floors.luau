@@ -5,10 +5,10 @@ local Config = require(script.Parent.Config)
 
 local Floors = {}
 
-Floors.MaxFloor = 10 -- chapter I only, for the first release
+Floors.MaxFloor = 15 -- chapter I only, for the first release (15 floors, decided 2026-10-16)
 
 Floors.Chapters = {
-	{ First = 1, Last = 10, Name = "The Drowned Catacombs" },
+	{ First = 1, Last = 15, Name = "The Drowned Catacombs" },
 }
 
 function Floors.ChapterName(floor: number): string
@@ -71,7 +71,7 @@ Floors.Bosses = { [5] = "Gravekeeper" } :: { [number]: string }
 
 -- How many combat rooms stand between the entrance and the stairs.
 function Floors.CombatRooms(floor: number): number
-	return math.min(3 + math.floor((floor - 1) / 2), 7)
+	return math.min(4 + math.floor((floor - 1) / 2), 8)
 end
 
 return Floors

@@ -36,6 +36,7 @@ function RunHud.Start()
 	local panel = Instance.new("Frame")
 	panel.Position = UDim2.fromOffset(12, 82)
 	panel.Size = UDim2.fromOffset(250, 50)
+	panel.AutomaticSize = Enum.AutomaticSize.Y
 	panel.BackgroundColor3 = Color3.fromRGB(22, 18, 20)
 	panel.BackgroundTransparency = 0.25
 	panel.Parent = gui
@@ -65,6 +66,16 @@ function RunHud.Start()
 		keyTexts[tier] = text
 	end
 
+	-- The Stairs Key: where to look for it, or that it's found.
+	local stairsText = label(panel, Fonts.Body, 13, Color3.fromRGB(150, 235, 175))
+	stairsText.Position = UDim2.fromOffset(10, 46)
+	stairsText.Size = UDim2.new(1, -20, 0, 18)
+	stairsText.TextXAlignment = Enum.TextXAlignment.Left
+	stairsText.Visible = false
+	local pad = Instance.new("UIPadding")
+	pad.PaddingBottom = UDim.new(0, 4)
+	pad.Parent = panel
+
 	local banner = label(gui, Fonts.Title, 54, Color3.fromRGB(240, 225, 200))
 	banner.AnchorPoint = Vector2.new(0.5, 0.5)
 	banner.Position = UDim2.fromScale(0.5, 0.3)
@@ -84,6 +95,17 @@ function RunHud.Start()
 		floorText.Text = `Floor {run.Floor}  ·  {run.Chapter}`
 		for tier, text in keyTexts do
 			text.Text = `{tier} {run.Keys[tier] or 0}`
+		end
+		stairsText.Visible = run.StairsKey ~= nil
+		if run.StairsKey == "Found" then
+			stairsText.Text = "Stairs Key: found, the way down is open"
+			stairsText.TextColor3 = Color3.fromRGB(150, 235, 175)
+		elseif run.StairsKey == "Elite" then
+			stairsText.Text = "Stairs Key: an elite carries it"
+			stairsText.TextColor3 = Color3.fromRGB(235, 200, 120)
+		elseif run.StairsKey == "Treasure" then
+			stairsText.Text = "Stairs Key: in the treasure room"
+			stairsText.TextColor3 = Color3.fromRGB(235, 200, 120)
 		end
 	end)
 
