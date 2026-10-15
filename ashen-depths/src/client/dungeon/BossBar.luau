@@ -82,6 +82,9 @@ function BossBar.Start()
 				end
 			end
 		end
+		if player:GetAttribute("Cutscene") then
+			best = nil -- the entrance scene shows the name its own way
+		end
 		frame.Visible = best ~= nil
 		if not best then
 			shown = nil

@@ -113,7 +113,7 @@ local function tryAttack()
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if not tool or not root or not humanoid or humanoid.Health <= 0 then
+	if not tool or not root or not humanoid or humanoid.Health <= 0 or player:GetAttribute("Cutscene") then
 		return
 	end
 	local weapon = Weapons[tool:GetAttribute("WeaponType") :: string]

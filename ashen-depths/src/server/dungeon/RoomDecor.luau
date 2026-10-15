@@ -7,6 +7,9 @@
 --   Chapel:    an altar with candles, red banners, old pews
 --   Prison:    barred cells along a wall, chains and remains inside
 --   Vault:     heaps of gold coins and banners (treasure rooms)
+--   Graveyard: the Gravekeeper's lair: rows of leaning headstones, open graves with heaped earth and a
+--              shovel left in the dirt, coffins, candles on the stones, and a low grave mist over everything.
+--              The middle stays clear for the fight.
 -- Big pieces only go along walls without a doorway, so paths and the middle of the room stay clear.
 -- Tripo-made props (Coffin, Barrel, Banner, Candles in ServerStorage.DungeonProps) are used when present.
 
@@ -417,6 +420,95 @@ themes.Vault = function(ctx)
 end
 
 -- A lighter touch for rooms with no theme of their own (stairs, secret rooms).
+local EARTH = Color3.fromRGB(58, 46, 36)
+local GRAVE_STONE = Color3.fromRGB(96, 98, 94)
+
+local function headstone(ctx: Context, cframe: CFrame)
+	local rng = ctx.Rng
+	local height = rng:NextNumber(2.6, 3.8)
+	local width = rng:NextNumber(1.8, 2.4)
+	local lean = CFrame.Angles(rng:NextNumber(-0.18, 0.12), rng:NextNumber(-0.25, 0.25), rng:NextNumber(-0.12, 0.12))
+	local base = cframe * lean
+	local slab = part(ctx.Model, "Headstone", Vector3.new(width, height - width / 2, 0.55), base * CFrame.new(0, (height - width / 2) / 2 - 0.3, 0), GRAVE_STONE, Enum.Material.Slate)
+	part(ctx.Model, "HeadstoneTop", Vector3.new(0.55, width, width), base * CFrame.new(0, height - width / 2 - 0.3, 0) * CFrame.Angles(0, math.rad(90), 0), GRAVE_STONE, Enum.Material.Slate, Enum.PartType.Cylinder)
+	-- an engraved cross on the face
+	deco(ctx.Model, "Engraving", Vector3.new(0.18, height * 0.45, 0.08), slab.CFrame * CFrame.new(0, 0.2, -0.3), Color3.fromRGB(60, 62, 60), Enum.Material.Slate)
+	deco(ctx.Model, "Engraving", Vector3.new(width * 0.45, 0.18, 0.08), slab.CFrame * CFrame.new(0, height * 0.12, -0.3), Color3.fromRGB(60, 62, 60), Enum.Material.Slate)
+	-- a little heap of earth in front of it
+	deco(ctx.Model, "GraveMound", Vector3.new(width * 1.1, 0.7, 4.2), cframe * CFrame.new(0, 0.05, -2.4), EARTH, Enum.Material.Ground, Enum.PartType.Ball)
+end
+
+local function openGrave(ctx: Context, spot: Vector3, turn: number)
+	local rng = ctx.Rng
+	local frame = CFrame.new(spot) * CFrame.Angles(0, turn, 0)
+	-- the dark pit, the stone edge round it and the earth dug out beside it
+	deco(ctx.Model, "GravePit", Vector3.new(3.4, 0.1, 6.6), frame * CFrame.new(0, 0.06, 0), Color3.fromRGB(14, 11, 9), Enum.Material.Ground)
+	for _, side in { -1, 1 } do
+		part(ctx.Model, "GraveEdge", Vector3.new(0.5, 0.4, 7.4), frame * CFrame.new(side * 1.95, 0.2, 0), Color3.fromRGB(74, 72, 68), Enum.Material.Cobblestone)
+	end
+	part(ctx.Model, "DugEarth", Vector3.new(3.6, 2.2, 5.2), frame * CFrame.new(3.9, 0.3, 0.4) * CFrame.Angles(0, rng:NextNumber(-0.3, 0.3), 0), EARTH, Enum.Material.Ground, Enum.PartType.Ball)
+	-- a shovel left stuck in the heap
+	local shovel = Props.Place("GravekeeperShovel", ctx.Model, frame * CFrame.new(3.6, 0.6, 0.2) * CFrame.Angles(math.rad(rng:NextNumber(-25, -12)), 0, math.rad(rng:NextNumber(-15, 15))) * CFrame.Angles(math.rad(180), 0, 0), 0.55)
+	if shovel then
+		for _, d in shovel:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+			end
+		end
+	end
+	headstone(ctx, frame * CFrame.new(0, 0, -4.4) * CFrame.Angles(0, math.pi, 0))
+end
+
+themes.Graveyard = function(ctx)
+	local rng = ctx.Rng
+	local S = ctx.Size
+	tint(ctx, Color3.fromRGB(62, 60, 58), Color3.fromRGB(46, 40, 34), Enum.Material.Ground)
+	-- Rows of headstones along the walls without doorways, a second row a step further in.
+	for _, frame in ctx.PlainWalls do
+		local along = -S / 2 + 6
+		while along <= S / 2 - 6 do
+			headstone(ctx, onWall(ctx, frame, along + rng:NextNumber(-0.8, 0.8), 2.2))
+			if rng:NextNumber() < 0.6 then
+				headstone(ctx, onWall(ctx, frame, along + 2.5 + rng:NextNumber(-0.6, 0.6), 7.5))
+			end
+			if rng:NextNumber() < 0.35 then
+				candleCluster(ctx, (onWall(ctx, frame, along + 1.4, 4.2)).Position, false)
+			end
+			along += 5.5
+		end
+		-- a coffin left out against each wall
+		if Props.Has("Coffin") then
+			Props.Place("Coffin", ctx.Model, onWall(ctx, frame, rng:NextNumber(-S / 5, S / 5), 3.2) * CFrame.Angles(0, math.rad(90), 0))
+		end
+	end
+	-- Open graves in the four corners of the clear middle.
+	for i, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+		local spot = ctx.Center + corner * (S / 2 - 12)
+		openGrave(ctx, spot, math.rad(45) + i * math.pi / 2)
+	end
+	for _ = 1, 3 do
+		bonePile(ctx, cornerSpot(ctx), 1.1)
+	end
+	-- A low grave mist drifting over the whole floor, and a sickly green glow from the graves.
+	local mist = deco(ctx.Model, "GraveMist", Vector3.new(S - 4, 0.2, S - 4), CFrame.new(ctx.Center + Vector3.new(0, 0.4, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+	mist.Transparency = 1
+	local fog = Instance.new("ParticleEmitter")
+	fog.Color = ColorSequence.new(Color3.fromRGB(170, 185, 175))
+	fog.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 4), NumberSequenceKeypoint.new(1, 8) })
+	fog.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 0.86), NumberSequenceKeypoint.new(1, 1) })
+	fog.Lifetime = NumberRange.new(7, 10)
+	fog.Speed = NumberRange.new(0.3, 0.9)
+	fog.SpreadAngle = Vector2.new(180, 10)
+	fog.Acceleration = Vector3.new(0, 0.05, 0)
+	fog.Rate = 9
+	fog.LightInfluence = 1
+	fog.Parent = mist
+	local glow = deco(ctx.Model, "GraveGlow", Vector3.new(1, 1, 1), CFrame.new(ctx.Center + Vector3.new(0, 2, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+	glow.Transparency = 1
+	light(glow, Color3.fromRGB(110, 200, 140), 40, 0.4)
+end
+
 themes.Plain = function(ctx)
 	bonePile(ctx, cornerSpot(ctx), 1)
 	rubble(ctx, cornerSpot(ctx), 3)

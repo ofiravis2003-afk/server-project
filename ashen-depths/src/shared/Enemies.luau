@@ -37,6 +37,8 @@
 --         ordinary blows. Slam: leaps at a player; a red circle on the floor shows where it lands (HitAt seconds
 --         into the clip) and everyone still inside is hit. Kick: shoves away whoever crowds it. Summon: at each
 --         health fraction in At, it calls Count of Minion up out of the ground (RiseAt seconds into the clip).
+--         Intro: the scene when the lair locks: the camera turns to the boss, it speaks its Lines, and its name
+--         comes up with Subtitle. It doesn't fight until the scene is over.
 
 export type HeldProp = { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }
 
@@ -45,6 +47,7 @@ export type BossDef = {
 	Slam: { Id: string, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number },
 	Kick: { Id: string, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number },
 	Summon: { Id: string, At: { number }, Minion: string, Count: number, RiseAt: number, Length: number },
+	Intro: { Subtitle: string, Lines: { string } },
 }
 
 export type EnemyDef = {
@@ -137,6 +140,14 @@ local Enemies: { [string]: EnemyDef } = {
 			Slam = { Id = "rbxassetid://92398419997787", HitAt = 1.2, Radius = 11, Range = 34, DamageScale = 1.8, Cooldown = 9 },
 			Kick = { Id = "rbxassetid://136966551268009", HitAt = 0.53, Range = 6, Push = 50, DamageScale = 0.7, Cooldown = 5 },
 			Summon = { Id = "rbxassetid://83831588165460", At = { 0.66, 0.33 }, Minion = "Skeleton", Count = 3, RiseAt = 1.6, Length = 3.5 },
+			Intro = {
+				Subtitle = "Keeper of the Drowned Dead",
+				Lines = {
+					"Another one... crawling down from Emberhold with a torch and a guild badge.",
+					"I buried the people of Valdren when the mountain fell. I have buried every fool since.",
+					"The King sleeps below. Nobody wakes him. Lie down, little hero... the earth is soft here.",
+				},
+			},
 		},
 	},
 	Skeleton = {

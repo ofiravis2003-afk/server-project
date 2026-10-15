@@ -1213,6 +1213,26 @@ local function bossSummon(enemy: Enemy)
 	enemy.Attacking = false
 end
 
+-- Its entrance: it stands and calls (the summoning pose) while the players watch, then the fight begins.
+function EnemyService.PlayIntro(enemy: Enemy, duration: number)
+	local boss = enemy.Boss
+	if not boss then
+		return
+	end
+	enemy.Attacking = true
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	task.delay(duration * 0.35, function()
+		if not enemy.Dead then
+			boss.Summon:Play(0.2, 1, 0.8)
+		end
+	end)
+	task.delay(duration, function()
+		boss.NextSlam = os.clock() + 4
+		enemy.LastAttack = os.clock()
+		enemy.Attacking = false
+	end)
+end
+
 local function bossThink(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humanoid, distance: number, now: number)
 	local boss = enemy.Boss :: BossState
 	local def = enemy.Def.Boss :: Enemies.BossDef

@@ -450,7 +450,7 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 			nextTheme += 1
 		end
 	end
-	local FIXED_THEMES = { Entrance = "Crypt", Treasure = "Vault", Secret = "Ossuary", Stairs = "Plain", Boss = "Crypt" }
+	local FIXED_THEMES = { Entrance = "Crypt", Treasure = "Vault", Secret = "Ossuary", Stairs = "Plain", Boss = "Graveyard" }
 
 	local rooms: { [string]: BuiltRoom } = {}
 	for key, plan in layout.Rooms do

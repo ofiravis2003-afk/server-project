@@ -50,6 +50,7 @@ type CombatRoom = {
 	EmptySince: number?,
 	HasElite: boolean,
 	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
+	IntroShown: boolean?,
 }
 
 local FloorService = {}
@@ -66,6 +67,8 @@ local runRemote = Remotes.Event("RunUpdated")
 local floorStartedRemote = Remotes.Event("FloorStarted")
 local notifyRemote = Remotes.Event("Notify")
 local damageNumberRemote = Remotes.Event("DamageNumber")
+local bossIntroRemote = Remotes.Event("BossIntro")
+local BOSS_INTRO_SECONDS = 11
 
 local function keysOf(player: Player): Keys
 	local k = keys[player]
@@ -226,7 +229,15 @@ local function activateRoom(room: CombatRoom, floor: number)
 			warn(`[FloorService] Spawning the boss failed: {boss}`)
 		elseif boss then
 			room.Enemies[boss] = true
-			notifyRemote:FireAllClients(`{(boss.Def.Boss :: any).Title} rises!`)
+			local def = boss.Def.Boss :: any
+			if not room.IntroShown then
+				-- Once a run: the gates slam, the camera turns to the boss and it speaks.
+				room.IntroShown = true
+				bossIntroRemote:FireAllClients(boss.Model, def.Title, def.Intro.Subtitle, def.Intro.Lines, BOSS_INTRO_SECONDS)
+				EnemyService.PlayIntro(boss, BOSS_INTRO_SECONDS)
+			else
+				notifyRemote:FireAllClients(`{def.Title} rises again!`)
+			end
 		end
 		room.Spawning = false
 		return
