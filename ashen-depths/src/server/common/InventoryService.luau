@@ -140,7 +140,9 @@ local function giveStarterItems(data: { [string]: any })
 	end
 
 	if next(data.Inventory) == nil then
+		-- A brand-new adventurer: a rusty sword and two health potions.
 		data.Equipped.Weapon = InventoryService.AddItem(data, "RustySword")
+		addToBag(data, "HealthPotion", "Common", 2)
 	end
 	if Config.TestMode and Config.TestLoadout then
 		-- A test set of weapons replaces everything, once for each different set (so loot found afterwards stays).
