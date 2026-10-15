@@ -425,6 +425,60 @@ local function setupLever(room: FloorBuilder.BuiltRoom)
 	end)
 end
 
+-- A boss lair is lit brighter than other rooms, so the fight and its warnings can be seen:
+-- a fire bowl in each corner and a cold light high above the middle.
+local function lightLair(room: FloorBuilder.BuiltRoom)
+	local half = room.Size / 2 - 7
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			local spot = room.Center + Vector3.new(sx * half, 0, sz * half)
+			local stand = Instance.new("Part")
+			stand.Name = "FireBowlStand"
+			stand.Anchored = true
+			stand.Size = Vector3.new(1.2, 3.2, 1.2)
+			stand.CFrame = CFrame.new(spot + Vector3.new(0, 1.6, 0))
+			stand.Color = Color3.fromRGB(45, 42, 40)
+			stand.Material = Enum.Material.Metal
+			stand.Parent = room.Model
+			local bowl = Instance.new("Part")
+			bowl.Name = "FireBowl"
+			bowl.Anchored = true
+			bowl.Shape = Enum.PartType.Cylinder
+			bowl.Size = Vector3.new(0.8, 3, 3)
+			bowl.CFrame = CFrame.new(spot + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
+			bowl.Color = Color3.fromRGB(55, 50, 45)
+			bowl.Material = Enum.Material.Metal
+			bowl.Parent = room.Model
+			local fire = Instance.new("Fire")
+			fire.Size = 6
+			fire.Heat = 9
+			fire.Color = Color3.fromRGB(255, 140, 50)
+			fire.SecondaryColor = Color3.fromRGB(255, 60, 20)
+			fire.Parent = bowl
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromRGB(255, 160, 90)
+			light.Range = 34
+			light.Brightness = 1.6
+			light.Shadows = true
+			light.Parent = bowl
+		end
+	end
+	local above = Instance.new("Part")
+	above.Name = "LairLight"
+	above.Anchored = true
+	above.CanCollide = false
+	above.CanQuery = false
+	above.Transparency = 1
+	above.Size = Vector3.new(1, 1, 1)
+	above.CFrame = CFrame.new(room.Center + Vector3.new(0, 16, 0))
+	above.Parent = room.Model
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(190, 200, 230)
+	glow.Range = 45
+	glow.Brightness = 0.9
+	glow.Parent = above
+end
+
 local startFloor: (number) -> ()
 
 -- A boss falls: everyone who fought it gets a Gold Key, a Gold Chest appears where it stood,
@@ -529,6 +583,7 @@ startFloor = function(floor: number)
 				setupCheckpointStone(room)
 			end
 		elseif plan.Type == "Boss" then
+			lightLair(room)
 			table.insert(combatRooms, {
 				Built = room,
 				Cleared = false,
