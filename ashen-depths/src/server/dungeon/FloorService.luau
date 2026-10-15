@@ -320,11 +320,13 @@ local function watchRooms()
 		if room.Cleared then
 			continue
 		end
+		-- A lair only locks once a player is well past its gates; after that, a player shoved back into a
+		-- gateway still counts as inside.
+		local margin = if not room.Boss then 1.5 elseif room.Active then -4 else 6
 		local anyoneInside = false
 		for _, player in Players:GetPlayers() do
 			local root = aliveRoot(player)
-			-- (In a boss lair, a player shoved into a gateway still counts as inside.)
-			if root and isInside(room.Built, root.Position, if room.Boss then -4 else 1.5) then
+			if root and isInside(room.Built, root.Position, margin) then
 				anyoneInside = true
 				break
 			end
