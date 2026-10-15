@@ -5,6 +5,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
@@ -54,6 +55,16 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 	local walkSpeed, jumpPower = humanoid.WalkSpeed, humanoid.JumpPower
 	humanoid.WalkSpeed = 0
 	humanoid.JumpPower = 0
+
+	-- Everything else on screen (weapon bar, gold, floor name, Roblox's own buttons) steps aside while it plays.
+	local hidden: { ScreenGui } = {}
+	for _, other in player:WaitForChild("PlayerGui"):GetChildren() do
+		if other:IsA("ScreenGui") and other.Enabled then
+			other.Enabled = false
+			table.insert(hidden, other)
+		end
+	end
+	pcall(StarterGui.SetCoreGuiEnabled, StarterGui, Enum.CoreGuiType.All, false)
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "BossIntro"
@@ -161,6 +172,10 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 	humanoid.WalkSpeed = walkSpeed
 	humanoid.JumpPower = jumpPower
 	player:SetAttribute("Cutscene", nil)
+	for _, other in hidden do
+		other.Enabled = true
+	end
+	pcall(StarterGui.SetCoreGuiEnabled, StarterGui, Enum.CoreGuiType.All, true)
 	task.wait(0.7)
 	gui:Destroy()
 end
