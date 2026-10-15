@@ -286,7 +286,8 @@ local function watchRooms()
 		local anyoneInside = false
 		for _, player in Players:GetPlayers() do
 			local root = aliveRoot(player)
-			if root and isInside(room.Built, root.Position, 1.5) then
+			-- (In a boss lair, a player shoved into a gateway still counts as inside.)
+			if root and isInside(room.Built, root.Position, if room.Boss then -4 else 1.5) then
 				anyoneInside = true
 				break
 			end

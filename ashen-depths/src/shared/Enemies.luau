@@ -129,12 +129,13 @@ local Enemies: { [string]: EnemyDef } = {
 		RespawnTime = 5,
 		Animations = GRAVEKEEPER_ANIMATIONS,
 		AnimationSpeeds = { Walk = 0.8 },
+		Sink = 1.7, -- its two-handed stance crouches below the rest pose
 		AttackClips = { { Id = "rbxassetid://100698180994174", HitAt = 0.57 } },
 		HeldProps = { { Prop = "GravekeeperShovel", Bone = "mixamorig:RightHand" } },
 		Boss = {
 			Title = "The Gravekeeper",
 			Slam = { Id = "rbxassetid://114482122415366", HitAt = 1.2, Radius = 11, Range = 34, DamageScale = 1.8, Cooldown = 9 },
-			Kick = { Id = "rbxassetid://134364173714373", HitAt = 0.53, Range = 6, Push = 70, DamageScale = 0.7, Cooldown = 5 },
+			Kick = { Id = "rbxassetid://134364173714373", HitAt = 0.53, Range = 6, Push = 50, DamageScale = 0.7, Cooldown = 5 },
 			Summon = { Id = "rbxassetid://140567108611606", At = { 0.66, 0.33 }, Minion = "Skeleton", Count = 3, RiseAt = 1.6, Length = 3.5 },
 		},
 	},
