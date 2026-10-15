@@ -300,9 +300,8 @@ function Inventory.Start()
 		title.Text = `Bag  {#ids}/{snapshot.BagSize}`
 		for order = 1, snapshot.BagSize do
 			local id = ids[order]
-			local cell = Instance.new("TextButton")
-			cell.Text = ""
-			cell.AutoButtonColor = id ~= nil
+			local cell = Instance.new("Frame")
+			cell.Name = `Slot{order}`
 			cell.BackgroundColor3 = SLOT
 			cell.LayoutOrder = order
 			cell.Parent = grid
@@ -322,7 +321,15 @@ function Inventory.Start()
 				badge.Size = UDim2.fromOffset(20, 16)
 				badge.Text = "E"
 			end
-			cell.Activated:Connect(function()
+			-- a clear button over the picture takes the click (the 3D view would swallow it)
+			local hit = Instance.new("TextButton")
+			hit.Name = "Pick"
+			hit.Text = ""
+			hit.BackgroundTransparency = 1
+			hit.Size = UDim2.fromScale(1, 1)
+			hit.ZIndex = 3
+			hit.Parent = cell
+			hit.Activated:Connect(function()
 				selected = id
 				confirmSell = false
 				redraw()
