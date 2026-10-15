@@ -70,7 +70,7 @@ end
 
 function ProgressService.Start()
 	DataService.OnLoaded(function(player, _data)
-		player.CharacterAdded:Connect(function(character)
+		local function onCharacter(character: Model)
 			character:WaitForChild("Humanoid")
 			-- No steady regeneration: health comes back from potions, the Tome, and resting between fights.
 			local regen = character:WaitForChild("Health", 5)
@@ -78,7 +78,11 @@ function ProgressService.Start()
 				regen:Destroy()
 			end
 			applyHealth(player)
-		end)
+		end
+		player.CharacterAdded:Connect(onCharacter)
+		if player.Character then
+			task.spawn(onCharacter, player.Character)
+		end
 		applyHealth(player)
 		ProgressService.PushStats(player)
 	end)
