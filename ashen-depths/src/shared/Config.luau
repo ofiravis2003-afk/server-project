@@ -46,5 +46,6 @@ return {
 		{ Name = "Rat", Weight = 4 },
 		{ Name = "SkeletonArcher", Weight = 4 },
 		{ Name = "Skeleton", Weight = 2 },
+		{ Name = "Slime", Weight = 4 },
 	},
 }
