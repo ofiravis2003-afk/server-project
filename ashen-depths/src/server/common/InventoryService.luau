@@ -1,7 +1,8 @@
 --!strict
 -- The player's items (the bag, Config.BagSize places), and the weapon Tool they carry.
 -- The hotbar holds only the equipped weapon (slot 1); the rest waits in the bag, where the player
--- can equip or sell it. A new item that finds the bag full is sold on the spot.
+-- can equip it or drop it. Selling only happens at a merchant in Emberhold: the shop marks the player
+-- with "AtShop" (set here on the server, so it can't be faked). A new item that finds the bag full is left behind.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -192,7 +193,7 @@ function InventoryService.RefreshTools(player: Player)
 end
 
 -- Gives a player a new item: saves it in the bag and shows them the "New item!" card.
--- With the bag full, it's sold right away for its gold.
+-- With the bag full, it's left behind.
 function InventoryService.GiveItem(player: Player, itemName: string, rarity: string): string?
 	local data = DataService.GetData(player)
 	if not data or not Items.Defs[itemName] then
@@ -200,9 +201,7 @@ function InventoryService.GiveItem(player: Player, itemName: string, rarity: str
 	end
 	itemReceivedRemote:FireClient(player, { Item = itemName, Rarity = rarity })
 	if countItems(data) >= Config.BagSize then
-		local price = Items.SellPrice(rarity, 0)
-		ProgressService.AddGold(player, price)
-		notifyRemote:FireClient(player, `Your bag is full: {Items.NameFor(itemName, rarity)} was sold for {price} gold.`)
+		notifyRemote:FireClient(player, `Your bag is full! {Items.NameFor(itemName, rarity)} was left behind. Drop something to make room.`)
 		return nil
 	end
 	local id = InventoryService.AddItem(data, itemName, rarity)
@@ -210,7 +209,12 @@ function InventoryService.GiveItem(player: Player, itemName: string, rarity: str
 	return id
 end
 
--- The player asks to equip or sell an item from their bag.
+-- A merchant's shop opens (true) or closes (false) for a player; only then can they sell.
+function InventoryService.SetAtShop(player: Player, open: boolean)
+	player:SetAttribute("AtShop", if open then true else nil)
+end
+
+-- The player asks to equip, sell (at a merchant) or drop an item from their bag.
 local function onAction(player: Player, action: any, itemId: any)
 	if not actionLimiter:Check(player) or type(itemId) ~= "string" then
 		return
@@ -226,12 +230,17 @@ local function onAction(player: Player, action: any, itemId: any)
 			data.Equipped.Weapon = itemId
 			InventoryService.RefreshTools(player)
 		end
-	elseif action == "Sell" then
+	elseif action == "Sell" or action == "Drop" then
 		if data.Equipped[def.Slot] == itemId then
-			return -- what's in hand can't be sold; equip something else first
+			return -- what's in hand can't be sold or dropped; equip something else first
+		end
+		if action == "Sell" and not player:GetAttribute("AtShop") then
+			return -- only at a merchant in Emberhold
 		end
 		data.Inventory[itemId] = nil
-		ProgressService.AddGold(player, Items.SellPrice(item.Rarity, item.Upgrade or 0))
+		if action == "Sell" then
+			ProgressService.AddGold(player, Items.SellPrice(item.Rarity, item.Upgrade or 0))
+		end
 	else
 		return
 	end

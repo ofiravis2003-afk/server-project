@@ -1,7 +1,8 @@
 --!strict
 -- The bag: a button (or the B key) opens a grid of everything the player owns, each in its rarity's color
 -- with a small 3D view. Clicking an item shows its name, stats and how it compares with the equipped weapon
--- (green up / red down), with Equip and Sell. Selling an Epic or better asks once more.
+-- (green up / red down), with Equip, and Sell when standing at a merchant in Emberhold (the server marks
+-- the player "AtShop"); anywhere else the button drops the item instead. Epic or better asks once more.
 -- A red dot on the button means something new came in since the bag was last opened.
 
 local ContextActionService = game:GetService("ContextActionService")
@@ -286,8 +287,13 @@ function Inventory.Start()
 		equip.BackgroundColor3 = if isEquipped then Color3.fromRGB(45, 45, 45) else Color3.fromRGB(40, 70, 45)
 		local price = Items.SellPrice(saved.Rarity, upgrade)
 		sell.Visible = not isEquipped
-		sell.Text = if confirmSell then `Sure? Sell for {price}` else `Sell ({price} gold)`
-		sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(80, 55, 25)
+		if player:GetAttribute("AtShop") then
+			sell.Text = if confirmSell then `Sure? Sell for {price}` else `Sell ({price} gold)`
+			sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(80, 55, 25)
+		else
+			sell.Text = if confirmSell then "Sure? Drop it for good" else "Drop"
+			sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(70, 40, 40)
+		end
 	end
 
 	local function redraw()
@@ -373,9 +379,15 @@ function Inventory.Start()
 			showDetails()
 			return
 		end
-		actionRemote:FireServer("Sell", selected)
+		actionRemote:FireServer(if player:GetAttribute("AtShop") then "Sell" else "Drop", selected)
 		selected = nil
 		confirmSell = false
+	end)
+	player:GetAttributeChangedSignal("AtShop"):Connect(function()
+		confirmSell = false
+		if panel.Visible then
+			showDetails()
+		end
 	end)
 	ContextActionService:BindAction("ToggleBag", function(_, state)
 		if state == Enum.UserInputState.Begin then
