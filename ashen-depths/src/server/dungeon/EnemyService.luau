@@ -1213,14 +1213,31 @@ local function bossSummon(enemy: Enemy)
 	enemy.Attacking = false
 end
 
--- Its entrance: it stands and calls (the summoning pose) while the players watch, then the fight begins.
-function EnemyService.PlayIntro(enemy: Enemy, duration: number)
+-- Its entrance: it steps slowly out of its tomb to `stepOut` (if given), stands and calls (the summoning pose)
+-- while the players watch, then the fight begins.
+function EnemyService.PlayIntro(enemy: Enemy, duration: number, stepOut: Vector3?)
 	local boss = enemy.Boss
 	if not boss then
 		return
 	end
 	enemy.Attacking = true
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	if stepOut then
+		task.delay(0.9, function()
+			if enemy.Dead then
+				return
+			end
+			local walkSpeed = enemy.Humanoid.WalkSpeed
+			enemy.Humanoid.WalkSpeed = 5
+			enemy.Humanoid:MoveTo(Vector3.new(stepOut.X, enemy.Root.Position.Y, stepOut.Z))
+			task.delay(duration * 0.35 - 1, function()
+				enemy.Humanoid.WalkSpeed = walkSpeed
+				if not enemy.Dead then
+					enemy.Humanoid:MoveTo(enemy.Root.Position)
+				end
+			end)
+		end)
+	end
 	task.delay(duration * 0.35, function()
 		if not enemy.Dead then
 			boss.Summon:Play(0.2, 1, 0.8)

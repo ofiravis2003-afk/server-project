@@ -2,6 +2,7 @@
 -- Draws what the server says happened: arrows, fireballs and their blasts, the healer's light,
 -- the red line an archer aims along before it shoots, and the bosses' warnings, quakes and summons.
 
+local CollectionService = game:GetService("CollectionService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -183,6 +184,28 @@ local handlers: { [string]: (...any) -> () } = {
 		}):Play()
 		TweenService:Create(light, TweenInfo.new(1.6), { Brightness = 0 }):Play()
 		Debris:AddItem(glow, 1.7)
+		-- The lair's fire bowls flare up green while the dead climb out, then burn orange again.
+		for _, fire in CollectionService:GetTagged("LairFire") do
+			local bowl = fire.Parent
+			if not fire:IsA("Fire") or not bowl or not bowl:IsA("BasePart") or (bowl.Position - position).Magnitude > 90 then
+				continue
+			end
+			local color, secondary, size = fire.Color, fire.SecondaryColor, fire.Size
+			fire.Color = Color3.fromRGB(110, 255, 150)
+			fire.SecondaryColor = Color3.fromRGB(30, 160, 70)
+			fire.Size = size * 1.6
+			local bowlLight = bowl:FindFirstChildOfClass("PointLight")
+			local lightColor = bowlLight and bowlLight.Color
+			if bowlLight then
+				bowlLight.Color = Color3.fromRGB(110, 255, 150)
+			end
+			task.delay(5, function()
+				fire.Color, fire.SecondaryColor, fire.Size = color, secondary, size
+				if bowlLight and lightColor then
+					TweenService:Create(bowlLight, TweenInfo.new(1), { Color = lightColor }):Play()
+				end
+			end)
+		end
 	end,
 	-- Where a summoned monster climbs out of the floor: a puff of grave dust.
 	Rise = function(position: Vector3)

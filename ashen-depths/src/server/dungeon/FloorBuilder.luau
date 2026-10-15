@@ -380,6 +380,7 @@ local function buildRoom(
 		Size = S,
 		Height = WALL_HEIGHT,
 		PlainWalls = plainWalls,
+		Doorways = built.Doorways,
 		Rng = rng,
 	}, theme)
 

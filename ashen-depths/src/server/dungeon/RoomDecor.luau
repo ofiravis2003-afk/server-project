@@ -7,11 +7,14 @@
 --   Chapel:    an altar with candles, red banners, old pews
 --   Prison:    barred cells along a wall, chains and remains inside
 --   Vault:     heaps of gold coins and banners (treasure rooms)
---   Graveyard: the Gravekeeper's lair: rows of leaning headstones, open graves with heaped earth and a
---              shovel left in the dirt, coffins, candles on the stones, and a low grave mist over everything.
---              The middle stays clear for the fight.
+--   Graveyard: the Gravekeeper's lair. Its tomb (Mausoleum) stands against the back wall between two weeping
+--              angels, with skulls heaped at their feet; the Gravekeeper waits at the tomb's door. Rows of leaning
+--              headstones and dead trees along the other walls, open graves fenced with iron, coffins, chains
+--              and hanging cages, a ring of runes on the floor (they light up when the fight starts), a beam of
+--              moonlight over the middle, and a low grave mist over everything. The middle stays clear.
 -- Big pieces only go along walls without a doorway, so paths and the middle of the room stay clear.
--- Tripo-made props (Coffin, Barrel, Banner, Candles in ServerStorage.DungeonProps) are used when present.
+-- Tripo-made props (Coffin, Barrel, Banner, Candles, and for the lair Mausoleum, AngelStatue, DeadTree, IronFence,
+-- SkullPile in ServerStorage.DungeonProps) are used when present.
 
 export type Context = {
 	Model: Model,
@@ -19,6 +22,7 @@ export type Context = {
 	Size: number,
 	Height: number,
 	PlainWalls: { CFrame }, -- frames at the center, looking out through each wall without a doorway
+	Doorways: { Vector3 }?, -- the first one is the way in
 	Rng: Random,
 }
 
@@ -460,16 +464,206 @@ local function openGrave(ctx: Context, spot: Vector3, turn: number)
 	headstone(ctx, frame * CFrame.new(0, 0, -4.4) * CFrame.Angles(0, math.pi, 0))
 end
 
+-- A lair prop stood against a wall: placed at `along`, then pushed out so its back sits `gap` studs off the wall.
+-- The stored props are turned so their front is -Z and sized for the lair, so no scale is needed.
+local function againstWall(ctx: Context, name: string, frame: CFrame, along: number, gap: number, turn: number?): (Model?, number)
+	local cf = onWall(ctx, frame, along, 0) * CFrame.Angles(0, turn or 0, 0)
+	local prop = Props.Place(name, ctx.Model, cf)
+	if not prop then
+		return nil, 0
+	end
+	local _, size = prop:GetBoundingBox()
+	local inward = -frame.LookVector
+	prop:PivotTo(prop:GetPivot() + inward * (size.Z / 2 + gap))
+	return prop, size.Z + gap
+end
+
+-- Takes the collision off a prop the players should walk through (fences, skulls, branches overhead).
+local function ghost(prop: Model?)
+	if prop then
+		for _, d in prop:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+			end
+		end
+	end
+end
+
+-- The plain wall facing the way in: the back of the lair.
+local function backWall(ctx: Context): CFrame?
+	local entry = ctx.Doorways and ctx.Doorways[1]
+	local inward = if entry then (ctx.Center - entry) * Vector3.new(1, 0, 1) else Vector3.zero
+	local best, bestDot = nil, -math.huge
+	for _, frame in ctx.PlainWalls do
+		local dot = if inward.Magnitude > 0.1 then frame.LookVector:Dot(inward.Unit) else 0
+		if dot > bestDot then
+			best, bestDot = frame, dot
+		end
+	end
+	return best
+end
+
+local RUNE_DARK = Color3.fromRGB(34, 38, 36)
+
+-- The fighting ring: a dark stone circle edged with runes (parts named "LairRune", lit by FloorService).
+local function runeCircle(ctx: Context, radius: number)
+	local rng = ctx.Rng
+	local c = ctx.Center
+	deco(ctx.Model, "ArenaStone", Vector3.new(0.14, radius * 2 + 3, radius * 2 + 3), CFrame.new(c + Vector3.new(0, 0.07, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(52, 54, 52), Enum.Material.Slate, Enum.PartType.Cylinder)
+	-- two thin rings, outer and inner, of short curved segments
+	for _, r in { radius + 1.1, radius - 1.1, 3.2 } do
+		local count = math.max(math.floor(r * 2.2), 10)
+		local length = 2 * math.pi * r / count + 0.05
+		for i = 1, count do
+			local a = (i / count) * math.pi * 2
+			local p = c + Vector3.new(math.cos(a) * r, 0.16, math.sin(a) * r)
+			deco(ctx.Model, "LairRune", Vector3.new(length, 0.06, 0.22), CFrame.lookAt(p, c + Vector3.new(0, 0.16, 0)) * CFrame.Angles(0, math.rad(90), 0), RUNE_DARK, Enum.Material.Slate)
+		end
+	end
+	-- glyphs between the rings: a stem with a couple of crossing strokes each, never two alike
+	local glyphs = 16
+	for i = 1, glyphs do
+		local a = (i / glyphs) * math.pi * 2
+		local p = c + Vector3.new(math.cos(a) * radius, 0.17, math.sin(a) * radius)
+		local frame = CFrame.lookAt(p, c + Vector3.new(0, 0.17, 0))
+		deco(ctx.Model, "LairRune", Vector3.new(0.18, 0.06, 1.3), frame, RUNE_DARK, Enum.Material.Slate)
+		for _ = 1, rng:NextInteger(1, 3) do
+			deco(ctx.Model, "LairRune", Vector3.new(0.16, 0.06, rng:NextNumber(0.5, 0.9)), frame * CFrame.new(0, 0, rng:NextNumber(-0.5, 0.5)) * CFrame.Angles(0, math.rad(rng:NextNumber(35, 145)), 0), RUNE_DARK, Enum.Material.Slate)
+		end
+	end
+	-- the sigil in the middle: a cross of strokes inside the small ring
+	for k = 0, 3 do
+		deco(ctx.Model, "LairRune", Vector3.new(0.2, 0.06, 5.4), CFrame.new(c + Vector3.new(0, 0.17, 0)) * CFrame.Angles(0, k * math.pi / 4, 0), RUNE_DARK, Enum.Material.Slate)
+	end
+end
+
+-- A chain hanging from the ceiling at `top`, `links` long; returns where it ends.
+local function chain(ctx: Context, top: Vector3, links: number): Vector3
+	for link = 0, links - 1 do
+		deco(ctx.Model, "Chain", Vector3.new(0.2, 0.55, 0.4), CFrame.new(top - Vector3.new(0, link * 0.48 + 0.3, 0)) * CFrame.Angles(0, if link % 2 == 0 then 0 else math.rad(90), 0), IRON, Enum.Material.Metal)
+	end
+	return top - Vector3.new(0, links * 0.48 + 0.3, 0)
+end
+
+-- An iron cage hanging on a chain, with what's left of its prisoner inside.
+local function hangingCage(ctx: Context, spot: Vector3, links: number)
+	local rng = ctx.Rng
+	local bottom = chain(ctx, Vector3.new(spot.X, ctx.Center.Y + ctx.Height, spot.Z), links)
+	local h, r = 4.6, 1.6
+	local frame = CFrame.new(bottom - Vector3.new(0, h / 2, 0)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), math.rad(rng:NextNumber(-6, 6)))
+	for _, y in { h / 2, -h / 2 } do
+		deco(ctx.Model, "CageRing", Vector3.new(0.25, r * 2 + 0.3, r * 2 + 0.3), frame * CFrame.new(0, y, 0) * CFrame.Angles(0, 0, math.rad(90)), IRON, Enum.Material.Metal, Enum.PartType.Cylinder)
+	end
+	for i = 1, 10 do
+		local a = (i / 10) * math.pi * 2
+		deco(ctx.Model, "CageBar", Vector3.new(0.14, h, 0.14), frame * CFrame.new(math.cos(a) * r, 0, math.sin(a) * r), IRON, Enum.Material.Metal)
+	end
+	deco(ctx.Model, "CageDome", Vector3.new(r * 2, 1.2, r * 2), frame * CFrame.new(0, h / 2 + 0.3, 0), IRON, Enum.Material.Metal, Enum.PartType.Ball)
+	deco(ctx.Model, "Skull", Vector3.new(0.8, 0.8, 0.8), frame * CFrame.new(0.3, -h / 2 + 0.55, 0.2), BONE, Enum.Material.Limestone, Enum.PartType.Ball)
+	for _ = 1, 3 do
+		deco(ctx.Model, "Bone", Vector3.new(0.22, 0.22, rng:NextNumber(1, 1.6)), frame * CFrame.new(rng:NextNumber(-0.7, 0.7), -h / 2 + 0.3, rng:NextNumber(-0.7, 0.7)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), BONE, Enum.Material.Limestone)
+	end
+end
+
+-- Cold moonlight falling through a crack over the middle, with dust turning in it.
+local function moonBeam(ctx: Context)
+	local spot = ctx.Center
+	local beam = deco(ctx.Model, "MoonBeam", Vector3.new(ctx.Height, 9, 9), CFrame.new(spot + Vector3.new(0, ctx.Height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 215, 235), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+	beam.Transparency = 0.93
+	beam.CastShadow = false
+	local dust = Instance.new("ParticleEmitter")
+	dust.Rate = 7
+	dust.Lifetime = NumberRange.new(6, 9)
+	dust.Speed = NumberRange.new(0.2, 0.6)
+	dust.Size = NumberSequence.new(0.12)
+	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.35), NumberSequenceKeypoint.new(1, 1) })
+	dust.LightEmission = 0.7
+	dust.Color = ColorSequence.new(Color3.fromRGB(225, 235, 245))
+	dust.Parent = beam
+	local lamp = deco(ctx.Model, "MoonLight", Vector3.new(1, 1, 1), CFrame.new(spot + Vector3.new(0, ctx.Height - 0.6, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+	lamp.Transparency = 1
+	local spotLight = Instance.new("SpotLight")
+	spotLight.Face = Enum.NormalId.Bottom
+	spotLight.Color = Color3.fromRGB(170, 195, 235)
+	spotLight.Range = 30
+	spotLight.Angle = 50
+	spotLight.Brightness = 2.5
+	spotLight.Shadows = true
+	spotLight.Parent = lamp
+	-- the crack itself, pale against the dark ceiling
+	for i = 1, 5 do
+		deco(ctx.Model, "CeilingCrack", Vector3.new(ctx.Rng:NextNumber(2, 5), 0.1, 0.4), CFrame.new(spot + Vector3.new(0, ctx.Height - 0.05, 0)) * CFrame.Angles(0, i * 1.25 + ctx.Rng:NextNumber(-0.3, 0.3), 0) * CFrame.new(2.5, 0, 0), Color3.fromRGB(150, 170, 190), Enum.Material.Neon).Transparency = 0.4
+	end
+end
+
+-- The Gravekeeper's tomb against the back wall, an angel weeping on each side and skulls heaped at their feet.
+-- Leaves BossDoor (where it waits) and BossSpot (where it steps out to) on the room for FloorService.
+local function tomb(ctx: Context, back: CFrame)
+	local inward = -back.LookVector
+	local floorAtWall = onWall(ctx, back, 0, 0).Position
+	local tombModel, depth = againstWall(ctx, "Mausoleum", back, 0, 0.6)
+	local width = 14
+	if tombModel then
+		local _, size = tombModel:GetBoundingBox()
+		width = size.X
+		-- a green glow and grave mist spilling out through its gate
+		local door = deco(ctx.Model, "TombGlow", Vector3.new(1, 1, 1), CFrame.lookAt(floorAtWall + inward * (depth - 1.5) + Vector3.new(0, 0.6, 0), floorAtWall + inward * depth + Vector3.new(0, 0.6, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)
+		door.Transparency = 1
+		light(door, Color3.fromRGB(110, 230, 150), 16, 1.6)
+		local seep = Instance.new("ParticleEmitter")
+		seep.Color = ColorSequence.new(Color3.fromRGB(150, 200, 165))
+		seep.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 2), NumberSequenceKeypoint.new(1, 5) })
+		seep.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.8), NumberSequenceKeypoint.new(1, 1) })
+		seep.Lifetime = NumberRange.new(4, 6)
+		seep.Speed = NumberRange.new(1, 2)
+		seep.SpreadAngle = Vector2.new(25, 5)
+		seep.EmissionDirection = Enum.NormalId.Front
+		seep.Rate = 5
+		seep.LightInfluence = 1
+		seep.Parent = door
+	else
+		depth = 3
+	end
+	ctx.Model:SetAttribute("BossDoor", floorAtWall + inward * (depth + 2.5))
+	ctx.Model:SetAttribute("BossSpot", floorAtWall + inward * (depth + 10))
+
+	for _, side in { -1, 1 } do
+		local along = side * (width / 2 + 5.5)
+		local angel, angelDepth = againstWall(ctx, "AngelStatue", back, along, 0.8, side * math.rad(-14))
+		if angel then
+			local skulls = Props.Place("SkullPile", ctx.Model, onWall(ctx, back, along - side * 1.5, angelDepth + 2.2) * CFrame.Angles(0, ctx.Rng:NextNumber(0, math.pi * 2), 0))
+			ghost(skulls)
+		end
+		-- candles with a warm light on the tomb steps
+		candleCluster(ctx, onWall(ctx, back, side * (width / 2 - 1), depth + 1.2).Position, true)
+	end
+end
+
 themes.Graveyard = function(ctx)
 	local rng = ctx.Rng
 	local S = ctx.Size
 	tint(ctx, Color3.fromRGB(62, 60, 58), Color3.fromRGB(46, 40, 34), Enum.Material.Ground)
-	-- Rows of headstones along the walls without doorways, a second row a step further in.
+	local back = backWall(ctx)
+	if back then
+		tomb(ctx, back)
+	end
+	-- Rows of headstones along the other walls without doorways, a second row a step further in,
+	-- and a dead tree reaching over them.
 	for _, frame in ctx.PlainWalls do
+		if frame == back then
+			continue
+		end
+		local tree = if Props.Has("DeadTree") then rng:NextNumber(-S / 6, S / 6) else nil
+		if tree then
+			ghost((againstWall(ctx, "DeadTree", frame, tree, 1.5, rng:NextNumber(-0.6, 0.6))))
+		end
 		local along = -S / 2 + 6
 		while along <= S / 2 - 6 do
-			headstone(ctx, onWall(ctx, frame, along + rng:NextNumber(-0.8, 0.8), 2.2))
-			if rng:NextNumber() < 0.6 then
+			if not tree or math.abs(along - tree) > 3.5 then
+				headstone(ctx, onWall(ctx, frame, along + rng:NextNumber(-0.8, 0.8), 2.2))
+			end
+			if rng:NextNumber() < 0.6 and (not tree or math.abs(along + 2.5 - tree) > 4.5) then
 				headstone(ctx, onWall(ctx, frame, along + 2.5 + rng:NextNumber(-0.6, 0.6), 7.5))
 			end
 			if rng:NextNumber() < 0.35 then
@@ -479,16 +673,31 @@ themes.Graveyard = function(ctx)
 		end
 		-- a coffin left out against each wall
 		if Props.Has("Coffin") then
-			Props.Place("Coffin", ctx.Model, onWall(ctx, frame, rng:NextNumber(-S / 5, S / 5), 3.2) * CFrame.Angles(0, math.rad(90), 0))
+			Props.Place("Coffin", ctx.Model, onWall(ctx, frame, (if tree and tree < 0 then 1 else -1) * rng:NextNumber(S / 8, S / 4), 3.2) * CFrame.Angles(0, math.rad(90), 0))
 		end
 	end
-	-- Open graves in the four corners of the clear middle.
+	-- Open graves in the four corners of the clear middle, each fenced with iron on its open side.
 	for i, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
 		local spot = ctx.Center + corner * (S / 2 - 12)
-		openGrave(ctx, spot, math.rad(45) + i * math.pi / 2)
+		local turn = math.rad(45) + i * math.pi / 2
+		openGrave(ctx, spot, turn)
+		ghost(Props.Place("IronFence", ctx.Model, CFrame.new(spot) * CFrame.Angles(0, turn, 0) * CFrame.new(-3.1, 0, -0.4) * CFrame.Angles(0, math.rad(90), 0)))
 	end
 	for _ = 1, 3 do
 		bonePile(ctx, cornerSpot(ctx), 1.1)
+	end
+	runeCircle(ctx, 15)
+	moonBeam(ctx)
+	-- Chains hanging from the ceiling round the ring, two of them holding cages.
+	for i = 1, 8 do
+		local a = (i / 8) * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+		local spot = ctx.Center + Vector3.new(math.cos(a), 0, math.sin(a)) * rng:NextNumber(17, 21)
+		if i == 2 or i == 6 then
+			hangingCage(ctx, spot, rng:NextInteger(6, 10))
+		else
+			local ends = chain(ctx, Vector3.new(spot.X, ctx.Center.Y + ctx.Height, spot.Z), rng:NextInteger(5, 12))
+			deco(ctx.Model, "Hook", Vector3.new(0.25, 0.9, 0.25), CFrame.new(ends - Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(20)), IRON, Enum.Material.Metal)
+		end
 	end
 	-- A low grave mist drifting over the whole floor, and a sickly green glow from the graves.
 	local mist = deco(ctx.Model, "GraveMist", Vector3.new(S - 4, 0.2, S - 4), CFrame.new(ctx.Center + Vector3.new(0, 0.4, 0)), Color3.new(0, 0, 0), Enum.Material.SmoothPlastic)

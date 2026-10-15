@@ -6,6 +6,7 @@
 -- (current floor, keys in hand) lives here in memory. Keys are per player and only last the run.
 -- Loot is per player too: everyone with the right key can open every chest once.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -203,6 +204,28 @@ local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 	end
 end
 
+-- The ring of runes on a lair's floor glows green while its boss fights, and goes dark when it falls.
+local function lightRunes(built: FloorBuilder.BuiltRoom, on: boolean)
+	local i = 0
+	for _, rune in built.Model:GetChildren() do
+		if rune.Name == "LairRune" and rune:IsA("BasePart") then
+			i += 1
+			if on then
+				rune.Material = Enum.Material.Neon
+			end
+			-- they catch one after another round the ring
+			TweenService:Create(rune, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, if on then (i % 40) * 0.04 else 0), {
+				Color = if on then Color3.fromRGB(80, 230, 130) else Color3.fromRGB(34, 38, 36),
+			}):Play()
+			if not on then
+				task.delay(0.5, function()
+					rune.Material = Enum.Material.Slate
+				end)
+			end
+		end
+	end
+end
+
 local function activateRoom(room: CombatRoom, floor: number)
 	room.Active = true
 	room.Spawning = true
@@ -211,13 +234,15 @@ local function activateRoom(room: CombatRoom, floor: number)
 
 	local rng = Random.new()
 	if room.Boss then
-		-- The boss waits on the far side of its lair, facing the way in; it grows tougher for each extra player.
+		-- The boss waits at the door of its tomb on the far side of the lair (or just on the far side), facing
+		-- the way in; it grows tougher for each extra player.
 		local party = math.max(#Players:GetPlayers(), 1)
 		local doorway = room.Built.Doorways[1] or room.Built.Center
 		local away = room.Built.Center - doorway
 		away = if away.Magnitude > 0.1 then Vector3.new(away.X, 0, away.Z).Unit else Vector3.new(0, 0, -1)
-		local spot = room.Built.Center + away * (room.Built.Size / 4)
-		local ok, boss = pcall(EnemyService.Spawn, room.Boss, CFrame.lookAt(spot, room.Built.Center), {
+		local stepOut = room.Built.Model:GetAttribute("BossSpot") :: Vector3?
+		local spot = (room.Built.Model:GetAttribute("BossDoor") :: Vector3?) or room.Built.Center + away * (room.Built.Size / 4)
+		local ok, boss = pcall(EnemyService.Spawn, room.Boss, CFrame.lookAt(spot, Vector3.new(room.Built.Center.X, spot.Y, room.Built.Center.Z)), {
 			HealthMultiplier = 1 + 0.6 * (party - 1),
 			DamageMultiplier = 1,
 			MinionMultiplier = Floors.EnemyHealthMultiplier(floor),
@@ -234,10 +259,11 @@ local function activateRoom(room: CombatRoom, floor: number)
 				-- Once a run: the gates slam, the camera turns to the boss and it speaks.
 				room.IntroShown = true
 				bossIntroRemote:FireAllClients(boss.Model, def.Title, def.Intro.Subtitle, def.Intro.Lines, BOSS_INTRO_SECONDS)
-				EnemyService.PlayIntro(boss, BOSS_INTRO_SECONDS)
+				EnemyService.PlayIntro(boss, BOSS_INTRO_SECONDS, stepOut)
 			else
 				notifyRemote:FireAllClients(`{def.Title} rises again!`)
 			end
+			lightRunes(room.Built, true)
 		end
 		room.Spawning = false
 		return
@@ -466,6 +492,7 @@ local function lightLair(room: FloorBuilder.BuiltRoom)
 			fire.Color = Color3.fromRGB(255, 140, 50)
 			fire.SecondaryColor = Color3.fromRGB(255, 60, 20)
 			fire.Parent = bowl
+			CollectionService:AddTag(fire, "LairFire")
 			local light = Instance.new("PointLight")
 			light.Color = Color3.fromRGB(255, 160, 90)
 			light.Range = 34
@@ -497,6 +524,7 @@ local startFloor: (number) -> ()
 bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 	local title = (boss.Def.Boss :: any).Title
 	local where = boss.Root.Position
+	lightRunes(room.Built, false)
 	for player in boss.Damagers do
 		if player.Parent then
 			giveKey(player, "Gold", where)
