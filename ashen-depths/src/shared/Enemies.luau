@@ -107,9 +107,9 @@ local ARCHER_ANIMATIONS = {
 
 -- The Gravekeeper (floor 5): Tripo model rigged in Mixamo, clips from Mixamo's Great Sword pack.
 local GRAVEKEEPER_ANIMATIONS = {
-	Idle = "rbxassetid://113679683332851",
-	Walk = "rbxassetid://84843612733807",
-	Death = "rbxassetid://95053601444919",
+	Idle = "rbxassetid://105381899996213",
+	Walk = "rbxassetid://99372373898155",
+	Death = "rbxassetid://94817343763568",
 	-- (no Hit clip: a boss doesn't flinch at every blow)
 }
 
@@ -130,13 +130,13 @@ local Enemies: { [string]: EnemyDef } = {
 		Animations = GRAVEKEEPER_ANIMATIONS,
 		AnimationSpeeds = { Walk = 0.8 },
 		Sink = 1.7, -- its two-handed stance crouches below the rest pose
-		AttackClips = { { Id = "rbxassetid://100698180994174", HitAt = 0.57 } },
+		AttackClips = { { Id = "rbxassetid://90230781354308", HitAt = 0.57 } },
 		HeldProps = { { Prop = "GravekeeperShovel", Bone = "mixamorig:RightHand" } },
 		Boss = {
 			Title = "The Gravekeeper",
-			Slam = { Id = "rbxassetid://114482122415366", HitAt = 1.2, Radius = 11, Range = 34, DamageScale = 1.8, Cooldown = 9 },
-			Kick = { Id = "rbxassetid://134364173714373", HitAt = 0.53, Range = 6, Push = 50, DamageScale = 0.7, Cooldown = 5 },
-			Summon = { Id = "rbxassetid://140567108611606", At = { 0.66, 0.33 }, Minion = "Skeleton", Count = 3, RiseAt = 1.6, Length = 3.5 },
+			Slam = { Id = "rbxassetid://92398419997787", HitAt = 1.2, Radius = 11, Range = 34, DamageScale = 1.8, Cooldown = 9 },
+			Kick = { Id = "rbxassetid://136966551268009", HitAt = 0.53, Range = 6, Push = 50, DamageScale = 0.7, Cooldown = 5 },
+			Summon = { Id = "rbxassetid://83831588165460", At = { 0.66, 0.33 }, Minion = "Skeleton", Count = 3, RiseAt = 1.6, Length = 3.5 },
 		},
 	},
 	Skeleton = {
