@@ -30,6 +30,9 @@ return {
 		{ Item = "AcolyteTome", Rarity = "Common" },
 	} :: { { Item: string, Rarity: string } }?,
 
+	-- While testing: the run starts on this floor instead of floor 1 (5 = the Gravekeeper's floor).
+	TestStartFloor = nil :: number?,
+
 	-- While testing: when set, every floor's monsters are picked from this list instead of the normal mix.
 	-- Set to nil to go back to the real per-floor mix.
 	TestEnemyMix = {

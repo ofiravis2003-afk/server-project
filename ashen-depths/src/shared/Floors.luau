@@ -60,6 +60,9 @@ function Floors.PickEnemy(floor: number, rng: Random): string
 	return mix[1].Name
 end
 
+-- Boss floors: the last room before the stairs is this boss's lair.
+Floors.Bosses = { [5] = "Gravekeeper" } :: { [number]: string }
+
 -- How many combat rooms stand between the entrance and the stairs.
 function Floors.CombatRooms(floor: number): number
 	return math.min(3 + math.floor((floor - 1) / 2), 7)

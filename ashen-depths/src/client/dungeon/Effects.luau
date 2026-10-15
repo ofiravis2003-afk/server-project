@@ -1,8 +1,9 @@
 --!strict
 -- Draws what the server says happened: arrows, fireballs and their blasts, the healer's light,
--- and the red line an archer aims along before it shoots.
+-- the red line an archer aims along before it shoots, and the bosses' warnings, quakes and summons.
 
 local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
@@ -104,6 +105,110 @@ local handlers: { [string]: (...any) -> () } = {
 			Size = Vector3.new(0.16, 0.16, length),
 		}):Play()
 		Debris:AddItem(line, duration)
+	end,
+	-- A boss's warning: a red circle on the floor that fills in until the blow lands.
+	Telegraph = function(center: Vector3, radius: number, duration: number)
+		local base = CFrame.new(center + Vector3.new(0, 0.08, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		local ring = basePart(Vector3.new(0.12, radius * 2, radius * 2), Color3.fromRGB(200, 30, 25), Enum.Material.Neon)
+		ring.Shape = Enum.PartType.Cylinder
+		ring.CFrame = base
+		ring.Transparency = 0.65
+		ring.Parent = workspace
+		local fill = basePart(Vector3.new(0.16, 0.2, 0.2), Color3.fromRGB(255, 60, 40), Enum.Material.Neon)
+		fill.Shape = Enum.PartType.Cylinder
+		fill.CFrame = base + Vector3.new(0, 0.02, 0)
+		fill.Transparency = 0.35
+		fill.Parent = workspace
+		TweenService:Create(fill, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = Vector3.new(0.16, radius * 2, radius * 2) }):Play()
+		TweenService:Create(ring, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Transparency = 0.4 }):Play()
+		Debris:AddItem(ring, duration + 0.05)
+		Debris:AddItem(fill, duration + 0.05)
+	end,
+	-- The blow lands: a shock ring of dust, and the screen shakes for whoever is close.
+	Quake = function(center: Vector3, radius: number)
+		local ring = basePart(Vector3.new(0.4, 2, 2), Color3.fromRGB(150, 135, 115), Enum.Material.SmoothPlastic)
+		ring.Shape = Enum.PartType.Cylinder
+		ring.CFrame = CFrame.new(center + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		ring.Transparency = 0.2
+		ring.Parent = workspace
+		TweenService:Create(ring, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = Vector3.new(0.4, radius * 2.4, radius * 2.4),
+			Transparency = 1,
+		}):Play()
+		Debris:AddItem(ring, 0.5)
+		local holder = basePart(Vector3.new(1, 1, 1), Color3.new(), Enum.Material.SmoothPlastic)
+		holder.Transparency = 1
+		holder.CFrame = CFrame.new(center + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		local dust = Instance.new("ParticleEmitter")
+		dust.Color = ColorSequence.new(Color3.fromRGB(170, 155, 135))
+		dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 2), NumberSequenceKeypoint.new(1, 5) })
+		dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+		dust.Lifetime = NumberRange.new(0.8, 1.4)
+		dust.Speed = NumberRange.new(8, 16)
+		dust.SpreadAngle = Vector2.new(90, 10)
+		dust.Drag = 3
+		dust.Rate = 0
+		dust.Parent = holder
+		holder.Parent = workspace
+		dust:Emit(60)
+		Debris:AddItem(holder, 2)
+		local camera = workspace.CurrentCamera
+		local character = Players.LocalPlayer.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if camera and root and (root.Position - center).Magnitude < radius * 3 then
+			task.spawn(function()
+				for i = 1, 8 do
+					local strength = (1 - i / 8) * 0.6
+					camera.CFrame *= CFrame.new(math.random(-10, 10) / 10 * strength, math.random(-10, 10) / 10 * strength, 0)
+					task.wait(0.025)
+				end
+			end)
+		end
+	end,
+	-- A boss calls the dead: a sickly green glow spreads around it.
+	Summon = function(position: Vector3)
+		local glow = basePart(Vector3.new(0.2, 4, 4), Color3.fromRGB(90, 255, 140), Enum.Material.Neon)
+		glow.Shape = Enum.PartType.Cylinder
+		glow.CFrame = CFrame.new(position - Vector3.new(0, 4, 0)) * CFrame.Angles(0, 0, math.rad(90))
+		glow.Transparency = 0.4
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(90, 255, 140)
+		light.Range = 24
+		light.Brightness = 3
+		light.Parent = glow
+		glow.Parent = workspace
+		TweenService:Create(glow, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = Vector3.new(0.2, 30, 30),
+			Transparency = 1,
+		}):Play()
+		TweenService:Create(light, TweenInfo.new(1.6), { Brightness = 0 }):Play()
+		Debris:AddItem(glow, 1.7)
+	end,
+	-- Where a summoned monster climbs out of the floor: a puff of grave dust.
+	Rise = function(position: Vector3)
+		local holder = basePart(Vector3.new(1, 1, 1), Color3.new(), Enum.Material.SmoothPlastic)
+		holder.Transparency = 1
+		holder.CFrame = CFrame.new(position + Vector3.new(0, 0.5, 0))
+		local dust = Instance.new("ParticleEmitter")
+		dust.Color = ColorSequence.new(Color3.fromRGB(120, 140, 110))
+		dust.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 3) })
+		dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+		dust.Lifetime = NumberRange.new(0.8, 1.3)
+		dust.Speed = NumberRange.new(2, 6)
+		dust.SpreadAngle = Vector2.new(60, 60)
+		dust.Rate = 0
+		dust.Parent = holder
+		holder.Parent = workspace
+		dust:Emit(30)
+		Debris:AddItem(holder, 2)
+	end,
+	-- A boss's kick: this player's own character is thrown back.
+	Knockback = function(velocity: Vector3)
+		local character = Players.LocalPlayer.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root then
+			root.AssemblyLinearVelocity = velocity
+		end
 	end,
 	-- A ring of light rising around the healed player.
 	Heal = function(position: Vector3)

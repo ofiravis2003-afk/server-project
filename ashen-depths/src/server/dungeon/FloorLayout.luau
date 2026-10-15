@@ -3,13 +3,13 @@
 --
 -- The main path winds randomly from the Entrance through the combat rooms to the Stairs.
 -- Side branches hang off combat rooms: always a Treasure room, and often a Secret room
--- hidden behind a wall that a lever opens.
+-- hidden behind a wall that a lever opens. On a boss floor the last room before the stairs is the boss's lair.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Floors = require(ReplicatedStorage.Shared.Floors)
 
-export type RoomType = "Entrance" | "Combat" | "Treasure" | "Secret" | "Stairs"
+export type RoomType = "Entrance" | "Combat" | "Treasure" | "Secret" | "Stairs" | "Boss"
 
 export type RoomPlan = {
 	Key: string,
@@ -30,6 +30,7 @@ export type Layout = {
 
 local DIRECTIONS = { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) }
 local COMBAT_SIZES = { 32, 40, 48 }
+local BOSS_SIZE = 56
 local SECRET_CHANCE = 0.6
 
 local FloorLayout = {}
@@ -69,11 +70,12 @@ local function tryGenerate(floor: number, rng: Random): Layout?
 		end
 		local d = options[rng:NextInteger(1, #options)]
 		local isStairs = i == combatCount + 1
+		local isBoss = i == combatCount and Floors.Bosses[floor] ~= nil
 		local nextRoom = addRoom(
 			current.X + d.X,
 			current.Z + d.Y,
-			if isStairs then "Stairs" else "Combat",
-			if isStairs then 32 else COMBAT_SIZES[rng:NextInteger(1, #COMBAT_SIZES)]
+			if isStairs then "Stairs" elseif isBoss then "Boss" else "Combat",
+			if isStairs then 32 elseif isBoss then BOSS_SIZE else COMBAT_SIZES[rng:NextInteger(1, #COMBAT_SIZES)]
 		)
 		table.insert(links, { A = current.Key, B = nextRoom.Key, Secret = false })
 		table.insert(path, nextRoom.Key)
@@ -85,7 +87,7 @@ local function tryGenerate(floor: number, rng: Random): Layout?
 		local candidates = {}
 		for i = 2, #path - 1 do
 			local room = rooms[path[i]]
-			if not room.HasBranch then
+			if not room.HasBranch and room.Type == "Combat" then
 				for _, d in freeNeighbors(rooms, room.X, room.Z) do
 					table.insert(candidates, { Room = room, Dir = d })
 				end

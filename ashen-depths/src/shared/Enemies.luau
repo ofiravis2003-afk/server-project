@@ -33,8 +33,19 @@
 --   Squishy: wobbles as it moves (drawn by the players' screens).
 --   Procedural: "Scurry" = no animation clips; the body is moved by code (bouncing run, lunging bite).
 --   Pack: comes in a group of this many (min, max) in one spawn.
+--   Boss: a boss fight: its name on the big bar at the top of the screen, and its special moves on top of its
+--         ordinary blows. Slam: leaps at a player; a red circle on the floor shows where it lands (HitAt seconds
+--         into the clip) and everyone still inside is hit. Kick: shoves away whoever crowds it. Summon: at each
+--         health fraction in At, it calls Count of Minion up out of the ground (RiseAt seconds into the clip).
 
 export type HeldProp = { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }
+
+export type BossDef = {
+	Title: string,
+	Slam: { Id: string, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number },
+	Kick: { Id: string, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number },
+	Summon: { Id: string, At: { number }, Minion: string, Count: number, RiseAt: number, Length: number },
+}
 
 export type EnemyDef = {
 	DisplayName: string,
@@ -65,6 +76,7 @@ export type EnemyDef = {
 	Squishy: boolean?,
 	Procedural: string?,
 	Pack: { number }?,
+	Boss: BossDef?,
 }
 
 -- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Sword and Shield pack.
@@ -93,7 +105,39 @@ local ARCHER_ANIMATIONS = {
 	Death = "rbxassetid://114717097858899",
 }
 
+-- The Gravekeeper (floor 5): Tripo model rigged in Mixamo, clips from Mixamo's Great Sword pack.
+local GRAVEKEEPER_ANIMATIONS = {
+	Idle = "rbxassetid://113679683332851",
+	Walk = "rbxassetid://84843612733807",
+	Death = "rbxassetid://95053601444919",
+	-- (no Hit clip: a boss doesn't flinch at every blow)
+}
+
 local Enemies: { [string]: EnemyDef } = {
+	Gravekeeper = {
+		DisplayName = "The Gravekeeper",
+		Model = "Gravekeeper",
+		Health = 1400,
+		Damage = 22,
+		WalkSpeed = 10,
+		AggroRange = 90,
+		AttackRange = 9,
+		AttackCooldown = 2.4,
+		Windup = 0.6,
+		XP = 250,
+		Gold = { 150, 250 },
+		RespawnTime = 5,
+		Animations = GRAVEKEEPER_ANIMATIONS,
+		AnimationSpeeds = { Walk = 0.8 },
+		AttackClips = { { Id = "rbxassetid://100698180994174", HitAt = 0.57 } },
+		HeldProps = { { Prop = "GravekeeperShovel", Bone = "mixamorig:RightHand" } },
+		Boss = {
+			Title = "The Gravekeeper",
+			Slam = { Id = "rbxassetid://114482122415366", HitAt = 1.2, Radius = 11, Range = 34, DamageScale = 1.8, Cooldown = 9 },
+			Kick = { Id = "rbxassetid://134364173714373", HitAt = 0.53, Range = 6, Push = 70, DamageScale = 0.7, Cooldown = 5 },
+			Summon = { Id = "rbxassetid://140567108611606", At = { 0.66, 0.33 }, Minion = "Skeleton", Count = 3, RiseAt = 1.6, Length = 3.5 },
+		},
+	},
 	Skeleton = {
 		DisplayName = "Skeleton",
 		Model = "SkeletonMixamo",

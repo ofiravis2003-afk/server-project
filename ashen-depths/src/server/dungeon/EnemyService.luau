@@ -38,6 +38,7 @@ local ELITE_EYE = Color3.fromRGB(255, 190, 40)
 local ELITE = { Scale = 1.3, Health = 3.5, Damage = 1.5, Rewards = 3 }
 
 export type SpawnOptions = {
+	MinionMultiplier: number?, -- bosses: how tough the monsters they summon are (the floor's usual strength)
 	HealthMultiplier: number?,
 	DamageMultiplier: number?,
 	Elite: boolean?,
@@ -64,6 +65,18 @@ export type Enemy = {
 	LastAttack: number,
 	Attacking: boolean,
 	Dead: boolean,
+	Boss: BossState?,
+	Options: SpawnOptions,
+}
+
+export type BossState = {
+	Slam: AnimationTrack,
+	Kick: AnimationTrack,
+	Summon: AnimationTrack,
+	NextSlam: number,
+	NextKick: number,
+	SummonsDone: number,
+	Minions: { Enemy },
 }
 
 local EnemyService = {}
@@ -476,6 +489,19 @@ local function boneShard(isSkull: boolean, scale: number, cframe: CFrame): (Mode
 	return model, main
 end
 
+-- A boss's summoned monsters crumble away with it.
+local function dismissMinions(enemy: Enemy)
+	local boss = enemy.Boss
+	if boss then
+		for _, minion in boss.Minions do
+			if not minion.Dead then
+				minion.Humanoid.Health = 0
+			end
+		end
+		boss.Minions = {}
+	end
+end
+
 local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	if enemy.Dead then
 		return
@@ -483,6 +509,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	enemy.Dead = true
 	CollectionService:RemoveTag(enemy.Model, ENEMY_TAG)
 	enemies[enemy.Model] = nil
+	dismissMinions(enemy)
 
 	for _, eye in enemy.Eyes do
 		eye.Material = Enum.Material.SmoothPlastic
@@ -846,6 +873,30 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	end
 
 	local barGui = head:FindFirstChild("HealthBar") :: BillboardGui
+	local bossState: BossState? = nil
+	if def.Boss then
+		-- A boss's health is the big bar at the top of the screen, not a little one over its head.
+		barGui.Enabled = false
+		local function load(id: string): AnimationTrack
+			local animation = Instance.new("Animation")
+			animation.AnimationId = id
+			local track = animator:LoadAnimation(animation)
+			track.Looped = false
+			track.Priority = Enum.AnimationPriority.Action
+			return track
+		end
+		bossState = {
+			Slam = load(def.Boss.Slam.Id),
+			Kick = load(def.Boss.Kick.Id),
+			Summon = load(def.Boss.Summon.Id),
+			NextSlam = os.clock() + 5,
+			NextKick = 0,
+			SummonsDone = 0,
+			Minions = {},
+		}
+		model:SetAttribute("BossTitle", def.Boss.Title)
+		CollectionService:AddTag(model, "Boss")
+	end
 	local enemy: Enemy = {
 		Name = name,
 		Def = def,
@@ -866,6 +917,8 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		LastAttack = 0,
 		Attacking = false,
 		Dead = false,
+		Boss = bossState,
+		Options = opts,
 	}
 	enemies[model] = enemy
 	CollectionService:AddTag(model, ENEMY_TAG)
@@ -906,6 +959,12 @@ function EnemyService.Remove(enemy: Enemy)
 	enemy.Dead = true
 	enemies[enemy.Model] = nil
 	CollectionService:RemoveTag(enemy.Model, ENEMY_TAG)
+	if enemy.Boss then
+		for _, minion in enemy.Boss.Minions do
+			EnemyService.Remove(minion)
+		end
+		enemy.Boss.Minions = {}
+	end
 	enemy.Model:Destroy()
 end
 
@@ -1036,6 +1095,148 @@ local function shoot(enemy: Enemy, targetRoot: BasePart)
 	enemy.Attacking = false
 end
 
+------------------------------------------------------------------------------------------------
+-- Bosses
+
+-- Living players whose root stands within `radius` (flat) of `center`.
+local function playersNear(center: Vector3, radius: number): { { Player: Player, Root: BasePart, Humanoid: Humanoid } }
+	local list = {}
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if root and humanoid and humanoid.Health > 0 then
+			local offset = root.Position - center
+			if Vector3.new(offset.X, 0, offset.Z).Magnitude <= radius then
+				table.insert(list, { Player = player, Root = root, Humanoid = humanoid })
+			end
+		end
+	end
+	return list
+end
+
+local function hurt(humanoid: Humanoid, root: BasePart, amount: number)
+	local damage = math.floor(amount + 0.5)
+	humanoid:TakeDamage(damage)
+	damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
+end
+
+-- Leaps at a player: a red circle marks where it will land; everyone still inside when it lands is hit.
+local function bossSlam(enemy: Enemy, targetRoot: BasePart)
+	local boss = enemy.Boss :: BossState
+	local move = (enemy.Def.Boss :: Enemies.BossDef).Slam
+	enemy.Attacking = true
+	boss.NextSlam = os.clock() + move.Cooldown
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	face(enemy, targetRoot.Position)
+	local start = enemy.Root.CFrame
+	local floorY = start.Position.Y - enemy.Humanoid.HipHeight - enemy.Root.Size.Y / 2
+	local landing = Vector3.new(targetRoot.Position.X, floorY, targetRoot.Position.Z)
+	effectRemote:FireAllClients("Telegraph", landing, move.Radius, move.HitAt)
+	setEyes(enemy, true)
+	boss.Slam:Play(0.1)
+	-- The body travels to just short of the circle's middle while it is in the air.
+	local toward = Vector3.new(landing.X - start.Position.X, 0, landing.Z - start.Position.Z)
+	local travel = math.max(toward.Magnitude - move.Radius * 0.35, 0)
+	local finish = if toward.Magnitude > 0.1 then start + toward.Unit * travel else start
+	enemy.Root.Anchored = true
+	task.wait(move.HitAt * 0.35)
+	if not enemy.Dead then
+		TweenService:Create(enemy.Root, TweenInfo.new(move.HitAt * 0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = finish }):Play()
+	end
+	task.wait(move.HitAt * 0.65)
+	if not enemy.Dead then
+		setEyes(enemy, false)
+		effectRemote:FireAllClients("Quake", landing, move.Radius)
+		for _, hit in playersNear(landing, move.Radius) do
+			hurt(hit.Humanoid, hit.Root, enemy.Damage * move.DamageScale)
+		end
+	end
+	task.wait(0.6)
+	enemy.Root.Anchored = false
+	enemy.Attacking = false
+end
+
+-- Shoves away whoever crowds it.
+local function bossKick(enemy: Enemy, targetRoot: BasePart)
+	local boss = enemy.Boss :: BossState
+	local move = (enemy.Def.Boss :: Enemies.BossDef).Kick
+	enemy.Attacking = true
+	boss.NextKick = os.clock() + move.Cooldown
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	face(enemy, targetRoot.Position)
+	boss.Kick:Play(0.1)
+	task.wait(move.HitAt)
+	if not enemy.Dead then
+		local look = enemy.Root.CFrame.LookVector
+		for _, hit in playersNear(enemy.Root.Position, move.Range + 1.5) do
+			local offset = hit.Root.Position - enemy.Root.Position
+			local flat = Vector3.new(offset.X, 0, offset.Z)
+			local away = if flat.Magnitude > 0.1 then flat.Unit else look
+			if look:Dot(away) > 0 then
+				hurt(hit.Humanoid, hit.Root, enemy.Damage * move.DamageScale)
+				-- The player's own screen moves their character, so it gets the push.
+				effectRemote:FireClient(hit.Player, "Knockback", away * move.Push + Vector3.new(0, move.Push * 0.45, 0))
+			end
+		end
+	end
+	task.wait(0.5)
+	enemy.Attacking = false
+end
+
+-- Calls skeletons up out of the floor around it.
+local function bossSummon(enemy: Enemy)
+	local boss = enemy.Boss :: BossState
+	local move = (enemy.Def.Boss :: Enemies.BossDef).Summon
+	enemy.Attacking = true
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	boss.Summon:Play(0.15)
+	effectRemote:FireAllClients("Summon", enemy.Root.Position)
+	task.wait(move.RiseAt)
+	if not enemy.Dead then
+		local floorY = enemy.Root.Position.Y - enemy.Humanoid.HipHeight - enemy.Root.Size.Y / 2
+		local strength = enemy.Options.MinionMultiplier or 1
+		for i = 1, move.Count do
+			local angle = (i / move.Count) * math.pi * 2 + math.random() * 0.5
+			local spot = Vector3.new(enemy.Root.Position.X + math.cos(angle) * 9, floorY, enemy.Root.Position.Z + math.sin(angle) * 9)
+			effectRemote:FireAllClients("Rise", spot)
+			local ok, minion = pcall(EnemyService.Spawn, move.Minion, CFrame.lookAt(spot, Vector3.new(enemy.Root.Position.X, floorY, enemy.Root.Position.Z)), {
+				HealthMultiplier = strength,
+				DamageMultiplier = strength,
+			})
+			if ok and minion then
+				table.insert(boss.Minions, minion)
+			end
+		end
+	end
+	task.wait(math.max(move.Length - move.RiseAt - 0.6, 0.3))
+	enemy.Attacking = false
+end
+
+local function bossThink(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humanoid, distance: number, now: number)
+	local boss = enemy.Boss :: BossState
+	local def = enemy.Def.Boss :: Enemies.BossDef
+	local ratio = enemy.Humanoid.Health / enemy.Humanoid.MaxHealth
+	local nextSummon = def.Summon.At[boss.SummonsDone + 1]
+	if nextSummon and ratio <= nextSummon then
+		boss.SummonsDone += 1
+		task.spawn(bossSummon, enemy)
+	elseif distance <= def.Kick.Range and now >= boss.NextKick then
+		task.spawn(bossKick, enemy, targetRoot)
+	elseif distance > def.Kick.Range + 2 and distance <= def.Slam.Range and now >= boss.NextSlam then
+		task.spawn(bossSlam, enemy, targetRoot)
+	elseif distance <= enemy.Def.AttackRange then
+		if now - enemy.LastAttack >= enemy.Def.AttackCooldown then
+			task.spawn(attack, enemy, targetRoot, targetHumanoid)
+		else
+			enemy.Humanoid:MoveTo(enemy.Root.Position)
+			face(enemy, targetRoot.Position)
+		end
+	else
+		enemy.Humanoid:MoveTo(targetRoot.Position)
+	end
+end
+
 local function think()
 	local now = os.clock()
 	for _, enemy in enemies do
@@ -1050,7 +1251,9 @@ local function think()
 		local offset = targetRoot.Position - enemy.Root.Position
 		local distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
 		local ranged = enemy.Def.Ranged
-		if ranged then
+		if enemy.Boss then
+			bossThink(enemy, targetRoot, targetHumanoid, distance, now)
+		elseif ranged then
 			if distance < ranged.KeepAway then
 				-- Too close: back away from the player.
 				local away = Vector3.new(-offset.X, 0, -offset.Z).Unit

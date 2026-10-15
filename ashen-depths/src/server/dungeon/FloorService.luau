@@ -49,6 +49,7 @@ type CombatRoom = {
 	Enemies: { [EnemyService.Enemy]: boolean },
 	EmptySince: number?,
 	HasElite: boolean,
+	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
 }
 
 local FloorService = {}
@@ -162,6 +163,8 @@ local function clearRoom(room: CombatRoom)
 	end
 end
 
+local bossDefeated: (CombatRoom, EnemyService.Enemy) -> ()
+
 local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 	-- Slimes split: the little ones join the fight before the room checks whether it is clear.
 	local split = enemy.Def.SplitInto
@@ -182,6 +185,9 @@ local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 		end
 	end
 	room.Enemies[enemy] = nil
+	if room.Boss and enemy.Def.Boss then
+		bossDefeated(room, enemy)
+	end
 	if enemy.Elite then
 		for player in enemy.Damagers do
 			if player.Parent then
@@ -201,6 +207,30 @@ local function activateRoom(room: CombatRoom, floor: number)
 	setGates(room, true)
 
 	local rng = Random.new()
+	if room.Boss then
+		-- The boss waits on the far side of its lair, facing the way in; it grows tougher for each extra player.
+		local party = math.max(#Players:GetPlayers(), 1)
+		local doorway = room.Built.Doorways[1] or room.Built.Center
+		local away = room.Built.Center - doorway
+		away = if away.Magnitude > 0.1 then Vector3.new(away.X, 0, away.Z).Unit else Vector3.new(0, 0, -1)
+		local spot = room.Built.Center + away * (room.Built.Size / 4)
+		local ok, boss = pcall(EnemyService.Spawn, room.Boss, CFrame.lookAt(spot, room.Built.Center), {
+			HealthMultiplier = 1 + 0.6 * (party - 1),
+			DamageMultiplier = 1,
+			MinionMultiplier = Floors.EnemyHealthMultiplier(floor),
+			OnDied = function(dead)
+				onEnemyDied(room, dead)
+			end,
+		})
+		if not ok then
+			warn(`[FloorService] Spawning the boss failed: {boss}`)
+		elseif boss then
+			room.Enemies[boss] = true
+			notifyRemote:FireAllClients(`{(boss.Def.Boss :: any).Title} rises!`)
+		end
+		room.Spawning = false
+		return
+	end
 	-- Small rooms 2, medium 3, big 4, plus one more every second floor.
 	local count = math.min(math.floor(room.Built.Size / 12) + math.floor((floor - 1) / 2), 8)
 	local eliteIndex = if room.HasElite then rng:NextInteger(1, count) else 0
@@ -396,6 +426,60 @@ end
 
 local startFloor: (number) -> ()
 
+-- A boss falls: everyone who fought it gets a Gold Key, a Gold Chest appears where it stood,
+-- and the next floor becomes their checkpoint (a new run can start right there).
+bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
+	local title = (boss.Def.Boss :: any).Title
+	local where = boss.Root.Position
+	for player in boss.Damagers do
+		if player.Parent then
+			giveKey(player, "Gold", where)
+			local data = DataService.GetData(player)
+			if data and currentFloor + 1 > (data.Checkpoint or 0) then
+				data.Checkpoint = currentFloor + 1
+			end
+		end
+	end
+	notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
+	task.delay(2.5, function()
+		if room.Built.Model.Parent then
+			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")
+		end
+	end)
+end
+
+-- On floor 1, a gate stone in the entrance hall lets a player who has beaten a boss start from its checkpoint.
+local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
+	local stone = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, 9), "Gold")
+	stone.Name = "CheckpointStone"
+	local p = prompt(stone:FindFirstChild("Pedestal") :: BasePart, "Descend", "Checkpoint", 1, 9)
+	p.Enabled = false
+	local function refresh()
+		local best = 0
+		for _, player in Players:GetPlayers() do
+			local data = DataService.GetData(player)
+			best = math.max(best, data and data.Checkpoint or 0)
+		end
+		p.Enabled = best > 1 and currentFloor == 1
+		p.ObjectText = `Floor {best}`
+	end
+	refresh()
+	task.spawn(function()
+		while stone.Parent do
+			task.wait(2)
+			refresh()
+		end
+	end)
+	p.Triggered:Connect(function(player)
+		local data = DataService.GetData(player)
+		local target = data and data.Checkpoint or 0
+		if target > 1 and not changingFloor and currentFloor == 1 then
+			notifyRemote:FireAllClients(`{player.DisplayName} opens the way to floor {target}.`)
+			startFloor(target)
+		end
+	end)
+end
+
 local function setupStairs(room: FloorBuilder.BuiltRoom)
 	local part = room.StairsPart
 	if not part then
@@ -440,6 +524,20 @@ startFloor = function(floor: number)
 		local plan = room.Plan
 		if plan.Type == "Entrance" then
 			entrance = room.Center
+			if floor == 1 then
+				setupCheckpointStone(room)
+			end
+		elseif plan.Type == "Boss" then
+			table.insert(combatRooms, {
+				Built = room,
+				Cleared = false,
+				Active = false,
+				Spawning = false,
+				Enemies = {},
+				EmptySince = nil,
+				HasElite = false,
+				Boss = Floors.Bosses[floor],
+			})
 		elseif plan.Type == "Combat" then
 			table.insert(combatRooms, {
 				Built = room,
@@ -547,7 +645,7 @@ function FloorService.Start()
 		floorStartedRemote:FireClient(player, currentFloor, Floors.ChapterName(currentFloor))
 	end)
 
-	startFloor(1)
+	startFloor(if Config.TestMode and Config.TestStartFloor then Config.TestStartFloor else 1)
 
 	local elapsed = 0
 	RunService.Heartbeat:Connect(function(dt)
