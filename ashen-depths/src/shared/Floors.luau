@@ -22,11 +22,11 @@ end
 
 -- Enemies get tougher every floor.
 function Floors.EnemyHealthMultiplier(floor: number): number
-	return 1 + 0.2 * (floor - 1)
+	return 1 + 0.25 * (floor - 1)
 end
 
 function Floors.EnemyDamageMultiplier(floor: number): number
-	return 1 + 0.1 * (floor - 1)
+	return 1 + 0.12 * (floor - 1)
 end
 
 -- Which monsters a floor's combat rooms are filled with, and how often (weights).

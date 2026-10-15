@@ -29,15 +29,22 @@ local TrapService = require(script.Parent.TrapService)
 local ORIGIN = Vector3.new(2000, 0, 0) -- far from the test room
 local CHECK_INTERVAL = 0.25
 local RESET_AFTER_EMPTY = 4 -- seconds a locked room may stand empty (everyone died) before it resets
-local ELITE_CHANCE = 0.4
+-- An elite in a combat room: more likely deeper down.
+local function eliteChance(floor: number): number
+	return math.min(0.3 + 0.04 * (floor - 1), 0.7)
+end
+-- Between fights (not inside a room that's fighting) health slowly comes back; during a fight only potions
+-- and the Tome heal. (Roblox's own steady regeneration is turned off in ProgressService.)
+local REST_HEAL_PER_SECOND = 0.03
 local TRAP_CHANCE = 0.45
 local ARROW_TRAP_CHANCE = 0.3
 local TRAP_DAMAGE = 14
 
 local LOOT = {
-	Bronze = { Gold = { 20, 40 }, Potions = { 0, 1 }, WeaponChance = 0.25, Rarities = { { "Rare", 1 } } },
-	Silver = { Gold = { 50, 90 }, Potions = { 1, 2 }, WeaponChance = 1, Rarities = { { "Rare", 0.6 }, { "Epic", 0.4 } } },
-	Gold = { Gold = { 120, 200 }, Potions = { 2, 3 }, WeaponChance = 1, Rarities = { { "Epic", 0.7 }, { "Legendary", 0.3 } } },
+	-- Mostly gold, potions and the floor's monster materials; a weapon only now and then (2026-10-16).
+	Bronze = { Gold = { 20, 40 }, Potions = { 0, 1 }, Materials = { 1, 3 }, WeaponChance = 0.1, Rarities = { { "Common", 0.6 }, { "Rare", 0.4 } } },
+	Silver = { Gold = { 50, 90 }, Potions = { 1, 2 }, Materials = { 2, 4 }, WeaponChance = 0.4, Rarities = { { "Rare", 0.8 }, { "Epic", 0.2 } } },
+	Gold = { Gold = { 120, 200 }, Potions = { 2, 3 }, Materials = { 3, 5 }, WeaponChance = 1, Rarities = { { "Epic", 0.85 }, { "Legendary", 0.15 } } },
 }
 
 type Keys = { Bronze: number, Silver: number, Gold: number }
@@ -392,6 +399,23 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 			text ..= `   +{got} Health Potion`
 		end
 	end
+	-- A handful of what this floor's monsters leave behind.
+	local pool = {}
+	for _, entry in Floors.EnemyMix(currentFloor) do
+		local def = Enemies[entry.Name]
+		for _, drop in (def and def.Drops) or {} do
+			if not table.find(pool, drop.Item) then
+				table.insert(pool, drop.Item)
+			end
+		end
+	end
+	if #pool > 0 then
+		local material = pool[rng:NextInteger(1, #pool)]
+		local got = InventoryService.GiveItem(player, material, "Common", rng:NextInteger(loot.Materials[1], loot.Materials[2]))
+		if got > 0 then
+			text ..= `   +{got} {Items.Defs[material].DisplayName}`
+		end
+	end
 	if rng:NextNumber() < loot.WeaponChance then
 		local itemName = Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
 		local rarity = rollRarity(rng, loot.Rarities)
@@ -650,7 +674,7 @@ startFloor = function(floor: number)
 				Spawning = false,
 				Enemies = {},
 				EmptySince = nil,
-				HasElite = rng:NextNumber() < ELITE_CHANCE,
+				HasElite = rng:NextNumber() < eliteChance(floor),
 			})
 			setupLever(room)
 			if rng:NextNumber() < TRAP_CHANCE then
@@ -762,11 +786,33 @@ function FloorService.Start()
 	startFloor(if Config.TestMode and Config.TestStartFloor then Config.TestStartFloor else 1)
 
 	local elapsed = 0
+	local restElapsed = 0
 	RunService.Heartbeat:Connect(function(dt)
 		elapsed += dt
+		restElapsed += dt
 		if elapsed >= CHECK_INTERVAL and not changingFloor then
 			elapsed = 0
 			watchRooms()
+		end
+		if restElapsed >= 1 then
+			restElapsed = 0
+			for _, player in Players:GetPlayers() do
+				local root = aliveRoot(player)
+				local humanoid = root and (player.Character :: Model):FindFirstChildOfClass("Humanoid")
+				if not root or not humanoid or humanoid.Health >= humanoid.MaxHealth then
+					continue
+				end
+				local fighting = false
+				for _, room in combatRooms do
+					if room.Active and isInside(room.Built, root.Position, -4) then
+						fighting = true
+						break
+					end
+				end
+				if not fighting then
+					humanoid.Health = math.min(humanoid.Health + humanoid.MaxHealth * REST_HEAL_PER_SECOND, humanoid.MaxHealth)
+				end
+			end
 		end
 	end)
 end
