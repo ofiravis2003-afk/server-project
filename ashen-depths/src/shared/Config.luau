@@ -34,7 +34,7 @@ return {
 	TestNoDamage = true,
 
 	-- While testing: the run starts on this floor instead of floor 1 (5 = the Gravekeeper's floor).
-	TestStartFloor = 5 :: number?, -- testing the Gravekeeper; set back to nil afterwards
+	TestStartFloor = nil :: number?, -- start every run on this floor (testing); nil = normal
 
 	-- While testing: when set, every floor's monsters are picked from this list instead of the normal mix.
 	-- Set to nil to go back to the real per-floor mix.
