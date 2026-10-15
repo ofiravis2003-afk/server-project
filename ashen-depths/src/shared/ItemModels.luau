@@ -62,10 +62,10 @@ local builders: { [string]: (Model) -> () } = {
 		part(m, Vector3.new(0.3, 0.3, 0.3), CFrame.new(0.6, 0.15, 0.2), Color3.fromRGB(110, 230, 150), Enum.Material.Neon, Enum.PartType.Ball)
 	end,
 	HealthPotion = function(m)
-		local glass = part(m, Vector3.new(1.4, 1.4, 1.4), CFrame.new(), Color3.fromRGB(230, 235, 240), Enum.Material.Glass, Enum.PartType.Ball)
-		glass.Transparency = 0.55
-		part(m, Vector3.new(1.15, 1.15, 1.15), CFrame.new(0, -0.08, 0), Color3.fromRGB(220, 30, 40), Enum.Material.Neon, Enum.PartType.Ball).Transparency = 0.15
-		part(m, Vector3.new(0.7, 0.4, 0.4), CFrame.new(0, 0.85, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(230, 235, 240), Enum.Material.Glass, Enum.PartType.Cylinder).Transparency = 0.5
+		-- (no Glass or Neon: pictures in the bag draw them flat and pale)
+		part(m, Vector3.new(1.4, 1.4, 1.4), CFrame.new(), Color3.fromRGB(200, 30, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		part(m, Vector3.new(0.35, 0.35, 0.35), CFrame.new(-0.35, 0.35, -0.45), Color3.fromRGB(255, 220, 220), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		part(m, Vector3.new(0.7, 0.4, 0.4), CFrame.new(0, 0.85, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 200, 205), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
 		part(m, Vector3.new(0.3, 0.34, 0.34), CFrame.new(0, 1.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(120, 80, 50), Enum.Material.Wood, Enum.PartType.Cylinder)
 	end,
 }
