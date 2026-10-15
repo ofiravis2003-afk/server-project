@@ -35,9 +35,9 @@ local ARROW_TRAP_CHANCE = 0.3
 local TRAP_DAMAGE = 14
 
 local LOOT = {
-	Bronze = { Gold = { 20, 40 }, WeaponChance = 0.25, Rarities = { { "Rare", 1 } } },
-	Silver = { Gold = { 50, 90 }, WeaponChance = 1, Rarities = { { "Rare", 0.6 }, { "Epic", 0.4 } } },
-	Gold = { Gold = { 120, 200 }, WeaponChance = 1, Rarities = { { "Epic", 0.7 }, { "Legendary", 0.3 } } },
+	Bronze = { Gold = { 20, 40 }, Potions = { 0, 1 }, WeaponChance = 0.25, Rarities = { { "Rare", 1 } } },
+	Silver = { Gold = { 50, 90 }, Potions = { 1, 2 }, WeaponChance = 1, Rarities = { { "Rare", 0.6 }, { "Epic", 0.4 } } },
+	Gold = { Gold = { 120, 200 }, Potions = { 2, 3 }, WeaponChance = 1, Rarities = { { "Epic", 0.7 }, { "Legendary", 0.3 } } },
 }
 
 type Keys = { Bronze: number, Silver: number, Gold: number }
@@ -385,6 +385,13 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 	local gold = math.floor(rng:NextInteger(loot.Gold[1], loot.Gold[2]) * (1 + 0.15 * (currentFloor - 1)))
 	ProgressService.AddGold(player, gold)
 	local text = `+{gold} Gold`
+	local potions = rng:NextInteger(loot.Potions[1], loot.Potions[2])
+	if potions > 0 then
+		local got = InventoryService.GiveItem(player, "HealthPotion", "Common", potions)
+		if got > 0 then
+			text ..= `   +{got} Health Potion`
+		end
+	end
 	if rng:NextNumber() < loot.WeaponChance then
 		local itemName = Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
 		local rarity = rollRarity(rng, loot.Rarities)

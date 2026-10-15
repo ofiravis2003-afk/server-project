@@ -6,7 +6,14 @@ local Rarity = require(script.Parent.Rarity)
 
 export type ItemDef = {
 	DisplayName: string,
-	Slot: "Weapon" | "Head" | "Chest" | "Hands" | "Legs" | "Ring",
+	-- Weapons and armor are worn in a slot; materials (dropped by monsters, for selling, quests and upgrades)
+	-- and potions (drunk from the hotbar) just sit in the bag, stacked.
+	Slot: "Weapon" | "Head" | "Chest" | "Hands" | "Legs" | "Ring" | "Material" | "Potion",
+	Stack: number?, -- stackable: up to this many in one bag place
+	Limit: number?, -- the most a player can carry in all (potions)
+	Price: number?, -- what a merchant pays for one (materials and potions; gear goes by rarity)
+	HealFraction: number?, -- potions: part of max health given back
+	Description: string?,
 	WeaponType: string?,
 	Damage: number?,
 	Heal: number?, -- tome only: health given back per cast
@@ -50,6 +57,16 @@ Items.Defs = {
 		Look = "Tome",
 		Names = { Rare = "Book of Mending", Epic = "Lantern Codex", Legendary = "Radiant Codex", Mythic = "Tome of the Dawn" },
 	},
+
+	-- Materials: every monster leaves something of itself behind.
+	Bone = { DisplayName = "Bone", Slot = "Material", Stack = 99, Price = 2, Description = "Dropped by skeletons." },
+	Fletching = { DisplayName = "Black Fletching", Slot = "Material", Stack = 99, Price = 3, Description = "Arrow feathers from skeleton archers." },
+	RatTail = { DisplayName = "Rat Tail", Slot = "Material", Stack = 99, Price = 1, Description = "Dropped by giant rats." },
+	SlimeGel = { DisplayName = "Slime Gel", Slot = "Material", Stack = 99, Price = 2, Description = "What's left of a slime." },
+	GraveShroud = { DisplayName = "Grave Shroud", Slot = "Material", Stack = 99, Price = 60, Description = "Torn from the Gravekeeper's coat. Rare." },
+
+	-- Potions: drunk from the hotbar (slot 2).
+	HealthPotion = { DisplayName = "Health Potion", Slot = "Potion", Stack = 5, Limit = 5, Price = 8, HealFraction = 0.4, Description = "Gives back 40% of your health." },
 } :: { [string]: ItemDef }
 
 -- One starter weapon of each type, in hotbar order.
@@ -75,10 +92,20 @@ function Items.WeaponDamage(itemName: string, rarity: string, upgrade: number): 
 	return scaled(def and def.Damage or 0, rarity, upgrade)
 end
 
--- What a merchant (or a full bag) pays for an item.
+-- What a merchant pays for an item (a whole stack of `count`).
 local SELL_PRICE = { Common = 10, Rare = 30, Epic = 90, Legendary = 250, Mythic = 600 }
-function Items.SellPrice(rarity: string, upgrade: number): number
+function Items.SellPrice(itemName: string, rarity: string, upgrade: number, count: number?): number
+	local def = Items.Defs[itemName]
+	if def and def.Price then
+		return def.Price * (count or 1)
+	end
 	return math.floor((SELL_PRICE[rarity] or 10) * (1 + 0.1 * upgrade))
+end
+
+-- Gear is worn (one per bag place); materials and potions stack.
+function Items.IsGear(itemName: string): boolean
+	local def = Items.Defs[itemName]
+	return def ~= nil and def.Slot ~= "Material" and def.Slot ~= "Potion"
 end
 
 function Items.WeaponHeal(itemName: string, rarity: string, upgrade: number): number

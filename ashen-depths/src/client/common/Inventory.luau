@@ -10,10 +10,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
+local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Rarity = require(ReplicatedStorage.Shared.Rarity)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local WeaponBuilder = require(ReplicatedStorage.Shared.WeaponBuilder)
 
 local PANEL = Color3.fromRGB(22, 18, 20)
 local EDGE = Color3.fromRGB(120, 90, 50)
@@ -26,7 +26,7 @@ local COLUMNS = 6
 local CELL = 64
 local GAP = 6
 
-type SavedItem = { Item: string, Rarity: string, Upgrade: number? }
+type SavedItem = { Item: string, Rarity: string, Upgrade: number?, Count: number? }
 type Snapshot = { Items: { [string]: SavedItem }, Equipped: { [string]: string }, BagSize: number }
 
 local Inventory = {}
@@ -82,18 +82,7 @@ local function preview(parent: Instance, saved: SavedItem, size: UDim2, position
 	view.LightColor = Color3.fromRGB(255, 235, 210)
 	view.LightDirection = Vector3.new(-1, -1, -1)
 	view.Parent = parent
-	local def = Items.Defs[saved.Item]
-	if not def or not def.Look then
-		return
-	end
-	local tool = WeaponBuilder.Build(def.Look, saved.Rarity)
-	local model = Instance.new("Model")
-	for _, child in tool:GetChildren() do
-		if child:IsA("BasePart") or child:IsA("Model") then
-			child.Parent = model
-		end
-	end
-	tool:Destroy()
+	local model = ItemModels.Build(saved.Item, saved.Rarity)
 	model.Parent = view
 	local camera = Instance.new("Camera")
 	camera.FieldOfView = 40
@@ -223,6 +212,10 @@ function Inventory.Start()
 				return equippedA
 			end
 			local ia, ib = snapshot.Items[a], snapshot.Items[b]
+			local ga, gb = Items.IsGear(ia.Item), Items.IsGear(ib.Item)
+			if ga ~= gb then
+				return ga
+			end
 			local ra, rb = RARITY_RANK[ia.Rarity] or 0, RARITY_RANK[ib.Rarity] or 0
 			if ra ~= rb then
 				return ra > rb
@@ -267,8 +260,25 @@ function Inventory.Start()
 		preview(big, saved, UDim2.fromScale(1, 1), UDim2.new())
 		name.Text = Items.NameFor(saved.Item, saved.Rarity) .. (if upgrade > 0 then ` +{upgrade}` else "")
 		name.TextColor3 = info.Color
-		kind.Text = if def and def.WeaponType then `{saved.Rarity} {def.WeaponType}` else saved.Rarity
-		kind.TextColor3 = info.Color
+		local gear = Items.IsGear(saved.Item)
+		kind.Text = if def and def.WeaponType then `{saved.Rarity} {def.WeaponType}` elseif def then def.Slot else saved.Rarity
+		kind.TextColor3 = if gear then info.Color else Color3.fromRGB(190, 180, 165)
+		if not gear then
+			name.TextColor3 = TEXT
+			local count = saved.Count or 1
+			stats.Text = `{(def and def.Description) or ""}\nYou have {count}.`
+			equip.Visible = false
+			sell.Visible = true
+			local price = Items.SellPrice(saved.Item, saved.Rarity, 0, count)
+			if player:GetAttribute("AtShop") then
+				sell.Text = if confirmSell then `Sure? Sell all for {price}` else `Sell all ({price} gold)`
+				sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(80, 55, 25)
+			else
+				sell.Text = if confirmSell then "Sure? Drop them all" else "Drop all"
+				sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(70, 40, 40)
+			end
+			return
+		end
 
 		-- Compared with the weapon in hand (unless this is it).
 		local equippedId = snapshot.Equipped.Weapon
@@ -285,7 +295,7 @@ function Inventory.Start()
 		equip.Text = if isEquipped then "Equipped" else "Equip"
 		equip.AutoButtonColor = not isEquipped
 		equip.BackgroundColor3 = if isEquipped then Color3.fromRGB(45, 45, 45) else Color3.fromRGB(40, 70, 45)
-		local price = Items.SellPrice(saved.Rarity, upgrade)
+		local price = Items.SellPrice(saved.Item, saved.Rarity, upgrade)
 		sell.Visible = not isEquipped
 		if player:GetAttribute("AtShop") then
 			sell.Text = if confirmSell then `Sure? Sell for {price}` else `Sell ({price} gold)`
@@ -321,6 +331,16 @@ function Inventory.Start()
 			cell.BackgroundColor3 = SLOT:Lerp(info.Color, 0.18)
 			stroke(cell, info.Color, if selected == id then 3 else 1.5)
 			preview(cell, saved, UDim2.fromScale(1, 1), UDim2.new())
+			if (saved.Count or 1) > 1 then
+				local count = label(cell, Fonts.Number, 15, TEXT)
+				count.AnchorPoint = Vector2.new(1, 1)
+				count.Position = UDim2.new(1, -4, 1, -2)
+				count.Size = UDim2.fromOffset(40, 16)
+				count.TextXAlignment = Enum.TextXAlignment.Right
+				count.TextStrokeTransparency = 0.2
+				count.ZIndex = 2
+				count.Text = `x{saved.Count}`
+			end
 			if snapshot.Equipped.Weapon == id then
 				local badge = label(cell, Fonts.Title, 14, GOLD)
 				badge.Position = UDim2.fromOffset(4, 2)
@@ -373,7 +393,9 @@ function Inventory.Start()
 		if not saved or not selected then
 			return
 		end
-		local precious = (RARITY_RANK[saved.Rarity] or 0) >= (RARITY_RANK.Epic or 3)
+		local precious = if Items.IsGear(saved.Item)
+			then (RARITY_RANK[saved.Rarity] or 0) >= (RARITY_RANK.Epic or 3)
+			else (saved.Count or 1) >= 5
 		if precious and not confirmSell then
 			confirmSell = true
 			showDetails()

@@ -27,7 +27,7 @@ local function show(position: Vector3, value: number | string, kind: string)
 	anchor.Parent = workspace.Terrain
 
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(240, 50)
+	gui.Size = if kind == "Reward" then UDim2.fromOffset(260, 90) else UDim2.fromOffset(240, 50)
 	gui.AlwaysOnTop = true
 	gui.LightInfluence = 0
 	gui.Adornee = anchor

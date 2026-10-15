@@ -17,6 +17,8 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local InventoryService = require(script.Parent.Parent.Common.InventoryService)
+local Items = require(ReplicatedStorage.Shared.Items)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local Props = require(script.Parent.Props)
 
@@ -747,7 +749,21 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 			local gold = math.random(enemy.Def.Gold[1], enemy.Def.Gold[2]) * rewards
 			ProgressService.AddXP(player, xp)
 			ProgressService.AddGold(player, gold)
-			damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), `+{xp} XP   +{gold} Gold`, "Reward")
+			local text = `+{xp} XP   +{gold} Gold`
+			-- Each player gets their own share of what it leaves behind.
+			for _, drop in enemy.Def.Drops or {} do
+				if enemy.Elite or math.random() < drop.Chance then
+					local count = if drop.Count then math.random(drop.Count[1], drop.Count[2]) else 1
+					if enemy.Elite then
+						count *= 2
+					end
+					local got = InventoryService.GiveItem(player, drop.Item, "Common", count)
+					if got > 0 then
+						text ..= `\n+{got} {Items.Defs[drop.Item].DisplayName}`
+					end
+				end
+			end
+			damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), text, "Reward")
 		end
 	end
 	if options.OnDied then

@@ -9,10 +9,10 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
+local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Rarity = require(ReplicatedStorage.Shared.Rarity)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local WeaponBuilder = require(ReplicatedStorage.Shared.WeaponBuilder)
 
 local SHOW_TIME = 3.5
 local CARD_SIZE = UDim2.fromOffset(360, 120)
@@ -75,13 +75,8 @@ local function buildCard(gui: ScreenGui, received: Received): (Frame, () -> ())
 	camera.Parent = view
 	view.CurrentCamera = camera
 	local spin: RBXScriptConnection? = nil
-	if def and def.Look then
-		local tool = WeaponBuilder.Build(def.Look, received.Rarity)
-		local model = Instance.new("Model")
-		for _, child in tool:GetChildren() do
-			child.Parent = model
-		end
-		tool:Destroy()
+	if def then
+		local model = ItemModels.Build(received.Item, received.Rarity)
 		model.Parent = view
 		local box, size = model:GetBoundingBox()
 		local center = box.Position
@@ -110,14 +105,16 @@ local function buildCard(gui: ScreenGui, received: Received): (Frame, () -> ())
 	local rarity = label(card, Fonts.Body, 15, info.Color)
 	rarity.Position = UDim2.fromOffset(122, 64)
 	rarity.Size = UDim2.fromOffset(228, 18)
-	rarity.Text = if def and def.WeaponType then `{received.Rarity} {def.WeaponType}` else received.Rarity
+	rarity.Text = if def and def.WeaponType then `{received.Rarity} {def.WeaponType}` elseif def and not Items.IsGear(received.Item) then def.Slot else received.Rarity
 
 	local stats = label(card, Fonts.Body, 14, Color3.fromRGB(220, 215, 205))
 	stats.Position = UDim2.fromOffset(122, 86)
 	stats.Size = UDim2.fromOffset(228, 18)
 	local damage = Items.WeaponDamage(received.Item, received.Rarity, 0)
 	local heal = Items.WeaponHeal(received.Item, received.Rarity, 0)
-	stats.Text = if heal > 0
+	stats.Text = if def and not def.WeaponType
+		then def.Description or ""
+		elseif heal > 0
 		then `Damage {math.floor(damage + 0.5)}   Heal {math.floor(heal + 0.5)}`
 		else `Damage {math.floor(damage + 0.5)}`
 

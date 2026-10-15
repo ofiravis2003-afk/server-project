@@ -61,6 +61,9 @@ export type EnemyDef = {
 	Windup: number,
 	XP: number,
 	Gold: { number },
+	-- What it leaves behind for each player who hurt it: Count of Item with this Chance (elites always drop,
+	-- and twice as many). Boss drops are certain.
+	Drops: { { Item: string, Chance: number, Count: { number }? } }?,
 	RespawnTime: number,
 	Model: string?,
 	Scale: number?,
@@ -129,6 +132,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Windup = 0.6,
 		XP = 250,
 		Gold = { 150, 250 },
+		Drops = { { Item = "GraveShroud", Chance = 1 }, { Item = "Bone", Chance = 1, Count = { 4, 7 } } },
 		RespawnTime = 5,
 		Animations = GRAVEKEEPER_ANIMATIONS,
 		AnimationSpeeds = { Walk = 0.8 },
@@ -162,6 +166,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Windup = 0.7, -- the attack clip raises its arm before the swing; this is the time to step away
 		XP = 12,
 		Gold = { 3, 6 },
+		Drops = { { Item = "Bone", Chance = 0.6 } },
 		RespawnTime = 5,
 		Animations = SWORD_ANIMATIONS,
 		AnimationSpeeds = { Walk = 0.8 },
@@ -194,6 +199,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Windup = 0.9,
 		XP = 14,
 		Gold = { 4, 7 },
+		Drops = { { Item = "Fletching", Chance = 0.5 }, { Item = "Bone", Chance = 0.3 } },
 		RespawnTime = 5,
 		Animations = ARCHER_ANIMATIONS,
 		-- Its clips stand side-on with the bow arm out; this turns the body so the arrow flies at the player.
@@ -223,6 +229,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Windup = 0.5,
 		XP = 10,
 		Gold = { 2, 5 },
+		Drops = { { Item = "SlimeGel", Chance = 0.6 } },
 		RespawnTime = 5,
 		DeathStyle = "Splat",
 		SplitInto = { Name = "SlimeSmall", Count = 2 },
@@ -239,6 +246,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Windup = 0.35,
 		XP = 6,
 		Gold = { 1, 3 },
+		Drops = { { Item = "RatTail", Chance = 0.5 } },
 		RespawnTime = 5,
 		-- (The code-driven scurry looked bad; it waits for a real animated rat. Procedural = "Scurry" brings it back.)
 		DeathStyle = "Flip",
@@ -257,6 +265,7 @@ local Enemies: { [string]: EnemyDef } = {
 		Windup = 0.4,
 		XP = 4,
 		Gold = { 1, 2 },
+		Drops = { { Item = "SlimeGel", Chance = 0.25 } },
 		RespawnTime = 5,
 		DeathStyle = "Splat",
 		Squishy = true,

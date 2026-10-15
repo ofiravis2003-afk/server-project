@@ -1,7 +1,8 @@
 --!strict
--- The player's items (the bag, Config.BagSize places), and the weapon Tool they carry.
--- The hotbar holds only the equipped weapon (slot 1); the rest waits in the bag, where the player
--- can equip it or drop it. Selling only happens at a merchant in Emberhold: the shop marks the player
+-- The player's items (the bag, Config.BagSize places), and the Tools on their hotbar.
+-- Hotbar: slot 1 is the equipped weapon, slots 2-4 the potions they carry (taking one out drinks it, and the
+-- weapon comes back to hand). The rest waits in the bag, where the player can equip it or drop it.
+-- Materials and potions stack in one bag place (Items Stack); potions also have a carry limit (Items Limit). Selling only happens at a merchant in Emberhold: the shop marks the player
 -- with "AtShop" (set here on the server, so it can't be faked). A new item that finds the bag full is left behind.
 
 local CollectionService = game:GetService("CollectionService")
@@ -17,7 +18,9 @@ local RateLimiter = require(script.Parent.RateLimiter)
 
 local TOOL_TAG = "WeaponTool"
 
-export type Item = { Item: string, Rarity: string, Upgrade: number }
+export type Item = { Item: string, Rarity: string, Upgrade: number, Count: number? }
+
+local POTION_COOLDOWN = 10
 
 local InventoryService = {}
 
@@ -34,6 +37,8 @@ local inventoryRemote = Remotes.Event("InventoryUpdated")
 local actionRemote = Remotes.Event("InventoryAction")
 local notifyRemote = Remotes.Event("Notify")
 local actionLimiter = RateLimiter.new(0.2)
+local damageNumberRemote = Remotes.Event("DamageNumber")
+local nextPotion: { [Player]: number } = {}
 
 local function countItems(data: { [string]: any }): number
 	local n = 0
@@ -41,6 +46,49 @@ local function countItems(data: { [string]: any }): number
 		n += 1
 	end
 	return n
+end
+
+-- How many of `itemName` the player has in all.
+local function countOf(data: { [string]: any }, itemName: string): number
+	local n = 0
+	for _, item in data.Inventory do
+		if item.Item == itemName then
+			n += item.Count or 1
+		end
+	end
+	return n
+end
+
+-- Puts `count` of an item in the bag: onto stacks that have room first, then into new places.
+-- Returns how many went in (fewer when the bag is full or the carry limit is reached).
+local function addToBag(data: { [string]: any }, itemName: string, rarity: string, count: number): number
+	local def = Items.Defs[itemName]
+	local stack = def.Stack or 1
+	local left = count
+	if def.Limit then
+		left = math.min(left, def.Limit - countOf(data, itemName))
+	end
+	if stack > 1 then
+		for _, item in data.Inventory do
+			if left <= 0 then
+				break
+			end
+			if item.Item == itemName and (item.Count or 1) < stack then
+				local put = math.min(left, stack - (item.Count or 1))
+				item.Count = (item.Count or 1) + put
+				left -= put
+			end
+		end
+	end
+	while left > 0 and countItems(data) < Config.BagSize do
+		local id = InventoryService.AddItem(data, itemName, rarity)
+		local put = math.min(left, stack)
+		if stack > 1 then
+			data.Inventory[id].Count = put
+		end
+		left -= put
+	end
+	return count - math.max(left, 0)
 end
 
 -- Sends the player what's in their bag and what they have equipped.
@@ -112,6 +160,9 @@ local function giveStarterItems(data: { [string]: any })
 			return
 		end
 	end
+	if Config.TestMode and countOf(data, "HealthPotion") == 0 then
+		addToBag(data, "HealthPotion", "Common", 3)
+	end
 	if Config.TestMode then
 		for _, itemName in Items.StarterWeapons do
 			if not ownsItemNamed(data, itemName) then
@@ -121,10 +172,26 @@ local function giveStarterItems(data: { [string]: any })
 	end
 end
 
--- The weapon ids to put in the hotbar: just the equipped weapon, in slot 1.
+-- The weapon id for hotbar slot 1: just the equipped weapon.
 local function hotbarIds(data: { [string]: any }): { string }
 	return if data.Equipped.Weapon then { data.Equipped.Weapon } else {}
 end
+
+-- The kinds of potion the player carries, for hotbar slots 2-4 (one slot per kind).
+local function potionKinds(data: { [string]: any }): { string }
+	local kinds, seen = {}, {}
+	for _, item in data.Inventory do
+		local def = Items.Defs[item.Item]
+		if def and def.Slot == "Potion" and not seen[item.Item] then
+			seen[item.Item] = true
+			table.insert(kinds, item.Item)
+		end
+	end
+	table.sort(kinds)
+	return kinds
+end
+
+local drinkPotion: (Player, string) -> ()
 
 -- Rebuilds the player's weapon Tools from their save. A weapon that was in hand is put back in hand.
 function InventoryService.RefreshTools(player: Player)
@@ -190,23 +257,104 @@ function InventoryService.RefreshTools(player: Player)
 			wasHolding = false
 		end
 	end
+
+	-- Potions: taking one out of the hotbar drinks it.
+	for i, itemName in potionKinds(data) do
+		if i > Config.HotbarSize - 1 then
+			break
+		end
+		local def = Items.Defs[itemName]
+		local potion = Instance.new("Tool")
+		potion.Name = `{def.DisplayName} ({countOf(data, itemName)})`
+		potion.ToolTip = def.Description or def.DisplayName
+		potion.RequiresHandle = false
+		potion.CanBeDropped = false
+		potion:SetAttribute("Potion", itemName)
+		CollectionService:AddTag(potion, TOOL_TAG)
+		potion.Equipped:Connect(function()
+			drinkPotion(player, itemName)
+		end)
+		potion.Parent = backpack
+	end
 end
 
--- Gives a player a new item: saves it in the bag and shows them the "New item!" card.
--- With the bag full, it's left behind.
-function InventoryService.GiveItem(player: Player, itemName: string, rarity: string): string?
+-- Drinks one potion (if it's ready and does something), then puts the weapon back in hand.
+drinkPotion = function(player: Player, itemName: string)
 	local data = DataService.GetData(player)
-	if not data or not Items.Defs[itemName] then
-		return nil
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local def = Items.Defs[itemName]
+	local now = os.clock()
+	if data and humanoid and humanoid.Health > 0 and def and countOf(data, itemName) > 0 then
+		if (nextPotion[player] or 0) > now then
+			notifyRemote:FireClient(player, `Not yet: {math.ceil((nextPotion[player] :: number) - now)}s until the next potion.`)
+		elseif def.HealFraction and humanoid.Health >= humanoid.MaxHealth then
+			notifyRemote:FireClient(player, "You're already at full health.")
+		else
+			nextPotion[player] = now + POTION_COOLDOWN
+			for id, item in data.Inventory do
+				if item.Item == itemName then
+					item.Count = (item.Count or 1) - 1
+					if item.Count <= 0 then
+						data.Inventory[id] = nil
+					end
+					break
+				end
+			end
+			if def.HealFraction then
+				local heal = math.floor(humanoid.MaxHealth * def.HealFraction)
+				humanoid.Health = math.min(humanoid.Health + heal, humanoid.MaxHealth)
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if root then
+					damageNumberRemote:FireClient(player, root.Position + Vector3.new(0, 3, 0), heal, "Heal")
+					local sparkle = Instance.new("ParticleEmitter")
+					sparkle.Color = ColorSequence.new(Color3.fromRGB(255, 90, 100), Color3.fromRGB(255, 200, 200))
+					sparkle.LightEmission = 0.8
+					sparkle.Size = NumberSequence.new(0.35, 0)
+					sparkle.Lifetime = NumberRange.new(0.6, 1)
+					sparkle.Speed = NumberRange.new(2, 4)
+					sparkle.SpreadAngle = Vector2.new(180, 180)
+					sparkle.Acceleration = Vector3.new(0, 5, 0)
+					sparkle.Parent = root
+					sparkle:Emit(30)
+					task.delay(1.2, function()
+						sparkle:Destroy()
+					end)
+				end
+			end
+			InventoryService.PushInventory(player)
+		end
 	end
-	itemReceivedRemote:FireClient(player, { Item = itemName, Rarity = rarity })
-	if countItems(data) >= Config.BagSize then
-		notifyRemote:FireClient(player, `Your bag is full! {Items.NameFor(itemName, rarity)} was left behind. Drop something to make room.`)
-		return nil
+	task.defer(InventoryService.RefreshTools, player)
+end
+
+-- Gives a player `count` (default 1) of an item: into the bag, with the "New item!" card for gear and potions
+-- (materials only get the floating "+1 Bone" the caller shows). What doesn't fit is left behind.
+-- Returns how many went in.
+function InventoryService.GiveItem(player: Player, itemName: string, rarity: string, count: number?): number
+	local data = DataService.GetData(player)
+	local def = Items.Defs[itemName]
+	if not data or not def then
+		return 0
 	end
-	local id = InventoryService.AddItem(data, itemName, rarity)
-	InventoryService.PushInventory(player)
-	return id
+	local wanted = count or 1
+	local added = addToBag(data, itemName, rarity, wanted)
+	if added > 0 and def.Slot ~= "Material" then
+		itemReceivedRemote:FireClient(player, { Item = itemName, Rarity = rarity })
+	end
+	if added < wanted then
+		local reason = if def.Limit and countOf(data, itemName) >= def.Limit
+			then `You can't carry more than {def.Limit} {def.DisplayName}s.`
+			else `Your bag is full! {Items.NameFor(itemName, rarity)} was left behind. Drop something to make room.`
+		notifyRemote:FireClient(player, reason)
+	end
+	if added > 0 then
+		InventoryService.PushInventory(player)
+		if def.Slot == "Potion" then
+			InventoryService.RefreshTools(player)
+		end
+	end
+	return added
 end
 
 -- A merchant's shop opens (true) or closes (false) for a player; only then can they sell.
@@ -239,7 +387,10 @@ local function onAction(player: Player, action: any, itemId: any)
 		end
 		data.Inventory[itemId] = nil
 		if action == "Sell" then
-			ProgressService.AddGold(player, Items.SellPrice(item.Rarity, item.Upgrade or 0))
+			ProgressService.AddGold(player, Items.SellPrice(item.Item, item.Rarity, item.Upgrade or 0, item.Count))
+		end
+		if def.Slot == "Potion" then
+			InventoryService.RefreshTools(player)
 		end
 	else
 		return
@@ -259,6 +410,9 @@ function InventoryService.Start()
 		InventoryService.PushInventory(player)
 	end)
 	actionRemote.OnServerEvent:Connect(onAction)
+	game:GetService("Players").PlayerRemoving:Connect(function(player)
+		nextPotion[player] = nil
+	end)
 end
 
 return InventoryService
