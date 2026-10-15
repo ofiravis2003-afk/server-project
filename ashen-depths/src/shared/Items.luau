@@ -75,6 +75,12 @@ function Items.WeaponDamage(itemName: string, rarity: string, upgrade: number): 
 	return scaled(def and def.Damage or 0, rarity, upgrade)
 end
 
+-- What a merchant (or a full bag) pays for an item.
+local SELL_PRICE = { Common = 10, Rare = 30, Epic = 90, Legendary = 250, Mythic = 600 }
+function Items.SellPrice(rarity: string, upgrade: number): number
+	return math.floor((SELL_PRICE[rarity] or 10) * (1 + 0.1 * upgrade))
+end
+
 function Items.WeaponHeal(itemName: string, rarity: string, upgrade: number): number
 	local def = Items.Defs[itemName]
 	return scaled(def and def.Heal or 0, rarity, upgrade)

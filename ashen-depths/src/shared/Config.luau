@@ -13,6 +13,10 @@ return {
 
 	MaxPartySize = 4,
 
+	-- The bag holds this many items; the hotbar has this many slots (1 = the weapon, 2-4 = potions later).
+	BagSize = 30,
+	HotbarSize = 4,
+
 	-- While building: every player gets one weapon of each type, and enemies come back after dying.
 	-- Turn off before launch.
 	TestMode = true,

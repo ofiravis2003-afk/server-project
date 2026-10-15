@@ -10,6 +10,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Common = script.Parent.Parent.Common
 local DamageNumbers = require(Common.DamageNumbers)
 local Hud = require(Common.Hud)
+local Inventory = require(Common.Inventory)
 local ItemPopup = require(Common.ItemPopup)
 
 Remotes.Event("Notify").OnClientEvent:Connect(function(message: string)
@@ -19,5 +20,6 @@ end)
 Hud.Start()
 DamageNumbers.Start()
 ItemPopup.Start()
+Inventory.Start()
 
 print(`[Ashen Depths] Emberhold client v{Config.Version} ready`)

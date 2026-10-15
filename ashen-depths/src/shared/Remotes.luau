@@ -16,6 +16,8 @@ local EVENT_NAMES = {
 	"FloorStarted", -- server -> client: a new floor begins (shows its title)
 	"ItemReceived", -- server -> client: the player got a new item (shows the "New item!" card)
 	"BossIntro", -- server -> client: play a boss's entrance scene (camera, its words, its name)
+	"InventoryUpdated", -- server -> client: everything in the player's bag and what is equipped
+	"InventoryAction", -- client -> server: equip or sell an item from the bag
 }
 
 local FUNCTION_NAMES = {}
