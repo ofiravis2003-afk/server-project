@@ -1,6 +1,9 @@
 --!strict
 -- A small 3D model of any item, for pictures (the bag, the "New item!" card).
--- Weapons come from WeaponBuilder; materials and potions are made here from a few parts.
+-- Weapons come from WeaponBuilder. Materials and potions use a real model from ReplicatedStorage.ItemModels
+-- (named like the item, e.g. "HealthPotion") when there is one, and otherwise are made here from a few parts.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local WeaponBuilder = require(script.Parent.WeaponBuilder)
 local Items = require(script.Parent.Items)
@@ -84,6 +87,13 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 		end
 		tool:Destroy()
 		return model
+	end
+	local folder = ReplicatedStorage:FindFirstChild("ItemModels")
+	local made = folder and folder:FindFirstChild(itemName)
+	if made and made:IsA("Model") then
+		local copy = made:Clone()
+		copy:PivotTo(CFrame.new())
+		return copy
 	end
 	local build = builders[itemName]
 	if build then
