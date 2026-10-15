@@ -624,7 +624,12 @@ function FloorService.Start()
 	dungeonFolder.Parent = workspace
 
 	local function onPlayer(player: Player)
-		player.CharacterAdded:Connect(function(_character)
+		player.CharacterAdded:Connect(function(character)
+			if Config.TestMode and Config.TestNoDamage then
+				local shield = Instance.new("ForceField")
+				shield.Visible = false
+				shield.Parent = character
+			end
 			if not Config.StartInTestArena then
 				task.defer(sendToEntrance, player)
 			end
@@ -632,6 +637,11 @@ function FloorService.Start()
 		end)
 		if player.Character and not Config.StartInTestArena then
 			sendToEntrance(player)
+		end
+		if player.Character and Config.TestMode and Config.TestNoDamage then
+			local shield = Instance.new("ForceField")
+			shield.Visible = false
+			shield.Parent = player.Character
 		end
 	end
 	Players.PlayerAdded:Connect(onPlayer)

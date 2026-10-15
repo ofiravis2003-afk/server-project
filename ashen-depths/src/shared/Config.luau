@@ -30,6 +30,9 @@ return {
 		{ Item = "AcolyteTome", Rarity = "Common" },
 	} :: { { Item: string, Rarity: string } }?,
 
+	-- While testing: players take no damage (an invisible force field), to watch a fight closely.
+	TestNoDamage = true,
+
 	-- While testing: the run starts on this floor instead of floor 1 (5 = the Gravekeeper's floor).
 	TestStartFloor = 5 :: number?, -- testing the Gravekeeper; set back to nil afterwards
 
