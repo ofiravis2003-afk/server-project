@@ -109,7 +109,7 @@ local ARCHER_ANIMATIONS = {
 local GRAVEKEEPER_ANIMATIONS = {
 	Idle = "rbxassetid://105381899996213",
 	Walk = "rbxassetid://99372373898155",
-	Death = "rbxassetid://94817343763568",
+	Death = "rbxassetid://71892949823815",
 	-- (no Hit clip: a boss doesn't flinch at every blow)
 }
 
