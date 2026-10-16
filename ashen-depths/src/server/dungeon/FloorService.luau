@@ -36,6 +36,7 @@ end
 -- Between fights (not inside a room that's fighting) health slowly comes back; during a fight only potions
 -- and the Tome heal. (Roblox's own steady regeneration is turned off in ProgressService.)
 local REST_HEAL_PER_SECOND = 0.03
+local EVENT_CHANCE = 0.45 -- of a floor (without a boss or the Guardians) having an event
 local TRAP_CHANCE = 0.45
 local ARROW_TRAP_CHANCE = 0.3
 local TRAP_DAMAGE = 14
@@ -1023,9 +1024,10 @@ startFloor = function(floor: number)
 		end
 	end
 
-	-- One event a floor from floor 2: an ambush, a trapped room, or the wandering merchant (always the
-	-- merchant before a boss or the Guardians, to stock up).
-	if floor >= 2 then
+	-- From floor 2, about half the floors have an event: an ambush, a trapped room, or the wandering merchant
+	-- (always the merchant before a boss or the Guardians, to stock up). The other floors are just floors.
+	local lairAhead = Floors.Bosses[floor] ~= nil or Floors.Guardians[floor] == true
+	if floor >= 2 and (lairAhead or rng:NextNumber() < EVENT_CHANCE) then
 		local lairFloor = Floors.Bosses[floor] ~= nil or Floors.Guardians[floor] == true
 		local kinds = { "Ambush", "Traps", "Merchant" }
 		local kind = if lairFloor then "Merchant" else kinds[rng:NextInteger(1, #kinds)]
