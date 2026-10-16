@@ -31,6 +31,15 @@ type Snapshot = { Items: { [string]: SavedItem }, Equipped: { [string]: string }
 
 local Inventory = {}
 
+local opener: (() -> ())? = nil
+
+-- Opens the bag (a shop's "Sell from your bag" button).
+function Inventory.Open()
+	if opener then
+		opener()
+	end
+end
+
 local function corner(parent: Instance, radius: number)
 	local c = Instance.new("UICorner")
 	c.CornerRadius = UDim.new(0, radius)
@@ -380,6 +389,9 @@ function Inventory.Start()
 	open.Activated:Connect(function()
 		setOpen(not panel.Visible)
 	end)
+	opener = function()
+		setOpen(true)
+	end
 	close.Activated:Connect(function()
 		setOpen(false)
 	end)

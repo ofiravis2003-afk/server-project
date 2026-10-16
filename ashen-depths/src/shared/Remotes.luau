@@ -20,6 +20,9 @@ local EVENT_NAMES = {
 	"InventoryAction", -- client -> server: equip or sell an item from the bag
 	"FloorPicker", -- server -> client: open the floor picker (the floors this player can choose)
 	"ChooseFloor", -- client -> server: start the run on this floor (checked against the player's progress)
+	"ShopOpen", -- server -> client: open a shopkeeper's window (its stock), or nil to close it
+	"ShopBuy", -- client -> server: buy offer number N from the open shop
+	"ShopClose", -- client -> server: the player closed the shop window
 }
 
 local FUNCTION_NAMES = {}

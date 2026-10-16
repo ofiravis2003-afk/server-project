@@ -947,6 +947,54 @@ local function setupMerchant(room: FloorBuilder.BuiltRoom, floor: number)
 	end)
 end
 
+-- A rope hanging from a hole in the ceiling of each floor's entrance: climbing it takes the player back up to
+-- Emberhold, with everything they found.
+local function setupReturnRope(room: FloorBuilder.BuiltRoom)
+	local at = room.Center + Vector3.new(-(room.Size / 2 - 6), 0, -(room.Size / 2 - 6))
+	local rope = Instance.new("Part")
+	rope.Name = "ReturnRope"
+	rope.Anchored = true
+	rope.Shape = Enum.PartType.Cylinder
+	rope.Size = Vector3.new(17, 0.35, 0.35)
+	rope.CFrame = CFrame.new(at + Vector3.new(0, 9, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	rope.Color = Color3.fromRGB(120, 92, 60)
+	rope.Material = Enum.Material.Fabric
+	rope.Parent = room.Model
+	local hole = Instance.new("Part")
+	hole.Name = "CeilingHole"
+	hole.Anchored = true
+	hole.CanCollide = false
+	hole.Shape = Enum.PartType.Cylinder
+	hole.Size = Vector3.new(0.2, 4, 4)
+	hole.CFrame = CFrame.new(at + Vector3.new(0, 17.85, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	hole.Color = Color3.fromRGB(255, 200, 140)
+	hole.Material = Enum.Material.Neon
+	hole.Transparency = 0.3
+	hole.Parent = room.Model
+	local daylight = Instance.new("SpotLight")
+	daylight.Face = Enum.NormalId.Bottom
+	daylight.Color = Color3.fromRGB(255, 210, 160)
+	daylight.Range = 20
+	daylight.Angle = 35
+	daylight.Brightness = 2
+	daylight.Parent = hole
+	local climb = prompt(rope, "Climb up", "Back to Emberhold", 1, 8)
+	climb.Triggered:Connect(function(player)
+		if game:GetService("RunService"):IsStudio() then
+			notifyRemote:FireClient(player, "The rope only leads up in the published game (Studio can't teleport).")
+			return
+		end
+		DataService.SaveNow(player)
+		local ok, err = pcall(function()
+			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, { player })
+		end)
+		if not ok then
+			warn(`[FloorService] Teleport to Emberhold failed: {err}`)
+			notifyRemote:FireClient(player, "The rope won't hold right now. Try again in a moment.")
+		end
+	end)
+end
+
 local function setupStairs(room: FloorBuilder.BuiltRoom)
 	local part = room.StairsPart
 	if not part then
@@ -1009,6 +1057,7 @@ startFloor = function(floor: number)
 		local plan = room.Plan
 		if plan.Type == "Entrance" then
 			entrance = room.Center
+			setupReturnRope(room)
 			if floor == 1 then
 				setupCheckpointStone(room)
 			end
