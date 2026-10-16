@@ -148,8 +148,17 @@ local function house(parent: Instance, frame: CFrame, width: number, name: strin
 	m.Parent = parent
 end
 
--- An iron lamp post with a burning lantern.
+-- An iron lamp post with a burning lantern (the Tripo LampPost when there is one).
 local function lampPost(parent: Instance, position: Vector3)
+	local made = prop("LampPost", parent, CFrame.lookAt(position, Vector3.new(0, position.Y, 0)))
+	if made then
+		local _, size = made:GetBoundingBox()
+		local glow = part(parent, "LampGlow", Vector3.new(0.5, 0.5, 0.5), CFrame.new(position + Vector3.new(0, size.Y - 1.6, 0)), WARM, Enum.Material.SmoothPlastic)
+		glow.Transparency = 1
+		glow.CanCollide = false
+		light(glow, WARM, 30, 1.4, true)
+		return
+	end
 	part(parent, "LampPost", Vector3.new(0.5, 11, 0.5), CFrame.new(position + Vector3.new(0, 5.5, 0)), Color3.fromRGB(30, 30, 32), Enum.Material.Metal)
 	part(parent, "LampFoot", Vector3.new(1.4, 0.8, 1.4), CFrame.new(position + Vector3.new(0, 0.4, 0)), Color3.fromRGB(30, 30, 32), Enum.Material.Metal)
 	local lantern = part(parent, "Lantern", Vector3.new(1, 1.4, 1), CFrame.new(position + Vector3.new(0, 11.4, 0)), WARM, Enum.Material.Neon)
@@ -382,6 +391,17 @@ function TownBuilder.Build(): Town
 	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 28, nil)
 	house(model, CFrame.new(-44, 0, inset), 30, nil)
 	house(model, CFrame.new(44, 0, inset), 30, nil)
+
+	-- the shops' wares out front, and market stalls in the square (each facing the middle)
+	local function facing(at: Vector3): CFrame
+		return CFrame.lookAt(at, Vector3.new(0, 0, 0))
+	end
+	prop("QuestBoard", model, CFrame.lookAt(Vector3.new(-44, 0, -50), Vector3.new(-44, 0, 0)))
+	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(36, 0, -51), Vector3.new(36, 0, 0)))
+	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(52, 0, -51), Vector3.new(52, 0, 0)))
+	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
+	prop("MarketStall", model, facing(Vector3.new(-30, 0, 30)))
+	prop("MarketStall", model, facing(Vector3.new(30, 0, 30)))
 
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0) } do
