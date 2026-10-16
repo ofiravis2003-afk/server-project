@@ -387,7 +387,7 @@
 ## 📌 מצב אחרי הפסקה (2026-10-17 ערב): מחכה להמשך
 - ✅ **חפצי עיר בפנים (Ashen Depths, `TownProps`):** LampPost, ‏MarketStall ×2, ‏QuestBoard (ליד הגילדה), ‏ArmorStand ×2 (ליד השריונייה), ‏PotionShelf (ליד חנות הקסמים). שמות וגדלים סודרו, ו-`TownBuilder` מציב אותם (commit 6424f50).
 - 👤 **הבניינים הוכנו ב-Tripo, עוד לא ב-Studio.** ב-`מודלים\עיר\בניינים\`: guild_hall, ‏armory, ‏magic_shop, ‏tavern, ‏house_a, ‏house_b, ‏forge_building.
-- 👤 **אנימציות עמידה הורדו מ-Mixamo** ל-`אנימציות\להעלאה ל-mixamo\`: ‏`Breathing Idle.fbx`, ‏`Dwarf Idle.fbx`, ‏`Happy Idle.fbx` ו-`Unarmed Idle.fbx` (לזהות כל דמות לפי הטקסטורה שבקובץ). יש גם `Downloadsldric_mixamo.fbx`.
+- 👤 **אנימציות עמידה הורדו מ-Mixamo** ל-`אנימציות\להעלאה ל-mixamo\`: ‏`Breathing Idle.fbx`, ‏`Dwarf Idle.fbx`, ‏`Happy Idle.fbx` ו-`Unarmed Idle.fbx` (לזהות כל דמות לפי הטקסטורה שבקובץ). יש גם `aldric_mixamo.fbx` (בתיקיית ההורדות).
 - ▶️ **השלב הבא (רק כשהשחקן-מפתח יגיד):**
   1. 🤖 להכין 8 קבצים לייבוא (rigged ו-idle לכל דמות: `clean_rigged.py` ו-`split_clip.py`).
   2. 👤 לייבא אותם, את 4 ה-GLB לצבעים ואת 7 הבניינים.
