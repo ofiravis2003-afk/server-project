@@ -400,8 +400,8 @@ function TownBuilder.Build(): Town
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(36, 0, -51), Vector3.new(36, 0, 0)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(52, 0, -51), Vector3.new(52, 0, 0)))
 	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
-	prop("MarketStall", model, facing(Vector3.new(-30, 0, 30)))
-	prop("MarketStall", model, facing(Vector3.new(30, 0, 30)))
+	prop("MarketStall", model, facing(Vector3.new(-20, 0, 40)))
+	prop("MarketStall", model, facing(Vector3.new(20, 0, 40)))
 
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0) } do
