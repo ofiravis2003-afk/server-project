@@ -7,7 +7,7 @@ local RunService = game:GetService("RunService")
 
 local TownFolk = {}
 
-type Held = { Prop: Model, Hand: Bone, Offset: CFrame, Fingers: { Bone } }
+type Held = { Prop: Model, Hand: Bone, Offset: CFrame, Fingers: { Bone }, Upright: CFrame, GripInHand: Vector3, GripToMiddle: Vector3 }
 
 -- The hand closes round the shaft: each finger joint bent this far (the idle clips keep the hand open).
 local FINGER_CURL = CFrame.Angles(0, 0, math.rad(70))
@@ -34,7 +34,15 @@ local function attach(prop: Model, town: Instance): Held?
 			table.insert(fingers, bone)
 		end
 	end
-	return { Prop = prop, Hand = hand, Offset = handNow:Inverse() * upright, Fingers = fingers }
+	return {
+		Prop = prop,
+		Hand = hand,
+		Offset = handNow:Inverse() * upright,
+		Fingers = fingers,
+		Upright = facing,
+		GripInHand = handNow:PointToObjectSpace(palm),
+		GripToMiddle = Vector3.new(0, (0.5 - grip) * length, 0),
+	}
 end
 
 function TownFolk.Start()
@@ -71,7 +79,11 @@ function TownFolk.Start()
 				for _, finger in h.Fingers do
 					finger.Transform = FINGER_CURL
 				end
-				h.Prop:PivotTo(h.Hand.TransformedWorldCFrame * h.Offset)
+				-- the shaft goes where the hand goes, but only leans a third as much as the hand turns
+				local follow = h.Hand.TransformedWorldCFrame * h.Offset
+				local grip = h.Hand.TransformedWorldCFrame * h.GripInHand
+				local lean = h.Upright:Lerp(follow.Rotation, 0.35)
+				h.Prop:PivotTo(CFrame.new(grip) * lean * CFrame.new(h.GripToMiddle))
 			end
 		end
 	end)
