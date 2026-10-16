@@ -27,6 +27,12 @@ local WARM = Color3.fromRGB(255, 176, 96)
 
 local SQUARE = 150 -- the square's width
 
+-- The townsfolk's standing animations (published from ServerStorage.TownClips). 0 until published.
+local IDLE: { [string]: number } = {
+	Brakka = 0,
+	GateGuard = 0,
+}
+
 local function part(parent: Instance, name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
 	local p = Instance.new("Part")
 	p.Name = name
@@ -166,6 +172,30 @@ local function brazier(parent: Instance, position: Vector3)
 	light(bowl, Color3.fromRGB(255, 150, 80), 28, 1.5, true)
 end
 
+-- A rigged Tripo townsperson from TownProps, standing on `cframe` and breathing in their idle animation.
+local function townsperson(name: string, parent: Instance, cframe: CFrame): Model?
+	local person = prop(name, parent, cframe)
+	if not person then
+		return nil
+	end
+	local id = IDLE[name]
+	local controller = person:FindFirstChildOfClass("AnimationController")
+	local animator = controller and controller:FindFirstChildOfClass("Animator")
+	if animator and id and id ~= 0 then
+		local animation = Instance.new("Animation")
+		animation.AnimationId = `rbxassetid://{id}`
+		local track = animator:LoadAnimation(animation)
+		track.Looped = true
+		track.Priority = Enum.AnimationPriority.Idle
+		-- not everyone breathes in step
+		track:Play(0, 1, 1)
+		task.defer(function()
+			track.TimePosition = math.random() * math.max(track.Length - 0.1, 0)
+		end)
+	end
+	return person
+end
+
 -- A stand-in figure (until the Tripo character is rigged): a robed body and a head, facing `cframe`'s front.
 local function standIn(parent: Instance, name: string, cframe: CFrame, height: number, color: Color3): BasePart
 	local m = Instance.new("Model")
@@ -260,7 +290,7 @@ local function forge(parent: Instance, frame: CFrame): BasePart
 
 	-- Brakka, behind the anvil and facing the square
 	local brakkaAt = frame * CFrame.new(2, 0, 7) * CFrame.Angles(0, math.pi, 0)
-	local figure = prop("Brakka", m, brakkaAt)
+	local figure = townsperson("Brakka", m, brakkaAt)
 	local spot: BasePart
 	if figure then
 		spot = figure:FindFirstChildWhichIsA("BasePart", true) :: BasePart
@@ -311,9 +341,24 @@ function TownBuilder.Build(): Town
 
 	-- the gate guard keeps watch at the well, on the side facing the town's entrance (south)
 	local guardAt = CFrame.lookAt(Vector3.new(9, 0, 11), Vector3.new(9, 0, 30))
-	local guard = prop("GateGuard", model, guardAt)
+	local guard = townsperson("GateGuard", model, guardAt)
 	if not guard then
 		standIn(model, "GateGuard", guardAt, 6.4, Color3.fromRGB(110, 30, 30))
+	end
+	-- his spear stands planted by his right hand
+	local folder = ServerStorage:FindFirstChild("TownProps")
+	local spearSource = folder and folder:FindFirstChild("GuardSpear")
+	if spearSource and spearSource:IsA("Model") then
+		local spear = spearSource:Clone()
+		for _, d in spear:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.Anchored = true
+				d.CanCollide = false
+			end
+		end
+		local _, size = spear:GetBoundingBox()
+		spear:PivotTo(guardAt * CFrame.new(1.6, size.Y / 2 - 0.2, -0.4) * CFrame.Angles(0, 0, math.rad(-4)))
+		spear.Parent = model
 	end
 
 	-- Brakka's Forge on the north side
