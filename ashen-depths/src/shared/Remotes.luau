@@ -23,6 +23,8 @@ local EVENT_NAMES = {
 	"ShopOpen", -- server -> client: open a shopkeeper's window (its stock), or nil to close it
 	"ShopBuy", -- client -> server: buy offer number N from the open shop
 	"ShopClose", -- client -> server: the player closed the shop window
+	"UpgradeItem", -- client -> server: ask Brakka to upgrade this weapon (by item id)
+	"UpgradeResult", -- server -> client: how the upgrade went (success, the new level, or failed)
 }
 
 local FUNCTION_NAMES = {}

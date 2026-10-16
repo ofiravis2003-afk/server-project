@@ -3,6 +3,8 @@
 --   Brakka (Brakka's Forge): talking to her opens her shop. She sells health potions and plain weapons, and
 --   while the shop is open the bag's button turns into Sell (InventoryService.SetAtShop), so loot and
 --   monster materials can be sold. Walking away or closing the window closes the shop.
+--   Brakka also upgrades weapons (+1 .. +10) for gold and monster materials (shared/Upgrades); from +6 an
+--   upgrade can fail, losing what was paid but never the weapon.
 --   The Great Well (The Descent): takes the player down into the Depths (the dungeon place).
 
 local Players = game:GetService("Players")
@@ -11,6 +13,8 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Items = require(ReplicatedStorage.Shared.Items)
+local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
@@ -96,6 +100,48 @@ function ShopService.Start()
 		end
 	end)
 	Remotes.Event("ShopClose").OnServerEvent:Connect(closeShop)
+
+	-- Brakka's upgrades
+	local upgradeResult = Remotes.Event("UpgradeResult")
+	local upgradeLimiter = RateLimiter.new(0.6)
+	Remotes.Event("UpgradeItem").OnServerEvent:Connect(function(player, itemId: any)
+		local shop = openShop[player]
+		local data = DataService.GetData(player)
+		if not shop or shop.Name ~= "Brakka" or not data or type(itemId) ~= "string" or not upgradeLimiter:Check(player) then
+			return
+		end
+		local item = data.Inventory[itemId]
+		local def = item and Items.Defs[item.Item]
+		if not item or not def or def.Slot ~= "Weapon" then
+			return
+		end
+		local level = item.Upgrade or 0
+		if level >= Upgrades.Max then
+			return
+		end
+		local cost = Upgrades.Cost(item.Rarity, level + 1)
+		if data.Gold < cost.Gold then
+			notifyRemote:FireClient(player, "Not enough gold.")
+			return
+		end
+		for _, need in cost.Materials do
+			if InventoryService.CountOf(player, need.Item) < need.Count then
+				notifyRemote:FireClient(player, `You need {need.Count} {Items.Defs[need.Item].DisplayName}.`)
+				return
+			end
+		end
+		ProgressService.AddGold(player, -cost.Gold)
+		for _, need in cost.Materials do
+			InventoryService.Take(player, need.Item, need.Count)
+		end
+		local worked = math.random() < cost.Chance
+		if worked then
+			item.Upgrade = level + 1
+			InventoryService.RefreshTools(player)
+		end
+		InventoryService.PushInventory(player)
+		upgradeResult:FireClient(player, { ItemId = itemId, Success = worked, Level = item.Upgrade or 0 })
+	end)
 	Players.PlayerRemoving:Connect(closeShop)
 
 	-- walking away from the shopkeeper closes the shop

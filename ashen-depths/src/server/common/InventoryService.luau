@@ -91,6 +91,37 @@ local function addToBag(data: { [string]: any }, itemName: string, rarity: strin
 	return count - math.max(left, 0)
 end
 
+-- How many of `itemName` a player carries (all stacks).
+function InventoryService.CountOf(player: Player, itemName: string): number
+	local data = DataService.GetData(player)
+	return if data then countOf(data, itemName) else 0
+end
+
+-- Takes `count` of a stacked item out of the player's bag. Returns false (and takes nothing) if they have fewer.
+function InventoryService.Take(player: Player, itemName: string, count: number): boolean
+	local data = DataService.GetData(player)
+	if not data or countOf(data, itemName) < count then
+		return false
+	end
+	local left = count
+	for id, item in data.Inventory do
+		if left <= 0 then
+			break
+		end
+		if item.Item == itemName then
+			local here = item.Count or 1
+			local take = math.min(here, left)
+			left -= take
+			if here - take <= 0 then
+				data.Inventory[id] = nil
+			else
+				item.Count = here - take
+			end
+		end
+	end
+	return true
+end
+
 -- Sends the player what's in their bag and what they have equipped.
 function InventoryService.PushInventory(player: Player)
 	local data = DataService.GetData(player)
@@ -222,7 +253,7 @@ function InventoryService.RefreshTools(player: Player)
 		local item = data.Inventory[id]
 		local def = Items.Defs[item.Item]
 		local tool = WeaponBuilder.Build(def.Look or "Sword", item.Rarity)
-		local name = Items.NameFor(item.Item, item.Rarity)
+		local name = Items.NameFor(item.Item, item.Rarity) .. (if (item.Upgrade or 0) > 0 then ` +{item.Upgrade}` else "")
 		tool.Name = name
 		tool.ToolTip = `{name} ({item.Rarity})`
 		tool:SetAttribute("ItemId", id)

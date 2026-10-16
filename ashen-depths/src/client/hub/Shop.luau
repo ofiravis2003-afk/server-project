@@ -12,6 +12,7 @@ local Items = require(ReplicatedStorage.Shared.Items)
 local Rarity = require(ReplicatedStorage.Shared.Rarity)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Inventory = require(script.Parent.Parent.Common.Inventory)
+local Upgrade = require(script.Parent.Upgrade)
 
 local PANEL = Color3.fromRGB(22, 18, 20)
 local EDGE = Color3.fromRGB(120, 90, 50)
@@ -138,6 +139,14 @@ function Shop.Start()
 	local sell = button(panel, "Sell from your bag", Color3.fromRGB(80, 55, 25))
 	sell.Position = UDim2.new(0, 12, 1, -50)
 	sell.Size = UDim2.new(1, -24, 0, 38)
+	-- Brakka also upgrades weapons
+	local upgrade = button(panel, "Upgrade weapons", Color3.fromRGB(120, 70, 25))
+	upgrade.Position = UDim2.new(0, 12, 1, -94)
+	upgrade.Size = UDim2.new(1, -24, 0, 38)
+	upgrade.Visible = false
+	upgrade.Activated:Connect(function()
+		Upgrade.Open()
+	end)
 
 	local function hide()
 		gui.Enabled = false
@@ -156,6 +165,8 @@ function Shop.Start()
 			return
 		end
 		title.Text = shop.Title
+		upgrade.Visible = shop.Shop == "Brakka"
+		list.Size = if upgrade.Visible then UDim2.new(1, -24, 1, -184) else UDim2.new(1, -24, 1, -140)
 		line.Text = `"{shop.Line}"`
 		for _, child in list:GetChildren() do
 			if child:IsA("GuiObject") then
