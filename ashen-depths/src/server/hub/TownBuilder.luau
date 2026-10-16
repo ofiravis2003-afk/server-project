@@ -356,8 +356,8 @@ function TownBuilder.Build(): Town
 				d.CanCollide = false
 			end
 		end
-		local _, size = spear:GetBoundingBox()
-		spear:PivotTo(guardAt * CFrame.new(1.6, size.Y / 2 - 0.2, -0.4) * CFrame.Angles(0, 0, math.rad(-4)))
+		-- (the spear's pivot is its middle; it is 9 studs long)
+		spear:PivotTo(guardAt * CFrame.new(1.6, 4.3, -0.4) * CFrame.Angles(0, 0, math.rad(-4)))
 		spear.Parent = model
 	end
 
