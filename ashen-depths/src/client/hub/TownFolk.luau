@@ -38,20 +38,33 @@ local function attach(prop: Model, town: Instance): Held?
 end
 
 function TownFolk.Start()
-	local town = workspace:WaitForChild("Town", 60)
+	local town = workspace:WaitForChild("Town", 120)
 	if not town then
 		return
 	end
-	task.wait(1.5) -- let the idle animations start, so the grip is measured in a standing pose
+	-- The town streams in a bit at a time, so a held prop is attached once its owner's hand has arrived
+	-- (and its owner has started breathing, so the grip is measured in a standing pose).
 	local held: { Held } = {}
-	for _, prop in town:GetDescendants() do
-		if prop:IsA("Model") and prop:GetAttribute("HeldBy") then
-			local h = attach(prop, town)
-			if h then
-				table.insert(held, h)
+	local attached: { [Model]: boolean } = {}
+	task.spawn(function()
+		while town.Parent do
+			for _, prop in town:GetDescendants() do
+				if prop:IsA("Model") and prop:GetAttribute("HeldBy") and not attached[prop] then
+					local owner = town:FindFirstChild(prop:GetAttribute("HeldBy") :: string, true)
+					local controller = owner and owner:FindFirstChildOfClass("AnimationController")
+					local animator = controller and controller:FindFirstChildOfClass("Animator")
+					if animator and #animator:GetPlayingAnimationTracks() > 0 then
+						local h = attach(prop, town)
+						if h then
+							attached[prop] = true
+							table.insert(held, h)
+						end
+					end
+				end
 			end
+			task.wait(1)
 		end
-	end
+	end)
 	RunService.RenderStepped:Connect(function()
 		for _, h in held do
 			if h.Prop.Parent then
