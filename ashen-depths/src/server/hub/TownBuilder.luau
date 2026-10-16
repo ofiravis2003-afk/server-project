@@ -27,10 +27,10 @@ local WARM = Color3.fromRGB(255, 176, 96)
 
 local SQUARE = 150 -- the square's width
 
--- The townsfolk's standing animations (published from ServerStorage.TownClips). 0 until published.
+-- The townsfolk's standing animations (published from ServerStorage.TownClips).
 local IDLE: { [string]: number } = {
-	Brakka = 0,
-	GateGuard = 0,
+	Brakka = 92067081387599, -- Mixamo "Standing W/ Briefcase Idle"
+	GateGuard = 109110735251450, -- Mixamo "Standing Idle"
 }
 
 local function part(parent: Instance, name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
