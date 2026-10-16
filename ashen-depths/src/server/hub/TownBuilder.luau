@@ -317,18 +317,20 @@ function TownBuilder.Build(): Town
 	end
 
 	-- Brakka's Forge on the north side
-	local brakka = forge(model, CFrame.new(0, 0, -SQUARE / 2 + 2))
+	-- (a building's front is its frame's -Z; each frame stands on the square's edge, turned to face the middle)
+	local edge = SQUARE / 2 - 1
+	local brakka = forge(model, CFrame.new(0, 0, -edge + 17) * CFrame.Angles(0, math.pi, 0))
 
 	-- the other shops and houses around the square (opening in later updates)
-	local h = SQUARE / 2 - 2
-	house(model, CFrame.new(-44, 0, -h), 30, "Guild Hall")
-	house(model, CFrame.new(44, 0, -h), 30, "Ironhide Armory")
-	house(model, CFrame.new(-h, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 28, "The Gilded Tome")
-	house(model, CFrame.new(-h, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 28, nil)
-	house(model, CFrame.new(h, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 28, "The Sunken Tankard")
-	house(model, CFrame.new(h, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 28, nil)
-	house(model, CFrame.new(-44, 0, h) * CFrame.Angles(0, math.pi, 0), 30, nil)
-	house(model, CFrame.new(44, 0, h) * CFrame.Angles(0, math.pi, 0), 30, nil)
+	local inset = edge - 16
+	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 30, "Guild Hall")
+	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 30, "Ironhide Armory")
+	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 28, "The Gilded Tome")
+	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 28, nil)
+	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 28, "The Sunken Tankard")
+	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 28, nil)
+	house(model, CFrame.new(-44, 0, inset), 30, nil)
+	house(model, CFrame.new(44, 0, inset), 30, nil)
 
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0) } do
