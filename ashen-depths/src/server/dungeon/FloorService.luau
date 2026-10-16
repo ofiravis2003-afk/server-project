@@ -80,6 +80,7 @@ local dungeonFolder: Folder
 
 local runRemote = Remotes.Event("RunUpdated")
 local floorStartedRemote = Remotes.Event("FloorStarted")
+local floorPickerRemote = Remotes.Event("FloorPicker")
 local notifyRemote = Remotes.Event("Notify")
 local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
@@ -778,19 +779,32 @@ guardiansDefeated = function(room: CombatRoom)
 end
 
 -- On floor 1, a gate stone in the entrance hall lets a player who has beaten a boss start from its checkpoint.
+-- The deepest floor a player may start a run on: any floor they have reached, or the checkpoint past a boss.
+local function unlockedFloor(player: Player): number
+	local data = DataService.GetData(player)
+	if not data then
+		return 1
+	end
+	return math.clamp(math.max(data.Checkpoint or 0, data.DeepestFloor or 0, 1), 1, Floors.MaxFloor)
+end
+
+local checkpointStone: BasePart? = nil
+
+-- The waystone in floor 1's entrance: it opens the floor picker (FloorPicker on the client), so a run can
+-- start on any floor already reached, to go back and grow stronger or to go straight down.
 local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
 	local stone = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, 9), "Gold")
 	stone.Name = "CheckpointStone"
-	local p = prompt(stone:FindFirstChild("Pedestal") :: BasePart, "Descend", "Checkpoint", 1, 9)
+	local base = stone:FindFirstChild("Pedestal") :: BasePart
+	checkpointStone = base
+	local p = prompt(base, "Choose floor", "Waystone", 0.5, 9)
 	p.Enabled = false
 	local function refresh()
-		local best = 0
+		local best = 1
 		for _, player in Players:GetPlayers() do
-			local data = DataService.GetData(player)
-			best = math.max(best, data and data.Checkpoint or 0)
+			best = math.max(best, unlockedFloor(player))
 		end
 		p.Enabled = best > 1 and currentFloor == 1
-		p.ObjectText = `Floor {best}`
 	end
 	refresh()
 	task.spawn(function()
@@ -800,13 +814,32 @@ local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
 		end
 	end)
 	p.Triggered:Connect(function(player)
-		local data = DataService.GetData(player)
-		local target = data and data.Checkpoint or 0
-		if target > 1 and not changingFloor and currentFloor == 1 then
-			notifyRemote:FireAllClients(`{player.DisplayName} opens the way to floor {target}.`)
-			startFloor(target)
+		local marks = {}
+		for floor in Floors.Bosses do
+			marks[tostring(floor)] = "Boss"
 		end
+		for floor in Floors.Guardians do
+			marks[tostring(floor)] = "Guardians"
+		end
+		floorPickerRemote:FireClient(player, { Unlocked = unlockedFloor(player), Max = Floors.MaxFloor, Marks = marks })
 	end)
+end
+
+-- A player picked a floor at the waystone: checked again here (reached it, standing at the stone, on floor 1).
+local function onChooseFloor(player: Player, floor: any)
+	if type(floor) ~= "number" or floor ~= math.floor(floor) or floor < 1 or floor > unlockedFloor(player) then
+		return
+	end
+	local root = aliveRoot(player)
+	local stone = checkpointStone
+	if changingFloor or currentFloor ~= 1 or not root or not stone or not stone.Parent or (root.Position - stone.Position).Magnitude > 16 then
+		return
+	end
+	if floor == 1 then
+		return
+	end
+	notifyRemote:FireAllClients(`{player.DisplayName} opens the way to floor {floor}.`)
+	startFloor(floor)
 end
 
 -- The wandering merchant (a floor event): a hooded figure with a lantern and a crate of potions near the
@@ -1175,6 +1208,7 @@ function FloorService.Start()
 		floorStartedRemote:FireClient(player, currentFloor, Floors.ChapterName(currentFloor))
 	end)
 
+	Remotes.Event("ChooseFloor").OnServerEvent:Connect(onChooseFloor)
 	startFloor(if Config.TestMode and Config.TestStartFloor then Config.TestStartFloor else 1)
 
 	local elapsed = 0

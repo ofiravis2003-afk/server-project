@@ -18,6 +18,8 @@ local EVENT_NAMES = {
 	"BossIntro", -- server -> client: play a boss's entrance scene (camera, its words, its name)
 	"InventoryUpdated", -- server -> client: everything in the player's bag and what is equipped
 	"InventoryAction", -- client -> server: equip or sell an item from the bag
+	"FloorPicker", -- server -> client: open the floor picker (the floors this player can choose)
+	"ChooseFloor", -- client -> server: start the run on this floor (checked against the player's progress)
 }
 
 local FUNCTION_NAMES = {}
