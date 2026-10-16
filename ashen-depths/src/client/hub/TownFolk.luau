@@ -7,7 +7,10 @@ local RunService = game:GetService("RunService")
 
 local TownFolk = {}
 
-type Held = { Prop: Model, Hand: Bone, Offset: CFrame }
+type Held = { Prop: Model, Hand: Bone, Offset: CFrame, Fingers: { Bone } }
+
+-- The hand closes round the shaft: each finger joint bent this far (the idle clips keep the hand open).
+local FINGER_CURL = CFrame.Angles(0, 0, math.rad(70))
 
 local function attach(prop: Model, town: Instance): Held?
 	local owner = town:FindFirstChild(prop:GetAttribute("HeldBy") :: string, true)
@@ -24,7 +27,14 @@ local function attach(prop: Model, town: Instance): Held?
 	local palm = (handNow * CFrame.new(0, 0.08 * (owner :: Model):GetScale(), 0)).Position
 	local facing = (owner :: Model):GetPivot().Rotation
 	local upright = CFrame.new(palm) * facing * CFrame.new(0, (0.5 - grip) * length, 0)
-	return { Prop = prop, Hand = hand, Offset = handNow:Inverse() * upright }
+	local fingers = {}
+	for _, joint in { "Index1", "Index2", "Index3" } do
+		local bone = (owner :: Model):FindFirstChild(`{hand.Name}{joint}`, true)
+		if bone and bone:IsA("Bone") then
+			table.insert(fingers, bone)
+		end
+	end
+	return { Prop = prop, Hand = hand, Offset = handNow:Inverse() * upright, Fingers = fingers }
 end
 
 function TownFolk.Start()
@@ -45,6 +55,9 @@ function TownFolk.Start()
 	RunService.RenderStepped:Connect(function()
 		for _, h in held do
 			if h.Prop.Parent then
+				for _, finger in h.Fingers do
+					finger.Transform = FINGER_CURL
+				end
 				h.Prop:PivotTo(h.Hand.TransformedWorldCFrame * h.Offset)
 			end
 		end
