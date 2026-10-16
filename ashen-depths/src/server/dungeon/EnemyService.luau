@@ -44,6 +44,10 @@ export type SpawnOptions = {
 	HealthMultiplier: number?,
 	DamageMultiplier: number?,
 	Elite: boolean?,
+	-- A named champion (the Guardians' Skeleton Captain): bigger by ExtraScale, its name over it and in the
+	-- big bar at the top of the screen like a boss.
+	Title: string?,
+	ExtraScale: number?,
 	OnDied: ((Enemy) -> ())?,
 }
 
@@ -845,6 +849,24 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		text.Text = `Elite {def.DisplayName}`
 		text.Parent = tag
 		tag.Parent = head
+	end
+
+	if opts.ExtraScale and opts.ExtraScale ~= 1 then
+		model:ScaleTo(model:GetScale() * opts.ExtraScale)
+	end
+	if opts.Title then
+		model.Name = opts.Title
+		model:SetAttribute("BossTitle", opts.Title)
+		CollectionService:AddTag(model, "Boss")
+		local bar = head:FindFirstChild("HealthBar") :: BillboardGui?
+		if bar then
+			bar.Enabled = false
+		end
+		local tag = head:FindFirstChild("EliteTag")
+		local text = tag and tag:FindFirstChildOfClass("TextLabel")
+		if text then
+			text.Text = opts.Title
+		end
 	end
 
 	model:PivotTo(cframe + Vector3.new(0, 3, 0))

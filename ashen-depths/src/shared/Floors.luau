@@ -69,6 +69,10 @@ end
 -- Boss floors: the last room before the stairs is this boss's lair.
 Floors.Bosses = { [5] = "Gravekeeper" } :: { [number]: string }
 
+-- Guardians' floors: the last room before the stairs is a locked hall where three waves of the floor's
+-- monsters come, the last led by a giant Skeleton Captain. Its reward is a boss's (no new model needed).
+Floors.Guardians = { [10] = true } :: { [number]: boolean }
+
 -- How many combat rooms stand between the entrance and the stairs.
 function Floors.CombatRooms(floor: number): number
 	return math.min(4 + math.floor((floor - 1) / 2), 8)

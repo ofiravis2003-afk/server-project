@@ -357,7 +357,7 @@ local function buildRoom(
 				block(leverModel, "Knob", Vector3.new(0.5, 0.5, 0.5), handle.CFrame * CFrame.new(0, 0.9, 0), IRON, Enum.Material.Metal).Shape = Enum.PartType.Ball
 				leverModel.Parent = model
 				built.Lever = leverModel
-			elseif plan.Type == "Combat" or plan.Type == "Boss" then
+			elseif plan.Type == "Combat" or plan.Type == "Boss" or plan.Type == "Guardians" then
 				table.insert(built.Gates, buildGate(model, doorway))
 			end
 		end
@@ -451,7 +451,7 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 			nextTheme += 1
 		end
 	end
-	local FIXED_THEMES = { Entrance = "Crypt", Treasure = "Vault", Secret = "Ossuary", Stairs = "Plain", Boss = "Graveyard" }
+	local FIXED_THEMES = { Entrance = "Crypt", Treasure = "Vault", Secret = "Ossuary", Stairs = "Plain", Boss = "Graveyard", Guardians = "Ossuary" }
 
 	local rooms: { [string]: BuiltRoom } = {}
 	for key, plan in layout.Rooms do

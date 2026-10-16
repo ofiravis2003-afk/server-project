@@ -58,6 +58,8 @@ type CombatRoom = {
 	EmptySince: number?,
 	HasElite: boolean,
 	KeyBearer: boolean?, -- this room's elite carries the Stairs Key
+	Guardians: boolean?, -- the Guardians' hall: waves of monsters, then a Skeleton Captain
+	Wave: number?,
 	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
 	IntroShown: boolean?,
 }
@@ -76,6 +78,7 @@ local runRemote = Remotes.Event("RunUpdated")
 local floorStartedRemote = Remotes.Event("FloorStarted")
 local notifyRemote = Remotes.Event("Notify")
 local damageNumberRemote = Remotes.Event("DamageNumber")
+local effectRemote = Remotes.Event("Effect")
 local bossIntroRemote = Remotes.Event("BossIntro")
 local BOSS_INTRO_SECONDS = 11
 
@@ -196,6 +199,8 @@ local function clearRoom(room: CombatRoom)
 end
 
 local bossDefeated: (CombatRoom, EnemyService.Enemy) -> ()
+local roomEmptied: (CombatRoom) -> ()
+local guardiansDefeated: (CombatRoom) -> ()
 
 local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 	-- Slimes split: the little ones join the fight before the room checks whether it is clear.
@@ -235,7 +240,7 @@ local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 		end
 	end
 	if room.Active and not room.Spawning and next(room.Enemies) == nil then
-		clearRoom(room)
+		roomEmptied(room)
 	end
 end
 
@@ -261,6 +266,80 @@ local function lightRunes(built: FloorBuilder.BuiltRoom, on: boolean)
 	end
 end
 
+-- The Guardians' hall: three waves, each rising when the last one falls; the third led by the Captain.
+local GUARDIAN_WAVES = {
+	{ { "Skeleton", 5 } },
+	{ { "SkeletonArcher", 3 }, { "Skeleton", 3 } },
+	{ { "Captain", 1 }, { "Skeleton", 2 }, { "SkeletonArcher", 2 } },
+}
+
+local function spawnWave(room: CombatRoom, floor: number, wave: number)
+	room.Spawning = true
+	room.Wave = wave
+	local rng = Random.new()
+	local extra = math.max(#Players:GetPlayers(), 1) - 1
+	for _, player in Players:GetPlayers() do
+		local root = aliveRoot(player)
+		if root and isInside(room.Built, root.Position, -4) then
+			notifyRemote:FireClient(player, if wave == #GUARDIAN_WAVES then "The Skeleton Captain rises!" else `Wave {wave} of {#GUARDIAN_WAVES}`)
+		end
+	end
+	for _, group in GUARDIAN_WAVES[wave] do
+		local name, count = group[1], group[2]
+		if name ~= "Captain" then
+			count += extra
+		end
+		for _ = 1, count do
+			if not room.Active then
+				room.Spawning = false
+				return
+			end
+			local spot = freeSpot(room.Built, rng, 6)
+			effectRemote:FireAllClients("Rise", spot)
+			local captain = name == "Captain"
+			local ok, enemy = pcall(EnemyService.Spawn, if captain then "Skeleton" else name, CFrame.lookAt(spot, room.Built.Center), {
+				HealthMultiplier = Floors.EnemyHealthMultiplier(floor) * (if captain then 3 * (1 + 0.6 * extra) else 1),
+				DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
+				Elite = captain,
+				Title = if captain then "Skeleton Captain" else nil,
+				ExtraScale = if captain then 1.5 else nil,
+				OnDied = function(dead)
+					onEnemyDied(room, dead)
+				end,
+			})
+			if ok and enemy then
+				room.Enemies[enemy] = true
+			else
+				warn(`[FloorService] Spawning a guardian failed: {enemy}`)
+			end
+			task.wait(0.25)
+		end
+	end
+	room.Spawning = false
+	if room.Active and next(room.Enemies) == nil then
+		roomEmptied(room)
+	end
+end
+
+roomEmptied = function(room: CombatRoom)
+	if room.Guardians and (room.Wave or 0) < #GUARDIAN_WAVES then
+		local nextWave = (room.Wave or 0) + 1
+		room.Spawning = true -- nothing else may clear the hall while the next wave is on its way
+		task.delay(2.5, function()
+			if room.Active then
+				spawnWave(room, currentFloor, nextWave)
+			else
+				room.Spawning = false
+			end
+		end)
+		return
+	end
+	clearRoom(room)
+	if room.Guardians then
+		guardiansDefeated(room)
+	end
+end
+
 local function activateRoom(room: CombatRoom, floor: number)
 	room.Active = true
 	room.Spawning = true
@@ -268,6 +347,10 @@ local function activateRoom(room: CombatRoom, floor: number)
 	setGates(room, true)
 
 	local rng = Random.new()
+	if room.Guardians then
+		spawnWave(room, floor, 1)
+		return
+	end
 	if room.Boss then
 		-- The boss waits at the door of its tomb on the far side of the lair (or just on the far side), facing
 		-- the way in; it grows tougher for each extra player.
@@ -334,7 +417,7 @@ local function activateRoom(room: CombatRoom, floor: number)
 	end
 	room.Spawning = false
 	if room.Active and next(room.Enemies) == nil then
-		clearRoom(room)
+		roomEmptied(room)
 	end
 end
 
@@ -342,6 +425,9 @@ end
 local function resetRoom(room: CombatRoom)
 	room.Active = false
 	room.EmptySince = nil
+	if room.Guardians then
+		room.Wave = 0
+	end
 	for enemy in room.Enemies do
 		EnemyService.Remove(enemy)
 	end
@@ -357,7 +443,7 @@ local function watchRooms()
 		end
 		-- A lair only locks once a player is well past its gates; after that, a player shoved back into a
 		-- gateway still counts as inside.
-		local margin = if not room.Boss then 1.5 elseif room.Active then -4 else 6
+		local margin = if not (room.Boss or room.Guardians) then 1.5 elseif room.Active then -4 else 6
 		local anyoneInside = false
 		for _, player in Players:GetPlayers() do
 			local root = aliveRoot(player)
@@ -384,7 +470,7 @@ local function watchRooms()
 					end
 				end
 				if next(room.Enemies) == nil then
-					clearRoom(room)
+					roomEmptied(room)
 				end
 			end
 		else
@@ -603,6 +689,27 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 	end)
 end
 
+-- The Captain is down: like a boss, everyone in the hall gets a Gold Key, the next floor becomes their
+-- checkpoint, and a Gold Chest appears.
+guardiansDefeated = function(room: CombatRoom)
+	for _, player in Players:GetPlayers() do
+		local root = aliveRoot(player)
+		if root and isInside(room.Built, root.Position, -4) then
+			giveKey(player, "Gold", root.Position)
+			local data = DataService.GetData(player)
+			if data and currentFloor + 1 > (data.Checkpoint or 0) then
+				data.Checkpoint = currentFloor + 1
+			end
+		end
+	end
+	notifyRemote:FireAllClients("The guardians have fallen! A Gold Chest waits in the hall.")
+	task.delay(2.5, function()
+		if room.Built.Model.Parent then
+			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")
+		end
+	end)
+end
+
 -- On floor 1, a gate stone in the entrance hall lets a player who has beaten a boss start from its checkpoint.
 local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
 	local stone = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, 9), "Gold")
@@ -687,7 +794,7 @@ startFloor = function(floor: number)
 		end
 	end
 	stairsKey = {
-		Needed = floor >= 2 and not Floors.Bosses[floor],
+		Needed = floor >= 2 and not Floors.Bosses[floor] and not Floors.Guardians[floor],
 		Found = false,
 		Where = if hasTreasure and rng:NextNumber() < 0.5 then "Treasure" else "Elite",
 	}
@@ -710,6 +817,19 @@ startFloor = function(floor: number)
 				EmptySince = nil,
 				HasElite = false,
 				Boss = Floors.Bosses[floor],
+			})
+		elseif plan.Type == "Guardians" then
+			lightLair(room)
+			table.insert(combatRooms, {
+				Built = room,
+				Cleared = false,
+				Active = false,
+				Spawning = false,
+				Enemies = {},
+				EmptySince = nil,
+				HasElite = false,
+				Guardians = true,
+				Wave = 0,
 			})
 		elseif plan.Type == "Combat" then
 			table.insert(combatRooms, {
