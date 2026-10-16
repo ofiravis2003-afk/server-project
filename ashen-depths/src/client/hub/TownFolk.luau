@@ -79,10 +79,14 @@ function TownFolk.Start()
 				for _, finger in h.Fingers do
 					finger.Transform = FINGER_CURL
 				end
-				-- the shaft goes where the hand goes, but only leans a third as much as the hand turns
+				-- the shaft runs through the middle of the closed fingers (most of the way from the wrist to
+				-- the curled fingertips), and only leans a little as the hand turns
 				local follow = h.Hand.TransformedWorldCFrame * h.Offset
-				local grip = h.Hand.TransformedWorldCFrame * h.GripInHand
-				local lean = h.Upright:Lerp(follow.Rotation, 0.35)
+				local grip = h.Hand.TransformedWorldCFrame.Position * 0.25
+				for _, finger in h.Fingers do
+					grip += finger.TransformedWorldCFrame.Position * (0.75 / #h.Fingers)
+				end
+				local lean = h.Upright:Lerp(follow.Rotation, 0.15)
 				h.Prop:PivotTo(CFrame.new(grip) * lean * CFrame.new(h.GripToMiddle))
 			end
 		end
