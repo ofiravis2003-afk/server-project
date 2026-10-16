@@ -30,7 +30,7 @@ local SQUARE = 150 -- the square's width
 -- The townsfolk's standing animations (published from ServerStorage.TownClips).
 local IDLE: { [string]: number } = {
 	Brakka = 92067081387599, -- Mixamo "Standing W/ Briefcase Idle"
-	GateGuard = 109110735251450, -- Mixamo "Standing Idle"
+	GateGuard = 77116071943805, -- Mixamo "Standing Idle"
 }
 
 local function part(parent: Instance, name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
