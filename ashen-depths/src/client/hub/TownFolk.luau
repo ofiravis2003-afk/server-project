@@ -1,0 +1,54 @@
+--!strict
+-- Puts the townsfolk's held things in their hands on each player's screen: a prop marked with the attributes
+-- HeldBy (the townsperson's name), Bone (the hand bone) and Grip (how far up the shaft the hand closes, 0-1)
+-- follows that hand every frame. (The server doesn't move a standing figure's bones, so this is done here.)
+
+local RunService = game:GetService("RunService")
+
+local TownFolk = {}
+
+type Held = { Prop: Model, Hand: Bone, Offset: CFrame }
+
+local function attach(prop: Model, town: Instance): Held?
+	local owner = town:FindFirstChild(prop:GetAttribute("HeldBy") :: string, true)
+	local hand = owner and owner:FindFirstChild(prop:GetAttribute("Bone") :: string, true)
+	if not hand or not hand:IsA("Bone") then
+		return nil
+	end
+	local _, size = prop:GetBoundingBox()
+	local length = (prop:GetAttribute("Length") :: number?) or size.Y
+	local grip = (prop:GetAttribute("Grip") :: number?) or 0.4
+	-- Upright, with the hand closed round the shaft at `grip` of its length from the bottom, in the palm
+	-- (a little way along the fingers from the wrist), and facing the way its owner faces.
+	local handNow = hand.TransformedWorldCFrame
+	local palm = (handNow * CFrame.new(0, 0.08 * (owner :: Model):GetScale(), 0)).Position
+	local facing = (owner :: Model):GetPivot().Rotation
+	local upright = CFrame.new(palm) * facing * CFrame.new(0, (0.5 - grip) * length, 0)
+	return { Prop = prop, Hand = hand, Offset = handNow:Inverse() * upright }
+end
+
+function TownFolk.Start()
+	local town = workspace:WaitForChild("Town", 60)
+	if not town then
+		return
+	end
+	task.wait(1.5) -- let the idle animations start, so the grip is measured in a standing pose
+	local held: { Held } = {}
+	for _, prop in town:GetDescendants() do
+		if prop:IsA("Model") and prop:GetAttribute("HeldBy") then
+			local h = attach(prop, town)
+			if h then
+				table.insert(held, h)
+			end
+		end
+	end
+	RunService.RenderStepped:Connect(function()
+		for _, h in held do
+			if h.Prop.Parent then
+				h.Prop:PivotTo(h.Hand.TransformedWorldCFrame * h.Offset)
+			end
+		end
+	end)
+end
+
+return TownFolk

@@ -356,8 +356,13 @@ function TownBuilder.Build(): Town
 				d.CanCollide = false
 			end
 		end
-		-- (the spear's pivot is its middle; it is 9 studs long)
-		spear:PivotTo(guardAt * CFrame.new(1.6, 4.3, -0.4) * CFrame.Angles(0, 0, math.rad(-4)))
+		-- (the spear's pivot is its middle; it is 9 studs long). Players' screens then put it in his right
+		-- hand and keep it there as he breathes (TownFolk on the client).
+		spear:PivotTo(guardAt * CFrame.new(1.6, 4.3, -0.4))
+		spear:SetAttribute("HeldBy", "GateGuard")
+		spear:SetAttribute("Bone", "mixamorig:RightHand")
+		spear:SetAttribute("Grip", 0.42)
+		spear:SetAttribute("Length", 9)
 		spear.Parent = model
 	end
 
