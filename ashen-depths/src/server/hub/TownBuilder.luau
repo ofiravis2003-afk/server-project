@@ -340,7 +340,7 @@ function TownBuilder.Build(): Town
 	end
 
 	-- the gate guard keeps watch at the well, on the side facing the town's entrance (south)
-	local guardAt = CFrame.lookAt(Vector3.new(9, 0, 11), Vector3.new(9, 0, 30))
+	local guardAt = CFrame.lookAt(Vector3.new(3, 0, 10.5), Vector3.new(3, 0, 30))
 	local guard = townsperson("GateGuard", model, guardAt)
 	if not guard then
 		standIn(model, "GateGuard", guardAt, 6.4, Color3.fromRGB(110, 30, 30))
