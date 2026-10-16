@@ -289,7 +289,7 @@ local function forge(parent: Instance, frame: CFrame): BasePart
 	end
 
 	-- Brakka, behind the anvil and facing the square
-	local brakkaAt = frame * CFrame.new(2, 0, 7) * CFrame.Angles(0, math.pi, 0)
+	local brakkaAt = frame * CFrame.new(2, 0, 7) -- (the frame's front, -Z, already looks out over the square)
 	local figure = townsperson("Brakka", m, brakkaAt)
 	local spot: BasePart
 	if figure then
