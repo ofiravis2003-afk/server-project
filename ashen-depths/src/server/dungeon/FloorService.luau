@@ -58,6 +58,9 @@ type CombatRoom = {
 	EmptySince: number?,
 	HasElite: boolean,
 	KeyBearer: boolean?, -- this room's elite carries the Stairs Key
+	EventKind: string?,
+	Ambush: boolean?, -- this floor's event: when cleared, a second wave climbs out of the floor
+	RewardChest: string?, -- a chest of this tier appears in the middle once the room is cleared (events)
 	Guardians: boolean?, -- the Guardians' hall: waves of monsters, then a Skeleton Captain
 	Wave: number?,
 	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
@@ -95,6 +98,7 @@ end
 -- the combat rooms carries it, or it waits on a pedestal in the treasure room. One key opens the way for everyone.
 -- (Boss floors need none: the lair stands before the stairs.)
 local stairsKey: { Needed: boolean, Found: boolean, Where: string } = { Needed = false, Found = false, Where = "" }
+local floorEvent: string? = nil -- this floor's event, told to players when they arrive
 
 local function pushRun(player: Player)
 	runRemote:FireClient(player, {
@@ -321,7 +325,57 @@ local function spawnWave(room: CombatRoom, floor: number, wave: number)
 	end
 end
 
+-- More of the floor's monsters climbing out of the ground, all over the room.
+local function riseEnemies(room: CombatRoom, floor: number, count: number)
+	local rng = Random.new()
+	for _ = 1, count do
+		if not room.Active then
+			break
+		end
+		local spot = freeSpot(room.Built, rng, 4)
+		effectRemote:FireAllClients("Rise", spot)
+		local ok, enemy = pcall(EnemyService.Spawn, Floors.PickEnemy(floor, rng), CFrame.lookAt(spot, room.Built.Center), {
+			HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
+			DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
+			OnDied = function(dead)
+				onEnemyDied(room, dead)
+			end,
+		})
+		if ok and enemy then
+			room.Enemies[enemy] = true
+		end
+		task.wait(0.3)
+	end
+end
+
+local placeChestLater: (CombatRoom, string) -> ()
+
 roomEmptied = function(room: CombatRoom)
+	if room.Ambush then
+		-- The floor's event: just as the gates should rise, more of them crawl out.
+		room.Ambush = false
+		room.RewardChest = "Bronze"
+		room.Spawning = true
+		for _, player in Players:GetPlayers() do
+			local root = aliveRoot(player)
+			if root and isInside(room.Built, root.Position, -4) then
+				notifyRemote:FireClient(player, "Ambush! More of them crawl out of the ground!")
+			end
+		end
+		task.delay(1.5, function()
+			local extra = math.max(#Players:GetPlayers(), 1) - 1
+			riseEnemies(room, currentFloor, 3 + math.floor(currentFloor / 3) + extra)
+			room.Spawning = false
+			if room.Active and next(room.Enemies) == nil then
+				roomEmptied(room)
+			end
+		end)
+		return
+	end
+	if room.RewardChest then
+		placeChestLater(room, room.RewardChest)
+		room.RewardChest = nil
+	end
 	if room.Guardians and (room.Wave or 0) < #GUARDIAN_WAVES then
 		local nextWave = (room.Wave or 0) + 1
 		room.Spawning = true -- nothing else may clear the hall while the next wave is on its way
@@ -427,6 +481,10 @@ local function resetRoom(room: CombatRoom)
 	room.EmptySince = nil
 	if room.Guardians then
 		room.Wave = 0
+	end
+	if room.RewardChest == "Bronze" and room.EventKind == "Ambush" then
+		room.Ambush = true
+		room.RewardChest = nil
 	end
 	for enemy in room.Enemies do
 		EnemyService.Remove(enemy)
@@ -691,6 +749,14 @@ end
 
 -- The Captain is down: like a boss, everyone in the hall gets a Gold Key, the next floor becomes their
 -- checkpoint, and a Gold Chest appears.
+placeChestLater = function(room: CombatRoom, tier: string)
+	task.delay(1.5, function()
+		if room.Built.Model.Parent then
+			placeChest(room.Built.Model, CFrame.new(room.Built.Center), tier)
+		end
+	end)
+end
+
 guardiansDefeated = function(room: CombatRoom)
 	for _, player in Players:GetPlayers() do
 		local root = aliveRoot(player)
@@ -738,6 +804,80 @@ local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
 		if target > 1 and not changingFloor and currentFloor == 1 then
 			notifyRemote:FireAllClients(`{player.DisplayName} opens the way to floor {target}.`)
 			startFloor(target)
+		end
+	end)
+end
+
+-- The wandering merchant (a floor event): a hooded figure with a lantern and a crate of potions near the
+-- entrance. Sells health potions for gold; selling to him isn't possible (only the shops in Emberhold buy).
+local function setupMerchant(room: FloorBuilder.BuiltRoom, floor: number)
+	local price = 20 + 3 * floor
+	local model = Instance.new("Model")
+	model.Name = "WanderingMerchant"
+	local spot = room.Center + Vector3.new(room.Size / 2 - 7, 0, room.Size / 2 - 9)
+	local face = CFrame.lookAt(spot, Vector3.new(room.Center.X, spot.Y, room.Center.Z))
+	local function piece(name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.Shape = shape or Enum.PartType.Block
+		p.Size = size
+		p.CFrame = cf
+		p.Color = color
+		p.Material = material
+		p.TopSurface = Enum.SurfaceType.Smooth
+		p.BottomSurface = Enum.SurfaceType.Smooth
+		p.Parent = model
+		return p
+	end
+	local ROBE = Color3.fromRGB(58, 44, 40)
+	-- the robe, wider at the hem, the hood and the dark inside of it with two dim eyes
+	local body = piece("Robe", Vector3.new(2.6, 4.4, 2), face * CFrame.new(0, 2.2, 0), ROBE, Enum.Material.Fabric)
+	piece("Hem", Vector3.new(3.2, 1.2, 2.5), face * CFrame.new(0, 0.6, 0), ROBE, Enum.Material.Fabric)
+	piece("Shoulders", Vector3.new(3, 0.8, 2.1), face * CFrame.new(0, 4.3, 0), ROBE, Enum.Material.Fabric)
+	piece("Hood", Vector3.new(2, 2.2, 2), face * CFrame.new(0, 5.4, 0.1), ROBE, Enum.Material.Fabric, Enum.PartType.Ball)
+	piece("HoodShadow", Vector3.new(1.3, 1.4, 0.4), face * CFrame.new(0, 5.3, -0.85), Color3.fromRGB(8, 6, 6), Enum.Material.SmoothPlastic)
+	for _, side in { -1, 1 } do
+		local eye = piece("Eye", Vector3.new(0.16, 0.1, 0.06), face * CFrame.new(side * 0.25, 5.4, -1.06), Color3.fromRGB(255, 200, 120), Enum.Material.Neon)
+		eye.CastShadow = false
+	end
+	piece("Belt", Vector3.new(2.7, 0.3, 2.1), face * CFrame.new(0, 2.6, 0), Color3.fromRGB(90, 62, 36), Enum.Material.Leather)
+	-- a staff with a lantern hanging from it
+	local staff = piece("Staff", Vector3.new(0.25, 7, 0.25), face * CFrame.new(1.8, 3.5, -0.4), Color3.fromRGB(70, 48, 30), Enum.Material.Wood)
+	local lantern = piece("Lantern", Vector3.new(0.6, 0.8, 0.6), staff.CFrame * CFrame.new(0, 3.1, -0.45), Color3.fromRGB(255, 190, 100), Enum.Material.Neon)
+	lantern.Transparency = 0.2
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(255, 180, 100)
+	glow.Range = 16
+	glow.Brightness = 1.6
+	glow.Shadows = true
+	glow.Parent = lantern
+	-- the crate of potions in front of him
+	local crate = piece("Crate", Vector3.new(3, 1.8, 2), face * CFrame.new(0, 0.9, -2.6), Color3.fromRGB(96, 68, 42), Enum.Material.WoodPlanks)
+	for i = 0, 4 do
+		local bottle = piece("Potion", Vector3.new(0.55, 0.55, 0.55), crate.CFrame * CFrame.new(-1.1 + i * 0.55, 1.15, (i % 2) * 0.35 - 0.2), Color3.fromRGB(200, 30, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		bottle.CastShadow = false
+	end
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") and p ~= body and p ~= crate then
+			p.CanCollide = false
+		end
+	end
+	model.Parent = room.Model
+
+	local buy = prompt(crate, "Buy", `Health Potion: {price} Gold`, 0.3, 9)
+	buy.Triggered:Connect(function(player)
+		local data = DataService.GetData(player)
+		if not data then
+			return
+		end
+		if data.Gold < price then
+			notifyRemote:FireClient(player, `The merchant shakes his head. A potion costs {price} gold.`)
+			return
+		end
+		local got = InventoryService.GiveItem(player, "HealthPotion", "Common", 1)
+		if got > 0 then
+			ProgressService.AddGold(player, -price)
 		end
 	end)
 end
@@ -793,6 +933,7 @@ startFloor = function(floor: number)
 			hasTreasure = true
 		end
 	end
+	floorEvent = nil
 	stairsKey = {
 		Needed = floor >= 2 and not Floors.Bosses[floor] and not Floors.Guardians[floor],
 		Found = false,
@@ -882,6 +1023,48 @@ startFloor = function(floor: number)
 		end
 	end
 
+	-- One event a floor from floor 2: an ambush, a trapped room, or the wandering merchant (always the
+	-- merchant before a boss or the Guardians, to stock up).
+	if floor >= 2 then
+		local lairFloor = Floors.Bosses[floor] ~= nil or Floors.Guardians[floor] == true
+		local kinds = { "Ambush", "Traps", "Merchant" }
+		local kind = if lairFloor then "Merchant" else kinds[rng:NextInteger(1, #kinds)]
+		local later = {}
+		for i, room in combatRooms do
+			if i > 1 and not room.Boss and not room.Guardians then
+				table.insert(later, room)
+			end
+		end
+		if kind ~= "Merchant" and #later == 0 then
+			kind = "Merchant"
+		end
+		if kind == "Merchant" then
+			for _, room in rooms do
+				if room.Plan.Type == "Entrance" then
+					setupMerchant(room, floor)
+				end
+			end
+			floorEvent = "A wandering merchant has set up near the entrance."
+		elseif kind == "Ambush" then
+			local room = later[rng:NextInteger(1, #later)]
+			room.Ambush = true
+			room.EventKind = "Ambush"
+			floorEvent = "Something stirs beneath this floor..."
+		else
+			local room = later[rng:NextInteger(1, #later)]
+			room.EventKind = "Traps"
+			room.RewardChest = "Silver"
+			local damage = TRAP_DAMAGE * Floors.EnemyDamageMultiplier(floor)
+			for _ = 1, 3 do
+				TrapService.Spikes(room.Built.Model, CFrame.new(freeSpot(room.Built, rng, 4)), damage)
+			end
+			for _ = 1, 2 do
+				TrapService.Flames(room.Built.Model, CFrame.new(freeSpot(room.Built, rng, 4)), damage)
+			end
+			floorEvent = "One of this floor's rooms is full of traps, and a Silver Chest waits past them."
+		end
+	end
+
 	if stairsKey.Needed and stairsKey.Where == "Elite" then
 		local candidates = {}
 		for i, room in combatRooms do
@@ -941,6 +1124,14 @@ startFloor = function(floor: number)
 		pushRun(player)
 	end
 	floorStartedRemote:FireAllClients(floor, Floors.ChapterName(floor))
+	if floorEvent then
+		local told = floorEvent
+		task.delay(4, function()
+			if currentFloor == floor then
+				notifyRemote:FireAllClients(told)
+			end
+		end)
+	end
 	changingFloor = false
 end
 
