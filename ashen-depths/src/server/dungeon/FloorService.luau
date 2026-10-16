@@ -24,6 +24,7 @@ local EnemyService = require(script.Parent.EnemyService)
 local FloorBuilder = require(script.Parent.FloorBuilder)
 local FloorLayout = require(script.Parent.FloorLayout)
 local Materials = require(script.Parent.Materials)
+local Props = require(script.Parent.Props)
 local TrapService = require(script.Parent.TrapService)
 
 local ORIGIN = Vector3.new(2000, 0, 0) -- far from the test room
@@ -865,27 +866,40 @@ local function setupMerchant(room: FloorBuilder.BuiltRoom, floor: number)
 		return p
 	end
 	local ROBE = Color3.fromRGB(58, 44, 40)
-	-- the robe, wider at the hem, the hood and the dark inside of it with two dim eyes
-	local body = piece("Robe", Vector3.new(2.6, 4.4, 2), face * CFrame.new(0, 2.2, 0), ROBE, Enum.Material.Fabric)
-	piece("Hem", Vector3.new(3.2, 1.2, 2.5), face * CFrame.new(0, 0.6, 0), ROBE, Enum.Material.Fabric)
-	piece("Shoulders", Vector3.new(3, 0.8, 2.1), face * CFrame.new(0, 4.3, 0), ROBE, Enum.Material.Fabric)
-	piece("Hood", Vector3.new(2, 2.2, 2), face * CFrame.new(0, 5.4, 0.1), ROBE, Enum.Material.Fabric, Enum.PartType.Ball)
-	piece("HoodShadow", Vector3.new(1.3, 1.4, 0.4), face * CFrame.new(0, 5.3, -0.85), Color3.fromRGB(8, 6, 6), Enum.Material.SmoothPlastic)
-	for _, side in { -1, 1 } do
-		local eye = piece("Eye", Vector3.new(0.16, 0.1, 0.06), face * CFrame.new(side * 0.25, 5.4, -1.06), Color3.fromRGB(255, 200, 120), Enum.Material.Neon)
-		eye.CastShadow = false
+	-- The Tripo merchant (DungeonProps.Merchant) when there is one, a figure of parts otherwise.
+	local figure = Props.Place("Merchant", model, face)
+	local body: BasePart
+	if figure then
+		body = figure:FindFirstChildWhichIsA("BasePart", true) :: BasePart
+		local glow = Instance.new("PointLight")
+		glow.Color = Color3.fromRGB(255, 180, 100)
+		glow.Range = 16
+		glow.Brightness = 1.4
+		glow.Shadows = true
+		glow.Parent = body
+	else
+		-- the robe, wider at the hem, the hood and the dark inside of it with two dim eyes
+		body = piece("Robe", Vector3.new(2.6, 4.4, 2), face * CFrame.new(0, 2.2, 0), ROBE, Enum.Material.Fabric)
+		piece("Hem", Vector3.new(3.2, 1.2, 2.5), face * CFrame.new(0, 0.6, 0), ROBE, Enum.Material.Fabric)
+		piece("Shoulders", Vector3.new(3, 0.8, 2.1), face * CFrame.new(0, 4.3, 0), ROBE, Enum.Material.Fabric)
+		piece("Hood", Vector3.new(2, 2.2, 2), face * CFrame.new(0, 5.4, 0.1), ROBE, Enum.Material.Fabric, Enum.PartType.Ball)
+		piece("HoodShadow", Vector3.new(1.3, 1.4, 0.4), face * CFrame.new(0, 5.3, -0.85), Color3.fromRGB(8, 6, 6), Enum.Material.SmoothPlastic)
+		for _, side in { -1, 1 } do
+			local eye = piece("Eye", Vector3.new(0.16, 0.1, 0.06), face * CFrame.new(side * 0.25, 5.4, -1.06), Color3.fromRGB(255, 200, 120), Enum.Material.Neon)
+			eye.CastShadow = false
+		end
+		piece("Belt", Vector3.new(2.7, 0.3, 2.1), face * CFrame.new(0, 2.6, 0), Color3.fromRGB(90, 62, 36), Enum.Material.Leather)
+		-- a staff with a lantern hanging from it
+		local staff = piece("Staff", Vector3.new(0.25, 7, 0.25), face * CFrame.new(1.8, 3.5, -0.4), Color3.fromRGB(70, 48, 30), Enum.Material.Wood)
+		local lantern = piece("Lantern", Vector3.new(0.6, 0.8, 0.6), staff.CFrame * CFrame.new(0, 3.1, -0.45), Color3.fromRGB(255, 190, 100), Enum.Material.Neon)
+		lantern.Transparency = 0.2
+		local glow = Instance.new("PointLight")
+		glow.Color = Color3.fromRGB(255, 180, 100)
+		glow.Range = 16
+		glow.Brightness = 1.6
+		glow.Shadows = true
+		glow.Parent = lantern
 	end
-	piece("Belt", Vector3.new(2.7, 0.3, 2.1), face * CFrame.new(0, 2.6, 0), Color3.fromRGB(90, 62, 36), Enum.Material.Leather)
-	-- a staff with a lantern hanging from it
-	local staff = piece("Staff", Vector3.new(0.25, 7, 0.25), face * CFrame.new(1.8, 3.5, -0.4), Color3.fromRGB(70, 48, 30), Enum.Material.Wood)
-	local lantern = piece("Lantern", Vector3.new(0.6, 0.8, 0.6), staff.CFrame * CFrame.new(0, 3.1, -0.45), Color3.fromRGB(255, 190, 100), Enum.Material.Neon)
-	lantern.Transparency = 0.2
-	local glow = Instance.new("PointLight")
-	glow.Color = Color3.fromRGB(255, 180, 100)
-	glow.Range = 16
-	glow.Brightness = 1.6
-	glow.Shadows = true
-	glow.Parent = lantern
 	-- the crate of potions in front of him
 	local crate = piece("Crate", Vector3.new(3, 1.8, 2), face * CFrame.new(0, 0.9, -2.6), Color3.fromRGB(96, 68, 42), Enum.Material.WoodPlanks)
 	for i = 0, 4 do
