@@ -902,9 +902,26 @@ local function setupMerchant(room: FloorBuilder.BuiltRoom, floor: number)
 	end
 	-- the crate of potions in front of him
 	local crate = piece("Crate", Vector3.new(3, 1.8, 2), face * CFrame.new(0, 0.9, -2.6), Color3.fromRGB(96, 68, 42), Enum.Material.WoodPlanks)
-	for i = 0, 4 do
-		local bottle = piece("Potion", Vector3.new(0.55, 0.55, 0.55), crate.CFrame * CFrame.new(-1.1 + i * 0.55, 1.15, (i % 2) * 0.35 - 0.2), Color3.fromRGB(200, 30, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
-		bottle.CastShadow = false
+	-- the potions for sale on top: the real potion model (ReplicatedStorage.ItemModels) when there is one
+	local items = game:GetService("ReplicatedStorage"):FindFirstChild("ItemModels")
+	local potionModel = items and items:FindFirstChild("HealthPotion")
+	for i = 0, 3 do
+		local at = crate.CFrame * CFrame.new(-1.05 + i * 0.7, 0.9, (i % 2) * 0.4 - 0.2)
+		if potionModel and potionModel:IsA("Model") then
+			local bottle = potionModel:Clone()
+			bottle:ScaleTo(bottle:GetScale() * 0.6)
+			bottle:PivotTo(at * CFrame.new(0, 0.45, 0) * CFrame.Angles(0, i * 1.3, 0))
+			for _, d in bottle:GetDescendants() do
+				if d:IsA("BasePart") then
+					d.Anchored = true
+					d.CanCollide = false
+				end
+			end
+			bottle.Parent = model
+		else
+			local bottle = piece("Potion", Vector3.new(0.55, 0.55, 0.55), at * CFrame.new(0, 0.28, 0), Color3.fromRGB(200, 30, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+			bottle.CastShadow = false
+		end
 	end
 	for _, p in model:GetDescendants() do
 		if p:IsA("BasePart") and p ~= body and p ~= crate then
