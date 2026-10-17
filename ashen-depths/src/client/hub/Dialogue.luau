@@ -100,6 +100,7 @@ function Dialogue.Start()
 
 	local function button(text: string, order: number, color: Color3, onClick: () -> ())
 		local b = Instance.new("TextButton")
+		b.Name = text:gsub(" ", "")
 		b.LayoutOrder = order
 		b.AutomaticSize = Enum.AutomaticSize.X
 		b.Size = UDim2.fromOffset(0, 36)
