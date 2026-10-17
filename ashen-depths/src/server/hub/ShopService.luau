@@ -15,6 +15,7 @@ local TeleportService = game:GetService("TeleportService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
+local Dialogues = require(ReplicatedStorage.Shared.Dialogues)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
@@ -73,12 +74,35 @@ function ShopService.Start()
 	local notifyRemote = Remotes.Event("Notify")
 
 	-- Brakka's shop
-	local trade = prompt(town.Brakka, "Trade", "Brakka")
-	trade.Triggered:Connect(function(player)
+	local function openBrakka(player: Player)
 		local stock = STOCK.Brakka
 		openShop[player] = { Name = "Brakka", At = town.Brakka }
 		InventoryService.SetAtShop(player, true)
 		openRemote:FireClient(player, { Shop = "Brakka", Title = stock.Title, Line = stock.Line, Offers = stock.Offers })
+	end
+
+	-- Talking to the townsfolk (their words in shared/Dialogues; Brakka's Trade opens her shop)
+	local dialogueRemote = Remotes.Event("DialogueOpen")
+	for key, d in Dialogues do
+		local person = town.Model:FindFirstChild(key, true)
+		local at = person and person:IsA("Model") and (person.PrimaryPart or person:FindFirstChildWhichIsA("BasePart", true))
+		if at then
+			local talk = prompt(at, "Talk", d.Name)
+			talk.Triggered:Connect(function(player)
+				dialogueRemote:FireClient(player, person)
+			end)
+		end
+	end
+	Remotes.Event("DialogueAction").OnServerEvent:Connect(function(player, key: any, action: any)
+		local person = type(key) == "string" and town.Model:FindFirstChild(key, true)
+		local character = player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if not person or not person:IsA("Model") or not root or (root.Position - person:GetPivot().Position).Magnitude > SHOP_RANGE then
+			return
+		end
+		if key == "Brakka" and action == "Trade" then
+			openBrakka(player)
+		end
 	end)
 
 	Remotes.Event("ShopBuy").OnServerEvent:Connect(function(player, index: any)

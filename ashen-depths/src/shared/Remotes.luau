@@ -25,6 +25,8 @@ local EVENT_NAMES = {
 	"ShopClose", -- client -> server: the player closed the shop window
 	"UpgradeItem", -- client -> server: ask Brakka to upgrade this weapon (by item id)
 	"UpgradeResult", -- server -> client: how the upgrade went (success, the new level, or failed)
+	"DialogueOpen", -- server -> client: talk to this townsperson (their model)
+	"DialogueAction", -- client -> server: the townsperson's own button (e.g. Brakka's Trade)
 }
 
 local FUNCTION_NAMES = {}

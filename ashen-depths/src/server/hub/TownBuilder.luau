@@ -450,7 +450,7 @@ function TownBuilder.Build(): Town
 	townsperson("OldPip", model, CFrame.lookAt(Vector3.new(52, 0, -20), Vector3.new(0, 0, -20)))
 
 	-- lamp posts round the square
-	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0) } do
+	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0), Vector3.new(30, 0, -48) } do
 		lampPost(model, at)
 	end
 
