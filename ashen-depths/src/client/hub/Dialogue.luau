@@ -224,6 +224,31 @@ function Dialogue.Start()
 			open(model)
 		end
 	end)
+	-- the player steps out of the shot while talking (their own screen only)
+	local function hideSelf(hidden: boolean)
+		local character = player.Character
+		if character then
+			for _, part in character:GetDescendants() do
+				if part:IsA("BasePart") or part:IsA("Decal") then
+					part.LocalTransparencyModifier = if hidden then 1 else 0
+				end
+			end
+		end
+	end
+	RunService.RenderStepped:Connect(function()
+		if talking then
+			hideSelf(true)
+		end
+	end)
+	local closeBefore = close
+	close = function()
+		local was = talking
+		closeBefore()
+		if was then
+			hideSelf(false)
+		end
+	end
+
 	RunService.Heartbeat:Connect(function()
 		local model = talking
 		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
