@@ -389,6 +389,7 @@
 - 👤 **הבניינים הוכנו ב-Tripo, עוד לא ב-Studio.** ב-`מודלים\עיר\בניינים\`: guild_hall, ‏armory, ‏magic_shop, ‏tavern, ‏house_a, ‏house_b, ‏forge_building.
 - 👤 **אנימציות עמידה הורדו מ-Mixamo** ל-`אנימציות\להעלאה ל-mixamo\`: ‏`Breathing Idle.fbx`, ‏`Dwarf Idle.fbx`, ‏`Happy Idle.fbx` ו-`Unarmed Idle.fbx` (לזהות כל דמות לפי הטקסטורה שבקובץ). יש גם `aldric_mixamo.fbx` (בתיקיית ההורדות).
 - ✅ (2026-10-17) **4 הדמויות בעיר עם תנועה:** AldricIdle 110153111695731, ThorneIdle 91422294151634, SeraphineIdle 89523763247665, OldPipIdle 106330872617044. ⏳ חסרים צבעים: לייבא את 4 ה-GLB עם No Rig.
+- ✅ (2026-10-17) **צבעים לדמויות ו-7 בניינים בעיר** (`TownProps`: GuildHall, ‏Armory, ‏MagicShop, ‏Tavern, ‏HouseA/HouseB לסירוגין, ‏ForgeBuilding סביב הנפחייה). כולם פונים לכיכר. אפשר לשפר: רווחים בין בניינים, השריונייה חשוכה.
 - ▶️ **השלב הבא (רק כשהשחקן-מפתח יגיד):**
   1. 🤖 להכין 8 קבצים לייבוא (rigged ו-idle לכל דמות: `clean_rigged.py` ו-`split_clip.py`).
   2. 👤 לייבא אותם, את 4 ה-GLB לצבעים ואת 7 הבניינים.
