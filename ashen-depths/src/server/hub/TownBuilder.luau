@@ -31,6 +31,10 @@ local SQUARE = 150 -- the square's width
 local IDLE: { [string]: number } = {
 	Brakka = 92067081387599, -- Mixamo "Standing W/ Briefcase Idle"
 	GateGuard = 77116071943805, -- Mixamo "Standing Idle"
+	Aldric = 110153111695731, -- Mixamo "Unarmed Idle"
+	Thorne = 91422294151634, -- Mixamo "Dwarf Idle"
+	Seraphine = 89523763247665, -- Mixamo "Happy Idle"
+	OldPip = 106330872617044, -- Mixamo "Breathing Idle"
 }
 
 local function part(parent: Instance, name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
@@ -402,6 +406,12 @@ function TownBuilder.Build(): Town
 	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
 	prop("MarketStall", model, facing(Vector3.new(-20, 0, 40)))
 	prop("MarketStall", model, facing(Vector3.new(20, 0, 40)))
+
+	-- the other townsfolk at their doors, facing the square (their shops open in later updates)
+	townsperson("Aldric", model, CFrame.lookAt(Vector3.new(-36, 0, -51), Vector3.new(-36, 0, 0)))
+	townsperson("Thorne", model, CFrame.lookAt(Vector3.new(44, 0, -51), Vector3.new(44, 0, 0)))
+	townsperson("Seraphine", model, CFrame.lookAt(Vector3.new(-52, 0, -16), Vector3.new(0, 0, -16)))
+	townsperson("OldPip", model, CFrame.lookAt(Vector3.new(52, 0, -20), Vector3.new(0, 0, -20)))
 
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0) } do
