@@ -115,7 +115,38 @@ end
 
 -- A two-storey house front facing the square: stone ground floor, timber-framed plaster upstairs, a steep
 -- roof, a door, and warm lit windows. `name` goes on its sign (nil for a plain house).
+-- A Tripo building from TownProps with its front on the frame's front line (the frame's -Z faces the square),
+-- optionally scaled to a width. Nil if there's no such model.
+local function building(name: string, parent: Instance, frame: CFrame, width: number?): Model?
+	local made = prop(name, parent, frame)
+	if not made then
+		return nil
+	end
+	local _, size = made:GetBoundingBox()
+	if width then
+		made:ScaleTo(made:GetScale() * width / size.X)
+		made:PivotTo(frame)
+		local box, scaled = made:GetBoundingBox()
+		made:PivotTo(made:GetPivot() + (frame.Position - (box.Position - Vector3.new(0, scaled.Y / 2, 0))))
+		size = scaled
+	end
+	made:PivotTo(made:GetPivot() * CFrame.new(0, 0, size.Z / 2 - 0.5))
+	return made
+end
+
+local HOUSE_MODELS = { ["Guild Hall"] = "GuildHall", ["Ironhide Armory"] = "Armory", ["The Gilded Tome"] = "MagicShop", ["The Sunken Tankard"] = "Tavern" }
+local plainHouse = 0
+
 local function house(parent: Instance, frame: CFrame, width: number, name: string?)
+	-- the real building when there is one (plain houses take turns between the two house models)
+	local modelName = if name then HOUSE_MODELS[name] else nil
+	if not modelName then
+		plainHouse += 1
+		modelName = if plainHouse % 2 == 1 then "HouseA" else "HouseB"
+	end
+	if building(modelName :: string, parent, frame) then
+		return
+	end
 	local m = Instance.new("Model")
 	m.Name = name or "House"
 	local depth = 16
@@ -252,6 +283,10 @@ local function forge(parent: Instance, frame: CFrame): BasePart
 	local m = Instance.new("Model")
 	m.Name = "BrakkasForge"
 	local w, d, h = 26, 16, 12
+	local shell = building("ForgeBuilding", m, frame * CFrame.new(0, 0, -1), w + 2)
+	if shell then
+		part(m, "Floor", Vector3.new(w, 0.3, d), frame * CFrame.new(0, 0.15, d / 2), DARK_STONE, Enum.Material.Slate)
+	else
 	-- back and side walls of stone, a timber front beam, a sloped roof
 	part(m, "BackWall", Vector3.new(w, h, 1.5), frame * CFrame.new(0, h / 2, d), STONE, Enum.Material.Cobblestone)
 	for _, side in { -1, 1 } do
@@ -263,6 +298,7 @@ local function forge(parent: Instance, frame: CFrame): BasePart
 	roof.CastShadow = true
 	part(m, "Floor", Vector3.new(w, 0.3, d), frame * CFrame.new(0, 0.15, d / 2), DARK_STONE, Enum.Material.Slate)
 	sign(m, "Brakka's Forge", frame * CFrame.new(0, h + 0.2, -0.8) * CFrame.Angles(0, math.pi, 0))
+	end
 
 	-- the forge at the back, the anvil in front of Brakka, the weapon rack by the wall
 	local back = frame * CFrame.new(-5, 0, d - 3.5)
