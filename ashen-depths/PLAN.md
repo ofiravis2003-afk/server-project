@@ -422,7 +422,8 @@
 - 🧪 **מצבי בדיקה רק ב-Studio של Depths, לא ב-GitHub:** מתחילים בקומה 5 ואין נזק. **לא לשמור (Ctrl+S) ב-Depths עם זה.** כשמסיימים: לסנכרן `FloorService` מחדש מ-GitHub.
 - ▶️ **The Bone Warden:**
   - ✅ הורד `Great Sword Pack.zip` (No Character) ל-`אנימציות\בוסיםone_warden\`.
-  - 👤 **מחר:** ב-Mixamo להוריד את `bw_rigged.fbx` (העלאה של `bone_warden_mixamo.fbx`, ‏With Skin, ‏T-pose).
+  - ✅ הורד `bw_rigged.fbx`. הוכנו 12 קבצים ב-`bone_warden\לייבוא\`: ‏`bw_rigged_clean.fbx` ו-11 תנועות (idle, walk, run, slash, spin, leap, cast, slide, rage, draw, death). 👤 לייבא ל-Depths (Rig: Custom), ואחר כך No Rig ל-`bone_warden.glb`, ‏`warden_sword.glb` ו-5 מודלי `warden_lair`.
+  - (היה:) ב-Mixamo להוריד את `bw_rigged.fbx` (העלאה של `bone_warden_mixamo.fbx`, ‏With Skin, ‏T-pose).
   - 🤖 **אחר כך:**
     1. לבחור תנועות מהחבילה: idle, ‏walk, ‏run, ‏slash, ‏high spin, ‏jump attack, ‏casting, ‏blocking, ‏draw sword, ‏death.
     2. להכין לייבוא.
