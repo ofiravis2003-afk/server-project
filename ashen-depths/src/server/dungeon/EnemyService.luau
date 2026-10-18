@@ -84,6 +84,11 @@ export type BossState = {
 	NextKick: number,
 	SummonsDone: number,
 	Minions: { Enemy },
+	Pose: AnimationTrack?, -- the intro clip (else Summon)
+	Rage: AnimationTrack?,
+	Raged: boolean,
+	Pace: number, -- multiplies its cooldowns (lower in its rage)
+	SlamMove: any?, -- the move its Slam uses now (its rage lunge replaces the leap)
 }
 
 local EnemyService = {}
@@ -933,6 +938,10 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 			NextKick = 0,
 			SummonsDone = 0,
 			Minions = {},
+			Pose = if def.Boss.Intro.Pose then load(def.Boss.Intro.Pose) else nil,
+			Rage = if def.Boss.Rage then load(def.Boss.Rage.Id) else nil,
+			Raged = false,
+			Pace = 1,
 		}
 		model:SetAttribute("BossTitle", def.Boss.Title)
 		CollectionService:AddTag(model, "Boss")
@@ -1164,9 +1173,9 @@ end
 -- Leaps at a player: a red circle marks where it will land; everyone still inside when it lands is hit.
 local function bossSlam(enemy: Enemy, targetRoot: BasePart)
 	local boss = enemy.Boss :: BossState
-	local move = (enemy.Def.Boss :: Enemies.BossDef).Slam
+	local move = boss.SlamMove or (enemy.Def.Boss :: Enemies.BossDef).Slam
 	enemy.Attacking = true
-	boss.NextSlam = os.clock() + move.Cooldown
+	boss.NextSlam = os.clock() + move.Cooldown * boss.Pace
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
 	face(enemy, targetRoot.Position)
 	local start = enemy.Root.CFrame
@@ -1202,7 +1211,7 @@ local function bossKick(enemy: Enemy, targetRoot: BasePart)
 	local boss = enemy.Boss :: BossState
 	local move = (enemy.Def.Boss :: Enemies.BossDef).Kick
 	enemy.Attacking = true
-	boss.NextKick = os.clock() + move.Cooldown
+	boss.NextKick = os.clock() + move.Cooldown * boss.Pace
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
 	face(enemy, targetRoot.Position)
 	boss.Kick:Play(0.1)
@@ -1249,7 +1258,76 @@ local function bossSummon(enemy: Enemy)
 			end
 		end
 	end
+	-- arrows rain round every player in the lair: red circles first, then they strike
+	local rain = move.Rain
+	if rain and not enemy.Dead then
+		local floorY = enemy.Root.Position.Y - enemy.Humanoid.HipHeight - enemy.Root.Size.Y / 2
+		for _, target in playersNear(enemy.Root.Position, 90) do
+			for _ = 1, rain.Count do
+				local offset = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 10
+				local spot = Vector3.new(target.Root.Position.X + offset.X, floorY, target.Root.Position.Z + offset.Z)
+				effectRemote:FireAllClients("Telegraph", spot, rain.Radius, rain.Delay)
+				task.delay(rain.Delay, function()
+					if enemy.Dead then
+						return
+					end
+					effectRemote:FireAllClients("Quake", spot, rain.Radius)
+					for _, hit in playersNear(spot, rain.Radius) do
+						hurt(hit.Humanoid, hit.Root, enemy.Damage * rain.DamageScale)
+					end
+				end)
+				task.wait(0.15)
+			end
+		end
+	end
 	task.wait(math.max(move.Length - move.RiseAt - 0.6, 0.3))
+	enemy.Attacking = false
+end
+
+-- Under its rage threshold: it roars, then fights faster: runs, lunges, and attacks more often.
+local function bossRage(enemy: Enemy)
+	local boss = enemy.Boss :: BossState
+	local rage = (enemy.Def.Boss :: Enemies.BossDef).Rage
+	if not rage then
+		return
+	end
+	enemy.Attacking = true
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	setEyes(enemy, true)
+	if boss.Rage then
+		boss.Rage:Play(0.15)
+	end
+	effectRemote:FireAllClients("Quake", enemy.Root.Position - Vector3.new(0, enemy.Humanoid.HipHeight, 0), 16)
+	task.wait(rage.Length)
+	if enemy.Dead then
+		return
+	end
+	setEyes(enemy, false)
+	enemy.Humanoid.WalkSpeed = enemy.Def.WalkSpeed * rage.SpeedScale
+	boss.Pace = rage.CooldownScale
+	local animator = enemy.Humanoid:FindFirstChildOfClass("Animator")
+	if rage.Run and animator then
+		local animation = Instance.new("Animation")
+		animation.AnimationId = rage.Run
+		local run = animator:LoadAnimation(animation)
+		run.Looped = true
+		run.Priority = Enum.AnimationPriority.Movement
+		local walk = enemy.Tracks.Walk
+		if walk and walk.IsPlaying then
+			walk:Stop(0.1)
+		end
+		enemy.Tracks.Walk = run
+	end
+	if rage.Lunge and animator then
+		local animation = Instance.new("Animation")
+		animation.AnimationId = rage.Lunge.Id
+		local lunge = animator:LoadAnimation(animation)
+		lunge.Looped = false
+		lunge.Priority = Enum.AnimationPriority.Action
+		boss.Slam = lunge
+		boss.SlamMove = rage.Lunge
+		boss.NextSlam = os.clock() + 1.5
+	end
 	enemy.Attacking = false
 end
 
@@ -1280,7 +1358,11 @@ function EnemyService.PlayIntro(enemy: Enemy, duration: number, stepOut: Vector3
 	end
 	task.delay(duration * 0.35, function()
 		if not enemy.Dead then
-			boss.Summon:Play(0.2, 1, 0.8)
+			if boss.Pose then
+				boss.Pose:Play(0.2, 1, 0.6)
+			else
+				boss.Summon:Play(0.2, 1, 0.8)
+			end
 		end
 	end)
 	task.delay(duration, function()
@@ -1295,15 +1377,18 @@ local function bossThink(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Hum
 	local def = enemy.Def.Boss :: Enemies.BossDef
 	local ratio = enemy.Humanoid.Health / enemy.Humanoid.MaxHealth
 	local nextSummon = def.Summon.At[boss.SummonsDone + 1]
-	if nextSummon and ratio <= nextSummon then
+	if def.Rage and not boss.Raged and ratio <= def.Rage.At then
+		boss.Raged = true
+		task.spawn(bossRage, enemy)
+	elseif nextSummon and ratio <= nextSummon then
 		boss.SummonsDone += 1
 		task.spawn(bossSummon, enemy)
 	elseif distance <= def.Kick.Range and now >= boss.NextKick then
 		task.spawn(bossKick, enemy, targetRoot)
-	elseif distance > def.Kick.Range + 2 and distance <= def.Slam.Range and now >= boss.NextSlam then
+	elseif distance > def.Kick.Range + 2 and distance <= (boss.SlamMove or def.Slam).Range and now >= boss.NextSlam then
 		task.spawn(bossSlam, enemy, targetRoot)
 	elseif distance <= enemy.Def.AttackRange then
-		if now - enemy.LastAttack >= enemy.Def.AttackCooldown then
+		if now - enemy.LastAttack >= enemy.Def.AttackCooldown * boss.Pace then
 			task.spawn(attack, enemy, targetRoot, targetHumanoid)
 		else
 			enemy.Humanoid:MoveTo(enemy.Root.Position)

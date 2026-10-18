@@ -26,6 +26,7 @@ export type Layout = {
 	Rooms: { [string]: RoomPlan },
 	Links: { Link },
 	Path: { string },
+	Floor: number,
 }
 
 local DIRECTIONS = { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) }
@@ -111,7 +112,7 @@ local function tryGenerate(floor: number, rng: Random): Layout?
 		attach("Secret", 24, true)
 	end
 
-	return { Rooms = rooms, Links = links, Path = path }
+	return { Rooms = rooms, Links = links, Path = path, Floor = floor }
 end
 
 function FloorLayout.Generate(floor: number, rng: Random): Layout

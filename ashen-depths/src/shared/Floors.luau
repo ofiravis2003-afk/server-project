@@ -67,7 +67,10 @@ function Floors.PickEnemy(floor: number, rng: Random): string
 end
 
 -- Boss floors: the last room before the stairs is this boss's lair.
-Floors.Bosses = { [5] = "Gravekeeper" } :: { [number]: string }
+Floors.Bosses = { [5] = "Gravekeeper", [15] = "BoneWarden" } :: { [number]: string }
+
+-- How each boss's lair is dressed (RoomDecor themes).
+Floors.BossThemes = { [5] = "Graveyard", [15] = "ThroneRoom" } :: { [number]: string }
 
 -- Guardians' floors: the last room before the stairs is a locked hall where three waves of the floor's
 -- monsters come, the last led by a giant Skeleton Captain. Its reward is a boss's (no new model needed).

@@ -718,6 +718,86 @@ themes.Graveyard = function(ctx)
 	light(glow, Color3.fromRGB(110, 200, 140), 40, 0.4)
 end
 
+-- The Bone Warden's throne room: the sealed gate to the king on the back wall, the bone throne before it,
+-- a red carpet from the way in up to the throne, knight statues standing guard along the walls, broken
+-- royal pillars, braziers round a ring of runes that burn red when the fight starts (RuneColor), and banners.
+themes.ThroneRoom = function(ctx)
+	local rng = ctx.Rng
+	local S = ctx.Size
+	tint(ctx, Color3.fromRGB(48, 46, 50), Color3.fromRGB(40, 38, 42), Enum.Material.Slate)
+	ctx.Model:SetAttribute("RuneColor", Color3.fromRGB(230, 60, 50))
+	local back = backWall(ctx)
+	if back then
+		local inward = -back.LookVector
+		local floorAtWall = onWall(ctx, back, 0, 0).Position
+		local gate, gateDepth = againstWall(ctx, "SealedGate", back, 0, 0.3)
+		local gateWidth = 20
+		if gate then
+			local _, size = gate:GetBoundingBox()
+			gateWidth = size.X
+			-- a dull red glow through the cracks of the gate
+			local seep = deco(ctx.Model, "GateGlow", Vector3.new(1, 1, 1), CFrame.new(floorAtWall + inward * (gateDepth + 1) + Vector3.new(0, 6, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+			seep.Transparency = 1
+			light(seep, Color3.fromRGB(255, 70, 50), 22, 1.4)
+		else
+			gateDepth = 2
+		end
+		-- the throne before the gate, and where its keeper waits
+		local throneAt = gateDepth + 4
+		local throne = Props.Place("BoneThrone", ctx.Model, onWall(ctx, back, 0, throneAt))
+		local throneDepth = 6
+		if throne then
+			local _, size = throne:GetBoundingBox()
+			throneDepth = size.Z
+		end
+		ctx.Model:SetAttribute("BossDoor", floorAtWall + inward * (throneAt + throneDepth / 2 + 3))
+		ctx.Model:SetAttribute("BossSpot", floorAtWall + inward * (throneAt + throneDepth / 2 + 11))
+		-- two knights flanking the gate
+		for _, side in { -1, 1 } do
+			againstWall(ctx, "KnightStatue", back, side * (gateWidth / 2 + 4), 0.6)
+		end
+		-- the red carpet up to the throne
+		local length = S - throneAt - throneDepth - 6
+		local carpetMid = floorAtWall + inward * (throneAt + throneDepth + length / 2)
+		deco(ctx.Model, "Carpet", Vector3.new(7, 0.12, length), CFrame.lookAt(carpetMid + Vector3.new(0, 0.07, 0), carpetMid + Vector3.new(0, 0.07, 0) + inward), Color3.fromRGB(110, 18, 22), Enum.Material.Fabric)
+		for _, side in { -1, 1 } do
+			deco(ctx.Model, "CarpetHem", Vector3.new(0.5, 0.14, length), CFrame.lookAt(carpetMid, carpetMid + inward) * CFrame.new(side * 3.7, 0.08, 0), Color3.fromRGB(200, 160, 60), Enum.Material.Fabric)
+		end
+	end
+	-- knights and broken pillars along the side walls, banners above
+	for _, frame in ctx.PlainWalls do
+		if frame == back then
+			continue
+		end
+		for _, side in { -1, 1 } do
+			againstWall(ctx, "KnightStatue", frame, side * S / 5, 0.8)
+			ghost((againstWall(ctx, "BrokenPillarRoyal", frame, side * S / 2.6, 1.5, rng:NextNumber(0, math.pi * 2))))
+		end
+		banner(ctx, frame, 0)
+	end
+	-- royal braziers round the fighting ring
+	for i = 0, 3 do
+		local a = math.rad(45 + i * 90)
+		local spot = ctx.Center + Vector3.new(math.cos(a), 0, math.sin(a)) * 18
+		local brazier = Props.Place("RoyalBrazier", ctx.Model, CFrame.new(spot))
+		local glowAt = deco(ctx.Model, "BrazierFire", Vector3.new(1, 1, 1), CFrame.new(spot + Vector3.new(0, 6.2, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+		glowAt.Transparency = 1
+		local fire = Instance.new("Fire")
+		fire.Size = 5
+		fire.Heat = 8
+		fire.Color = Color3.fromRGB(255, 120, 50)
+		fire.SecondaryColor = Color3.fromRGB(200, 40, 20)
+		fire.Parent = glowAt
+		light(glowAt, Color3.fromRGB(255, 130, 70), 26, 1.4)
+		local _ = brazier
+	end
+	runeCircle(ctx, 14)
+	-- a cold, dim air over the hall
+	local air = deco(ctx.Model, "HallGlow", Vector3.new(1, 1, 1), CFrame.new(ctx.Center + Vector3.new(0, ctx.Height - 3, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+	air.Transparency = 1
+	light(air, Color3.fromRGB(150, 140, 190), 50, 0.5)
+end
+
 themes.Plain = function(ctx)
 	bonePile(ctx, cornerSpot(ctx), 1)
 	rubble(ctx, cornerSpot(ctx), 3)

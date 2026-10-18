@@ -254,6 +254,7 @@ end
 
 -- The ring of runes on a lair's floor glows green while its boss fights, and goes dark when it falls.
 local function lightRunes(built: FloorBuilder.BuiltRoom, on: boolean)
+	local glow = (built.Model:GetAttribute("RuneColor") :: Color3?) or Color3.fromRGB(80, 230, 130)
 	local i = 0
 	for _, rune in built.Model:GetChildren() do
 		if rune.Name == "LairRune" and rune:IsA("BasePart") then
@@ -263,7 +264,7 @@ local function lightRunes(built: FloorBuilder.BuiltRoom, on: boolean)
 			end
 			-- they catch one after another round the ring
 			TweenService:Create(rune, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, if on then (i % 40) * 0.04 else 0), {
-				Color = if on then Color3.fromRGB(80, 230, 130) else Color3.fromRGB(34, 38, 36),
+				Color = if on then glow else Color3.fromRGB(34, 38, 36),
 			}):Play()
 			if not on then
 				task.delay(0.5, function()
@@ -744,6 +745,11 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 		end
 	end
 	notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
+	if currentFloor >= Floors.MaxFloor then
+		task.delay(4, function()
+			notifyRemote:FireAllClients("Chapter I complete: the Drowned Catacombs are yours. Beyond the sealed gate, the King waits... for now.")
+		end)
+	end
 	task.delay(2.5, function()
 		if room.Built.Model.Parent then
 			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")

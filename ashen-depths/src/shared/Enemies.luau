@@ -46,8 +46,28 @@ export type BossDef = {
 	Title: string,
 	Slam: { Id: string, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number },
 	Kick: { Id: string, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number },
-	Summon: { Id: string, At: { number }, Minion: string, Count: number, RiseAt: number, Length: number },
-	Intro: { Subtitle: string, Lines: { string } },
+	Summon: {
+		Id: string,
+		At: { number },
+		Minion: string,
+		Count: number,
+		RiseAt: number,
+		Length: number,
+		-- arrows falling from the dark: red circles round each player, then the hit
+		Rain: { Count: number, Radius: number, Delay: number, DamageScale: number }?,
+	},
+	Intro: { Subtitle: string, Lines: { string }, Pose: string? }, -- Pose: the clip it plays as it speaks
+	-- Below At of its health it roars (Id) and fights faster: moves SpeedScale quicker, attacks every
+	-- CooldownScale as often, runs (Run) and lunges (Lunge, used in place of its Slam).
+	Rage: {
+		Id: string,
+		At: number,
+		Length: number,
+		SpeedScale: number,
+		CooldownScale: number,
+		Run: string?,
+		Lunge: { Id: string, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number }?,
+	}?,
 }
 
 export type EnemyDef = {
@@ -119,7 +139,69 @@ local GRAVEKEEPER_ANIMATIONS = {
 	-- (no Hit clip: a boss doesn't flinch at every blow)
 }
 
+local BONE_WARDEN_ANIMATIONS = {
+	Idle = "rbxassetid://121480404020873",
+	Walk = "rbxassetid://111168615059154",
+	Death = "rbxassetid://114386714081090",
+}
+
 local Enemies: { [string]: EnemyDef } = {
+	-- The boss of chapter I (floor 15): the last knight of Valdren, keeping the sealed gate to the king.
+	-- Phase 1: wide sword blows, a spinning shove when crowded, a leap onto the far ones.
+	-- Phase 2 (70% and 45%): raises his sword and calls archers up from the dead, while arrows rain down.
+	-- Phase 3 (under 30%): roars, then runs and lunges, twice as fast.
+	BoneWarden = {
+		DisplayName = "The Bone Warden",
+		Model = "BoneWarden",
+		Health = 6500,
+		Damage = 42,
+		WalkSpeed = 11,
+		AggroRange = 100,
+		AttackRange = 11,
+		AttackCooldown = 2.2,
+		Windup = 0.6,
+		XP = 1200,
+		Gold = { 600, 900 },
+		Drops = { { Item = "GraveShroud", Chance = 1, Count = { 3, 5 } }, { Item = "Bone", Chance = 1, Count = { 10, 15 } } },
+		RespawnTime = 5,
+		Animations = BONE_WARDEN_ANIMATIONS,
+		AnimationSpeeds = { Walk = 0.9 },
+		Sink = 1.6,
+		AttackClips = { { Id = "rbxassetid://80380547311498", HitAt = 0.6 } },
+		HeldProps = { { Prop = "WardenSword", Bone = "mixamorig:RightHand" } },
+		Boss = {
+			Title = "The Bone Warden",
+			Slam = { Id = "rbxassetid://123467229735275", HitAt = 1.2, Radius = 12, Range = 36, DamageScale = 1.7, Cooldown = 9 },
+			Kick = { Id = "rbxassetid://140137057401616", HitAt = 0.85, Range = 9, Push = 55, DamageScale = 0.9, Cooldown = 6 },
+			Summon = {
+				Id = "rbxassetid://109645801773793",
+				At = { 0.7, 0.45 },
+				Minion = "SkeletonArcher",
+				Count = 2,
+				RiseAt = 2,
+				Length = 4.6,
+				Rain = { Count = 3, Radius = 6, Delay = 1.4, DamageScale = 0.8 },
+			},
+			Intro = {
+				Subtitle = "Last Knight of Valdren",
+				Pose = "rbxassetid://116384144343895",
+				Lines = {
+					"So the Gravekeeper's shovel finally broke.",
+					"A thousand years ago I swore an oath to King Malachar: none shall pass this gate. Not the living. Not the dead.",
+					"Your Guild sends children to die at my feet, year after year. Come, child. Let us keep the tradition.",
+				},
+			},
+			Rage = {
+				Id = "rbxassetid://125215761877496",
+				At = 0.3,
+				Length = 3.2,
+				SpeedScale = 1.6,
+				CooldownScale = 0.55,
+				Run = "rbxassetid://132904689104673",
+				Lunge = { Id = "rbxassetid://132291220982206", HitAt = 0.9, Radius = 9, Range = 30, DamageScale = 1.4, Cooldown = 6 },
+			},
+		},
+	},
 	Gravekeeper = {
 		DisplayName = "The Gravekeeper",
 		Model = "Gravekeeper",

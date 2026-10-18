@@ -4,6 +4,7 @@
 -- Until the KayKit pieces arrive, everything here is plain parts; the game logic doesn't care.
 
 
+local Floors = require(game:GetService("ReplicatedStorage").Shared.Floors)
 local FloorLayout = require(script.Parent.FloorLayout)
 local Props = require(script.Parent.Props)
 local RoomDecor = require(script.Parent.RoomDecor)
@@ -455,7 +456,7 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 
 	local rooms: { [string]: BuiltRoom } = {}
 	for key, plan in layout.Rooms do
-		local theme = themeOf[key] or FIXED_THEMES[plan.Type] or "Plain"
+		local theme = themeOf[key] or (if plan.Type == "Boss" then Floors.BossThemes[layout.Floor] else nil) or FIXED_THEMES[plan.Type] or "Plain"
 		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], theme, rng)
 	end
 
