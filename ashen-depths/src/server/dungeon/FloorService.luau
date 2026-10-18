@@ -20,6 +20,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
+local QuestService = require(script.Parent.Parent.Common.QuestService)
 local EnemyService = require(script.Parent.EnemyService)
 local FloorBuilder = require(script.Parent.FloorBuilder)
 local FloorLayout = require(script.Parent.FloorLayout)
@@ -1233,6 +1234,7 @@ startFloor = function(floor: number)
 
 	for _, player in Players:GetPlayers() do
 		local data = DataService.GetData(player)
+		QuestService.OnReachFloor(player, floor)
 		if data and floor > data.DeepestFloor then
 			data.DeepestFloor = floor
 		end

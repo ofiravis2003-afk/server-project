@@ -18,6 +18,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
+local QuestService = require(script.Parent.Parent.Common.QuestService)
 local Items = require(ReplicatedStorage.Shared.Items)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local Props = require(script.Parent.Props)
@@ -754,6 +755,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 			ProgressService.AddXP(player, xp)
 			ProgressService.AddGold(player, gold)
 			local text = `+{xp} XP   +{gold} Gold`
+			QuestService.OnKill(player, enemy.Name)
 			-- Each player gets their own share of what it leaves behind.
 			for _, drop in enemy.Def.Drops or {} do
 				if enemy.Elite or math.random() < drop.Chance then

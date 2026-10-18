@@ -27,6 +27,9 @@ local EVENT_NAMES = {
 	"UpgradeResult", -- server -> client: how the upgrade went (success, the new level, or failed)
 	"DialogueOpen", -- server -> client: talk to this townsperson (their model)
 	"DialogueAction", -- client -> server: the townsperson's own button (e.g. Brakka's Trade)
+	"QuestsUpdated", -- server -> client: every quest's state and progress, rank points and rank
+	"QuestAction", -- client -> server: Accept / TurnIn / Abandon a quest (only at the Guild)
+	"QuestBoardOpen", -- server -> client: open the quest board window
 }
 
 local FUNCTION_NAMES = {}

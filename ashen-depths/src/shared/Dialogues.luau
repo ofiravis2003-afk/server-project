@@ -29,6 +29,7 @@ local Dialogues: { [string]: Dialogue } = {
 			"The ash rises a little more every year. We go down so that it never reaches us.",
 			"Why do so many go down? Because the Depths take so many. Don't trouble yourself with the Guild's reasons. Trouble yourself with coming back.",
 		},
+		Action = "Quests",
 	},
 	Brakka = {
 		Name = "Brakka",

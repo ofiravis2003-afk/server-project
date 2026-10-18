@@ -10,6 +10,7 @@ return {
 	Inventory = {}, -- [itemId] = { Item = "IronSword", Rarity = "Common", Upgrade = 0 }
 	Equipped = {}, -- [slot] = itemId, slots: Head, Chest, Hands, Legs, Weapon, Ring
 	GuildRank = "Copper",
+	RankPoints = 0, -- from finished Guild quests; decides GuildRank (shared/Quests Ranks)
 	DeepestFloor = 0,
 	Checkpoint = 0, -- last boss floor beaten; a new run can start right after it
 	Quests = {},

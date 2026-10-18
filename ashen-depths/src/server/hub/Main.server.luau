@@ -11,10 +11,12 @@ local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
 local ProgressService = require(Common.ProgressService)
+local QuestService = require(Common.QuestService)
 local ShopService = require(script.Parent.ShopService)
 
 InventoryService.Start()
 ProgressService.Start()
+QuestService.Start()
 ShopService.Start()
 
 -- Last: everything that reacts to a player's data loading has registered by now.

@@ -21,7 +21,9 @@ local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
 local ProgressService = require(Common.ProgressService)
+local QuestService = require(Common.QuestService)
 local RateLimiter = require(Common.RateLimiter)
+local Quests = require(ReplicatedStorage.Shared.Quests)
 local TownBuilder = require(script.Parent.TownBuilder)
 
 local SHOP_RANGE = 16
@@ -102,8 +104,87 @@ function ShopService.Start()
 		end
 		if key == "Brakka" and action == "Trade" then
 			openBrakka(player)
+		elseif key == "Aldric" and action == "Quests" then
+			QuestService.SetAtGuild(player, true)
+			QuestService.Push(player)
+			Remotes.Event("QuestBoardOpen"):FireClient(player, true)
 		end
 	end)
+
+	-- The quest board by the Guild Hall opens the same window; walking away from the Guild closes it.
+	local board = town.Model:FindFirstChild("QuestBoard", true)
+	local aldric = town.Model:FindFirstChild("Aldric", true)
+	local boardPart = board and board:FindFirstChildWhichIsA("BasePart", true)
+	if boardPart then
+		local read = prompt(boardPart, "Read", "Quest Board")
+		read.Triggered:Connect(function(player)
+			QuestService.SetAtGuild(player, true)
+			QuestService.Push(player)
+			Remotes.Event("QuestBoardOpen"):FireClient(player, true)
+		end)
+	end
+	RunService.Heartbeat:Connect(function()
+		for _, player in Players:GetPlayers() do
+			if player:GetAttribute("AtGuild") then
+				local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				local near = false
+				for _, spot in { board, aldric } do
+					if root and spot and spot:IsA("Model") and (root.Position - spot:GetPivot().Position).Magnitude <= SHOP_RANGE + 4 then
+						near = true
+					end
+				end
+				if not near then
+					QuestService.SetAtGuild(player, false)
+					Remotes.Event("QuestBoardOpen"):FireClient(player, false)
+				end
+			end
+		end
+	end)
+
+	-- each player's Guild rank over their head, in its color
+	local function rankTag(player: Player, character: Model)
+		local head = character:WaitForChild("Head", 10) :: BasePart?
+		if not head then
+			return
+		end
+		local tag = Instance.new("BillboardGui")
+		tag.Name = "RankTag"
+		tag.Size = UDim2.fromOffset(160, 22)
+		tag.StudsOffset = Vector3.new(0, 2.6, 0)
+		tag.MaxDistance = 60
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.fromScale(1, 1)
+		text.BackgroundTransparency = 1
+		text.Font = Enum.Font.Fondamento
+		text.TextSize = 18
+		text.TextStrokeTransparency = 0.3
+		text.Parent = tag
+		local function refresh()
+			local name = (player:GetAttribute("GuildRank") :: string?) or "Copper"
+			text.Text = `{name} Adventurer`
+			for _, r in Quests.Ranks do
+				if r.Name == name then
+					text.TextColor3 = r.Color
+				end
+			end
+		end
+		refresh()
+		player:GetAttributeChangedSignal("GuildRank"):Connect(refresh)
+		tag.Parent = head
+	end
+	Players.PlayerAdded:Connect(function(player)
+		player.CharacterAdded:Connect(function(character)
+			rankTag(player, character)
+		end)
+	end)
+	for _, player in Players:GetPlayers() do
+		if player.Character then
+			task.spawn(rankTag, player, player.Character)
+		end
+		player.CharacterAdded:Connect(function(character)
+			rankTag(player, character)
+		end)
+	end
 
 	Remotes.Event("ShopBuy").OnServerEvent:Connect(function(player, index: any)
 		local shop = openShop[player]
