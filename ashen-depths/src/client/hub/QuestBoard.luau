@@ -19,7 +19,7 @@ local GOOD = Color3.fromRGB(110, 220, 120)
 local ROW = Color3.fromRGB(36, 30, 30)
 
 type Entry = { Id: string, State: string, Progress: number }
-type Snapshot = { Quests: { Entry }, Points: number, Rank: string }
+type Snapshot = { Quests: { Entry }, Points: number }
 
 local QuestBoard = {}
 
@@ -50,7 +50,7 @@ end
 function QuestBoard.Start()
 	local player = Players.LocalPlayer
 	local action = Remotes.Event("QuestAction")
-	local snapshot: Snapshot = { Quests = {}, Points = 0, Rank = "Copper" }
+	local snapshot: Snapshot = { Quests = {}, Points = 0 }
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "QuestBoard"
@@ -140,15 +140,9 @@ function QuestBoard.Start()
 				child:Destroy()
 			end
 		end
-		local nextRank
-		for _, r in Quests.Ranks do
-			if r.Points > snapshot.Points then
-				nextRank = r
-				break
-			end
-		end
-		rank.Text = `Rank: <b>{snapshot.Rank}</b>   ·   {snapshot.Points} points`
-			.. (if nextRank then `   ·   {nextRank.Points - snapshot.Points} more for {nextRank.Name}` else "")
+		local standing = Quests.Standing(snapshot.Points)
+		rank.Text = `Rank: <font color="#{standing.Color:ToHex()}"><b>{standing.Label}</b></font>`
+			.. (if standing.Top then "   ·   the highest rank" else `   ·   {standing.Into} / {standing.Need} to the next tier`)
 		local order = { Active = 1, Open = 2, Done = 3 }
 		local shown = {}
 		for _, e in snapshot.Quests do
@@ -174,7 +168,7 @@ function QuestBoard.Start()
 			local name = label(row, Fonts.Title, 18, if e.State == "Done" then GOOD else GOLD)
 			name.Position = UDim2.fromOffset(12, 6)
 			name.Size = UDim2.new(1, -24, 0, 22)
-			name.Text = (if e.State == "Done" then "✓ " else "") .. quest.Title
+			name.Text = (if e.State == "Done" then "✓ " else "") .. quest.Title .. (if quest.Repeatable then "  (bounty)" else "")
 			local about = label(row, Fonts.Body, 13, Color3.fromRGB(190, 180, 165))
 			about.Position = UDim2.fromOffset(12, 28)
 			about.Size = UDim2.new(1, -24, 0, 32)
@@ -183,7 +177,7 @@ function QuestBoard.Start()
 			goal.Position = UDim2.fromOffset(12, 62)
 			goal.Size = UDim2.new(1, -250, 0, 28)
 			goal.Text = if e.State == "Open"
-				then `{goalText(quest)}   ·   {quest.Gold} gold, {quest.XP} XP`
+				then `{goalText(quest)}   ·   {quest.Gold} gold, {quest.XP} XP, {quest.Points} rank points`
 				else `{goalText(quest)}: {e.Progress} / {quest.Count}`
 			if e.State == "Open" then
 				button(row, "Accept", Color3.fromRGB(40, 70, 45), -10, function()

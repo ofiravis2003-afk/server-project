@@ -36,21 +36,29 @@ function QuestService.Push(player: Player)
 	for _, quest in Quests.List do
 		local saved = data.Quests[quest.Id]
 		local state = if saved then saved.State else nil
+		if state == "Done" and quest.Repeatable then
+			state = "Open" -- a bounty, ready to take again
+		end
 		if not state and quest.Needs and not (data.Quests[quest.Needs] and data.Quests[quest.Needs].State == "Done") then
 			state = "Locked"
 		end
 		table.insert(list, { Id = quest.Id, State = state or "Open", Progress = progressOf(player, data, quest) })
 	end
-	updatedRemote:FireClient(player, { Quests = list, Points = data.RankPoints or 0, Rank = data.GuildRank })
+	updatedRemote:FireClient(player, { Quests = list, Points = data.RankPoints or 0 })
 end
 
 local function setRank(player: Player, data: { [string]: any })
-	local rank = Quests.RankFor(data.RankPoints or 0)
-	if rank ~= data.GuildRank then
-		data.GuildRank = rank
-		notifyRemote:FireClient(player, `The Guild raises you to {rank} rank!`)
+	local standing = Quests.Standing(data.RankPoints or 0)
+	if standing.Label ~= data.GuildRank then
+		local wasRank = data.GuildRank and string.split(data.GuildRank, " ")[1]
+		data.GuildRank = standing.Label
+		if wasRank and wasRank ~= standing.Rank then
+			notifyRemote:FireClient(player, `The Guild raises you to {standing.Rank} rank! ({standing.Label})`)
+		else
+			notifyRemote:FireClient(player, `Guild rank up: {standing.Label}`)
+		end
 	end
-	player:SetAttribute("GuildRank", rank)
+	player:SetAttribute("GuildRank", standing.Label)
 end
 
 local function advance(player: Player, kind: string, target: string?, amount: number, absolute: boolean)
@@ -98,7 +106,7 @@ local function onAction(player: Player, action: any, id: any)
 	end
 	local saved = data.Quests[id]
 	if action == "Accept" then
-		if saved then
+		if saved and not (saved.State == "Done" and quest.Repeatable) then
 			return
 		end
 		if quest.Needs and not (data.Quests[quest.Needs] and data.Quests[quest.Needs].State == "Done") then
@@ -150,6 +158,7 @@ function QuestService.Start()
 		if type(data.Quests) ~= "table" then
 			data.Quests = {}
 		end
+		data.GuildRank = Quests.Standing(data.RankPoints or 0).Label -- quietly, no rank-up message on join
 		setRank(player, data)
 		QuestService.Push(player)
 	end)

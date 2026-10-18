@@ -160,13 +160,9 @@ function ShopService.Start()
 		text.TextStrokeTransparency = 0.3
 		text.Parent = tag
 		local function refresh()
-			local name = (player:GetAttribute("GuildRank") :: string?) or "Copper"
-			text.Text = `{name} Adventurer`
-			for _, r in Quests.Ranks do
-				if r.Name == name then
-					text.TextColor3 = r.Color
-				end
-			end
+			local label = (player:GetAttribute("GuildRank") :: string?) or "Copper I"
+			text.Text = label
+			text.TextColor3 = Quests.ColorOf(string.split(label, " ")[1])
 		end
 		refresh()
 		player:GetAttributeChangedSignal("GuildRank"):Connect(refresh)
