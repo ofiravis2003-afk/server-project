@@ -35,6 +35,7 @@ Quests.List = {
 	{ Id = "Gravekeeper", Title = "The Gravekeeper", Text = "Something digs graves on the fifth floor. End it.", Kind = "Kill", Target = "Gravekeeper", Count = 1, Gold = 500, XP = 400, Points = 150, Needs = "IntoTheDepths" },
 	{ Id = "SlimeSamples", Title = "Slime Samples", Text = "Seraphine wants slime for her experiments. Don't ask.", Kind = "Collect", Target = "SlimeGel", Count = 10, Gold = 180, XP = 140, Points = 40, Repeatable = true, Needs = "Gravekeeper" },
 	{ Id = "PastTheGuardians", Title = "Past the Guardians", Text = "Break through the Guardians' hall and reach the eleventh floor.", Kind = "Reach", Count = 11, Gold = 600, XP = 500, Points = 200, Needs = "Gravekeeper" },
+	{ Id = "BoneWarden", Title = "The Last Knight", Text = "The Bone Warden guards the sealed gate on the fifteenth floor. End his watch.", Kind = "Kill", Target = "BoneWarden", Count = 1, Gold = 1500, XP = 1200, Points = 400, Needs = "PastTheGuardians" },
 } :: { Quest }
 
 Quests.ById = {} :: { [string]: Quest }
