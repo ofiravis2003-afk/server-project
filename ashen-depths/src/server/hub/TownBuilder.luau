@@ -281,7 +281,7 @@ local function wallOfTheFallen(parent: Instance, frame: CFrame)
 	local glow = part(wall, "WallGlow", Vector3.new(1, 1, 1), frame * CFrame.new(0, 2, -3), WARM, Enum.Material.SmoothPlastic)
 	glow.Transparency = 1
 	glow.CanCollide = false
-	light(glow, WARM, 12, 0.8)
+	light(glow, WARM, 15, 1.3)
 	wall.Parent = parent
 	return wall
 end
@@ -519,7 +519,7 @@ function TownBuilder.Build(): Town
 		return CFrame.lookAt(at, Vector3.new(0, 0, 0))
 	end
 	prop("QuestBoard", model, CFrame.lookAt(Vector3.new(-44, 0, -50), Vector3.new(-44, 0, 0)))
-	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-56, 0, -48), Vector3.new(-56, 0, 0)))
+	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-53.5, 0, -50.5), Vector3.new(-53.5, 0, 0)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(36, 0, -51), Vector3.new(36, 0, 0)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(52, 0, -51), Vector3.new(52, 0, 0)))
 	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
