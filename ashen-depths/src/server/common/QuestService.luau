@@ -23,6 +23,12 @@ local actionLimiter = RateLimiter.new(0.3)
 local function progressOf(player: Player, data: { [string]: any }, quest: Quests.Quest): number
 	if quest.Kind == "Collect" then
 		return math.min(InventoryService.CountOf(player, quest.Target :: string), quest.Count)
+	elseif quest.Kind == "Lore" then
+		local found = 0
+		for _ in data.Pages or {} do
+			found += 1
+		end
+		return math.min(found, quest.Count)
 	end
 	local saved = data.Quests[quest.Id]
 	return if saved then math.min(saved.Progress or 0, quest.Count) else 0
@@ -89,6 +95,25 @@ end
 -- A player helped kill `enemyName`.
 function QuestService.OnKill(player: Player, enemyName: string)
 	advance(player, "Kill", enemyName, 1, false)
+end
+
+-- A player found a page of Ilvane's journal (already kept in data.Pages): any Lore quest it finishes says so.
+function QuestService.OnPage(player: Player)
+	local data = DataService.GetData(player)
+	if not data then
+		return
+	end
+	local found = 0
+	for _ in data.Pages do
+		found += 1
+	end
+	for _, quest in Quests.List do
+		local saved = data.Quests[quest.Id]
+		if saved and saved.State == "Active" and quest.Kind == "Lore" and found == quest.Count then -- just reached it
+			notifyRemote:FireClient(player, `Quest complete: {quest.Title}. Bring the news to Seraphine.`)
+		end
+	end
+	QuestService.Push(player)
 end
 
 -- A player arrived on floor `floor`.

@@ -1,11 +1,12 @@
 --!strict
--- The Guild's quest board (also a townsperson's own requests, like Old Pip's): the player's rank and rank points at the top, then every quest that isn't locked:
+-- The Guild's quest board (also a townsperson's own requests, like Old Pip's or Seraphine's): the player's rank and rank points at the top, then every quest that isn't locked:
 -- its title, what to do, progress (12 / 20), the reward, and Accept / Turn in / Abandon. Done quests show a
 -- tick. The server closes it when the player walks away from the Guild.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Dialogues = require(ReplicatedStorage.Shared.Dialogues)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Quests = require(ReplicatedStorage.Shared.Quests)
@@ -43,6 +44,9 @@ local function goalText(quest: Quests.Quest): string
 	elseif quest.Kind == "Collect" then
 		local def = Items.Defs[quest.Target :: string]
 		return `Bring {quest.Count} {def and def.DisplayName or quest.Target}`
+	end
+	elseif quest.Kind == "Lore" then
+		return if quest.Count == 1 then "Find a page of Ilvane's journal" else `Find {quest.Count} pages of Ilvane's journal`
 	end
 	return `Reach floor {quest.Count}`
 end
@@ -209,7 +213,8 @@ function QuestBoard.Start()
 			return
 		end
 		giver = if type(who) == "string" then who else "Aldric"
-		title.Text = if giver == "Aldric" then "Guild Quests" else "Old Pip's Request"
+		local person = Dialogues[giver]
+		title.Text = if giver == "Aldric" or not person then "Guild Quests" else `{person.Name}'s Requests`
 		local screen = workspace.CurrentCamera.ViewportSize
 		fit.Scale = math.min(1, (screen.Y - 90) / panel.Size.Y.Offset, (screen.X - 24) / panel.Size.X.Offset)
 		gui.Enabled = true

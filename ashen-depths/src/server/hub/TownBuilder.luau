@@ -7,7 +7,10 @@
 -- Returns the spots other services hang their prompts on.
 
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
+
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 
 local TownBuilder = {}
 
@@ -204,6 +207,85 @@ local function lampPost(parent: Instance, position: Vector3)
 end
 
 -- A fire bowl on a stone stand, its fire and warm light.
+-- The Wall of the Fallen beside the Guild Hall: a slab of dark stone carved with the names of adventurers
+-- who never came back up. Far too many for a town this size. The oldest row, worn almost smooth, says A. Vane.
+local FIRST = { "Ser", "Bram", "Edda", "Tomas", "Iska", "Rolf", "Mira", "Gault", "Wren", "Osric", "Lena", "Corin", "Hale", "Ysolde", "Dunn", "Petra", "Alis", "Fenn", "Garrick", "Nell", "Odo", "Rhea", "Sten", "Tilda", "Ulric", "Vera", "Jory", "Kael", "Mags", "Brin" }
+local LAST = { "Ashby", "Morrow", "Crane", "Holt", "Vey", "Thatch", "Pike", "Marsh", "Rook", "Fell", "Stone", "Harrow", "Quill", "Barrow", "Lark", "Dunmore", "Wick", "Gale", "Cobb", "Penn" }
+
+local function wallOfTheFallen(parent: Instance, frame: CFrame)
+	local wall = Instance.new("Model")
+	wall.Name = "WallOfTheFallen"
+	part(wall, "Base", Vector3.new(11, 1, 2.6), frame * CFrame.new(0, 0.5, 0), DARK_STONE, Enum.Material.Slate)
+	local slab = part(wall, "Slab", Vector3.new(10, 8, 1.4), frame * CFrame.new(0, 5, 0), Color3.fromRGB(58, 56, 58), Enum.Material.Slate)
+	part(wall, "Cornice", Vector3.new(10.8, 0.7, 2), frame * CFrame.new(0, 9.35, 0), DARK_STONE, Enum.Material.Slate)
+	for _, side in { -1, 1 } do
+		part(wall, "Pillar", Vector3.new(1, 8.5, 1.8), frame * CFrame.new(side * 5.3, 5.25, 0), DARK_STONE, Enum.Material.Slate)
+	end
+	-- the names, carved into the front
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 50
+	gui.LightInfluence = 1
+	gui.Parent = slab
+	local head = Instance.new("TextLabel")
+	head.BackgroundTransparency = 1
+	head.Position = UDim2.new(0, 0, 0, 14)
+	head.Size = UDim2.new(1, 0, 0, 40)
+	head.FontFace = Fonts.Title
+	head.TextSize = 34
+	head.TextColor3 = Color3.fromRGB(196, 186, 166)
+	head.Text = "THEY WENT BELOW"
+	head.Parent = gui
+	local rng = Random.new(1040)
+	local columns = 4
+	local rows = 13
+	for c = 0, columns - 1 do
+		local names = {}
+		for r = 1, rows do
+			table.insert(names, `{FIRST[rng:NextInteger(1, #FIRST)]} {LAST[rng:NextInteger(1, #LAST)]}`)
+		end
+		local column = Instance.new("TextLabel")
+		column.BackgroundTransparency = 1
+		column.Position = UDim2.new(c / columns, 6, 0, 66)
+		column.Size = UDim2.new(1 / columns, -12, 1, -120)
+		column.FontFace = Fonts.Body
+		column.TextSize = 17
+		column.LineHeight = 1.05
+		column.TextColor3 = Color3.fromRGB(176, 168, 152)
+		column.TextTransparency = 0.1 + 0.08 * c
+		column.TextYAlignment = Enum.TextYAlignment.Top
+		column.Text = table.concat(names, "\n")
+		column.Parent = gui
+	end
+	-- the oldest row, nearly worn away
+	local oldest = Instance.new("TextLabel")
+	oldest.BackgroundTransparency = 1
+	oldest.AnchorPoint = Vector2.new(0, 1)
+	oldest.Position = UDim2.new(0, 0, 1, -14)
+	oldest.Size = UDim2.new(1, 0, 0, 30)
+	oldest.FontFace = Fonts.Body
+	oldest.TextSize = 16
+	oldest.TextColor3 = Color3.fromRGB(150, 144, 132)
+	oldest.TextTransparency = 0.55
+	oldest.Text = "Odo Harrow   ·   Mira Fell   ·   A. Vane   ·   Bram Ashby   ·   Kael Rook"
+	oldest.Parent = gui
+	-- candles and a little light at its foot
+	for _, x in { -3.6, -2.9, 3.1 } do
+		local candle = part(wall, "Candle", Vector3.new(0.6, 0.3, 0.3), frame * CFrame.new(x, 1.3, -0.9) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(225, 212, 180), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+		local flame = Instance.new("Fire")
+		flame.Size = 0.7
+		flame.Heat = 2
+		flame.Parent = candle
+	end
+	local glow = part(wall, "WallGlow", Vector3.new(1, 1, 1), frame * CFrame.new(0, 2, -3), WARM, Enum.Material.SmoothPlastic)
+	glow.Transparency = 1
+	glow.CanCollide = false
+	light(glow, WARM, 12, 0.8)
+	wall.Parent = parent
+	return wall
+end
+
 local function brazier(parent: Instance, position: Vector3)
 	part(parent, "BrazierStand", Vector3.new(1.6, 3, 1.6), CFrame.new(position + Vector3.new(0, 1.5, 0)), DARK_STONE, Enum.Material.Slate)
 	local bowl = part(parent, "Brazier", Vector3.new(0.8, 3, 3), CFrame.new(position + Vector3.new(0, 3.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(40, 36, 32), Enum.Material.Metal, Enum.PartType.Cylinder)
@@ -437,6 +519,7 @@ function TownBuilder.Build(): Town
 		return CFrame.lookAt(at, Vector3.new(0, 0, 0))
 	end
 	prop("QuestBoard", model, CFrame.lookAt(Vector3.new(-44, 0, -50), Vector3.new(-44, 0, 0)))
+	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-56, 0, -48), Vector3.new(-56, 0, 0)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(36, 0, -51), Vector3.new(36, 0, 0)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(52, 0, -51), Vector3.new(52, 0, 0)))
 	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))

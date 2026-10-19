@@ -17,6 +17,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Floors = require(ReplicatedStorage.Shared.Floors)
 local Items = require(ReplicatedStorage.Shared.Items)
+local Lore = require(ReplicatedStorage.Shared.Lore)
 local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
@@ -89,6 +90,7 @@ local notifyRemote = Remotes.Event("Notify")
 local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
 local bossIntroRemote = Remotes.Event("BossIntro")
+local loreRemote = Remotes.Event("LoreShow")
 local BOSS_INTRO_SECONDS = 11
 
 local function keysOf(player: Player): Keys
@@ -688,6 +690,201 @@ local function placeFoxHelmet(parent: Instance, position: Vector3)
 	end)
 end
 
+------------------------------------------------------------------------------------------------
+-- Ilvane's journal: on its floor, a page lies on a lectern in the treasure room. Reading it keeps it
+-- (data.Pages) and shows it on screen; it can be read again any time.
+
+local function placeLorePage(parent: Instance, position: Vector3, page: Lore.Page)
+	local lectern = Instance.new("Model")
+	lectern.Name = "LorePage"
+	local wood = Color3.fromRGB(62, 42, 28)
+	local function piece(name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.Size = size
+		p.CFrame = cframe
+		p.Color = color
+		p.Material = material
+		p.Shape = shape or Enum.PartType.Block
+		p.Parent = lectern
+		return p
+	end
+	local base = CFrame.new(position)
+	piece("Foot", Vector3.new(2.2, 0.3, 1.6), base * CFrame.new(0, 0.15, 0), wood, Enum.Material.Wood)
+	piece("Post", Vector3.new(0.45, 3, 0.45), base * CFrame.new(0, 1.65, 0), wood, Enum.Material.Wood)
+	local top = base * CFrame.new(0, 3.25, 0) * CFrame.Angles(math.rad(-25), 0, 0)
+	local desk = piece("Desk", Vector3.new(2, 0.2, 1.5), top, wood, Enum.Material.Wood)
+	local sheet = piece("Page", Vector3.new(1.3, 0.05, 1.05), top * CFrame.new(0, 0.13, 0) * CFrame.Angles(0, math.rad(4), 0), Color3.fromRGB(222, 202, 160), Enum.Material.Fabric)
+	sheet.CanCollide = false
+	local candle = piece("Candle", Vector3.new(0.25, 0.5, 0.25), top * CFrame.new(0.8, 0.35, 0.45), Color3.fromRGB(225, 212, 180), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+	candle.Size = Vector3.new(0.5, 0.25, 0.25)
+	candle.CFrame = top * CFrame.new(0.8, 0.35, 0.45) * CFrame.Angles(0, 0, math.rad(90))
+	local flame = Instance.new("Fire")
+	flame.Size = 0.6
+	flame.Heat = 2
+	flame.Parent = candle
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(255, 200, 130)
+	glow.Range = 10
+	glow.Brightness = 1.2
+	glow.Parent = sheet
+	local dust = Instance.new("ParticleEmitter")
+	dust.Color = ColorSequence.new(Color3.fromRGB(255, 225, 170))
+	dust.LightEmission = 0.6
+	dust.Size = NumberSequence.new(0.08)
+	dust.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.3), NumberSequenceKeypoint.new(1, 1) })
+	dust.Lifetime = NumberRange.new(3, 5)
+	dust.Rate = 4
+	dust.Speed = NumberRange.new(0.2, 0.5)
+	dust.SpreadAngle = Vector2.new(180, 180)
+	dust.Parent = sheet
+	local _ = desk
+	lectern.Parent = parent
+
+	local read = prompt(sheet, "Read", "Torn Page", 0.3, 8)
+	read.Triggered:Connect(function(player)
+		local data = DataService.GetData(player)
+		if not data then
+			return
+		end
+		local first = not data.Pages[page.Id]
+		data.Pages[page.Id] = true
+		local found = 0
+		for _ in data.Pages do
+			found += 1
+		end
+		loreRemote:FireClient(player, page.Id, found)
+		if first then
+			ProgressService.AddXP(player, 40 + 5 * currentFloor)
+			notifyRemote:FireClient(player, `A page of Ilvane's journal ({found}/{#Lore.Pages}). Seraphine will want to hear of this.`)
+			QuestService.OnPage(player)
+		end
+	end)
+end
+
+------------------------------------------------------------------------------------------------
+-- The Wardstones: one in every floor's entrance, built by Ilvane to hold the ash back. Dark until a player
+-- relights it with the Guild Brand (data.WardLit = the deepest one each player has lit); once lit, its
+-- runes and crystal burn gold. The one on floor 1 is also where a run can start deeper (the floor picker).
+
+local WARD_DARK = Color3.fromRGB(46, 42, 40)
+local WARD_FIRE = Color3.fromRGB(255, 176, 84)
+
+local function setWardstoneLit(stone: Model, lit: boolean)
+	for _, d in stone:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("Rune") then
+			if lit then
+				d.Material = Enum.Material.Neon
+				TweenService:Create(d, TweenInfo.new(1.2), { Color = WARD_FIRE }):Play()
+			else
+				d.Material = Enum.Material.Slate
+				d.Color = WARD_DARK
+			end
+		elseif d:IsA("PointLight") or d:IsA("ParticleEmitter") then
+			d.Enabled = lit
+		end
+	end
+	stone:SetAttribute("Lit", lit)
+end
+
+local function buildWardstone(parent: Instance, position: Vector3): Model
+	local stone = Instance.new("Model")
+	stone.Name = "Wardstone"
+	local slate = Color3.fromRGB(62, 62, 66)
+	local function piece(name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, rune: boolean?): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.Size = size
+		p.CFrame = cframe
+		p.Color = color
+		p.Material = material
+		p.TopSurface = Enum.SurfaceType.Smooth
+		p.Parent = stone
+		if rune then
+			p.CanCollide = false
+			p:SetAttribute("Rune", true)
+		end
+		return p
+	end
+	local at = CFrame.new(position)
+	piece("Plinth", Vector3.new(4.2, 0.7, 4.2), at * CFrame.new(0, 0.35, 0), Color3.fromRGB(48, 48, 52), Enum.Material.Slate)
+	piece("Step", Vector3.new(3.4, 0.5, 3.4), at * CFrame.new(0, 0.95, 0), Color3.fromRGB(56, 56, 60), Enum.Material.Slate)
+	local body = piece("Pillar", Vector3.new(2.2, 6, 2.2), at * CFrame.new(0, 4.2, 0), slate, Enum.Material.Slate)
+	stone.PrimaryPart = body
+	piece("Cap", Vector3.new(2.7, 0.5, 2.7), at * CFrame.new(0, 7.45, 0), Color3.fromRGB(56, 56, 60), Enum.Material.Slate)
+	-- runes down each face: a long line and three diamonds
+	for i = 0, 3 do
+		local face = at * CFrame.Angles(0, math.rad(90 * i), 0) * CFrame.new(0, 0, -1.11)
+		piece("RuneLine", Vector3.new(0.12, 4.6, 0.04), face * CFrame.new(0, 4.2, 0), WARD_DARK, Enum.Material.Slate, true)
+		for k = -1, 1 do
+			piece("RuneMark", Vector3.new(0.5, 0.5, 0.05), face * CFrame.new(0, 4.2 + k * 1.5, 0) * CFrame.Angles(0, 0, math.rad(45)), WARD_DARK, Enum.Material.Slate, true)
+		end
+		piece("RuneBand", Vector3.new(2.2, 0.12, 0.05), face * CFrame.new(0, 6.9, 0), WARD_DARK, Enum.Material.Slate, true)
+	end
+	-- the crystal floating over the cap, turning slowly
+	local crystal = piece("Crystal", Vector3.new(0.9, 0.9, 0.9), at * CFrame.new(0, 8.8, 0) * CFrame.Angles(math.rad(45), 0, math.rad(45)), WARD_DARK, Enum.Material.Slate, true)
+	TweenService:Create(crystal, TweenInfo.new(8, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), { CFrame = crystal.CFrame * CFrame.Angles(0, math.rad(180), 0) }):Play()
+	local light = Instance.new("PointLight")
+	light.Color = WARD_FIRE
+	light.Range = 20
+	light.Brightness = 1.6
+	light.Parent = crystal
+	local embers = Instance.new("ParticleEmitter")
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 200, 120), Color3.fromRGB(255, 120, 40))
+	embers.LightEmission = 1
+	embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.18), NumberSequenceKeypoint.new(1, 0) })
+	embers.Lifetime = NumberRange.new(1.5, 2.5)
+	embers.Rate = 10
+	embers.Speed = NumberRange.new(0.5, 1.5)
+	embers.SpreadAngle = Vector2.new(180, 180)
+	embers.Acceleration = Vector3.new(0, 1, 0)
+	embers.Parent = crystal
+	stone.Parent = parent
+	setWardstoneLit(stone, false)
+	return stone
+end
+
+local wardstone: Model? = nil
+
+local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
+	local stone = buildWardstone(room.Model, room.Center + Vector3.new(0, 0, 9))
+	wardstone = stone
+	local lit = #Players:GetPlayers() > 0
+	for _, player in Players:GetPlayers() do
+		local data = DataService.GetData(player)
+		if not data or (data.WardLit or 0) < floor then
+			lit = false
+		end
+	end
+	if lit then
+		setWardstoneLit(stone, true)
+		return
+	end
+	local relight = prompt(stone.PrimaryPart :: BasePart, "Relight", "Wardstone", 1.2, 10)
+	relight.Triggered:Connect(function(player)
+		if stone:GetAttribute("Lit") then
+			return
+		end
+		relight.Enabled = false
+		setWardstoneLit(stone, true)
+		for _, other in Players:GetPlayers() do
+			local data = DataService.GetData(other)
+			if data and (data.WardLit or 0) < floor then
+				data.WardLit = floor
+				ProgressService.AddXP(other, 15 + 5 * floor)
+			end
+		end
+		notifyRemote:FireAllClients(`{player.DisplayName} relights the Wardstone. The ash recedes from floor {floor}.`)
+	end)
+	task.delay(6, function()
+		if currentFloor == floor and stone.Parent and not stone:GetAttribute("Lit") then
+			notifyRemote:FireAllClients("This floor's Wardstone has gone dark. Relight it with your Guild Brand.")
+		end
+	end)
+end
+
 local function placeKeyPedestal(parent: Instance, position: Vector3, tier: string)
 	local pedestal = FloorBuilder.KeyPedestal(parent, position, tier)
 	local takenBy: { [Player]: boolean } = {}
@@ -775,6 +972,32 @@ end
 
 local startFloor: (number) -> ()
 
+-- After the Bone Warden: the red glow through the sealed gate turns green, and green embers drift up from
+-- beneath it. The first sign of what lies past Chapter I.
+local function greenEmber(room: FloorBuilder.BuiltRoom)
+	local glow = room.Model:FindFirstChild("GateGlow", true) :: BasePart?
+	if not glow then
+		return
+	end
+	local light = glow:FindFirstChildOfClass("PointLight")
+	if light then
+		TweenService:Create(light, TweenInfo.new(4), { Color = Color3.fromRGB(90, 255, 140), Brightness = 2 }):Play()
+	end
+	local embers = Instance.new("ParticleEmitter")
+	embers.Name = "GreenEmbers"
+	embers.Color = ColorSequence.new(Color3.fromRGB(120, 255, 160), Color3.fromRGB(40, 160, 80))
+	embers.LightEmission = 1
+	embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+	embers.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
+	embers.Lifetime = NumberRange.new(3, 5)
+	embers.Rate = 14
+	embers.Speed = NumberRange.new(1, 2.5)
+	embers.SpreadAngle = Vector2.new(35, 35)
+	embers.Acceleration = Vector3.new(0, 1.5, 0)
+	embers.EmissionDirection = Enum.NormalId.Top
+	embers.Parent = glow
+end
+
 -- A boss falls: everyone who fought it gets a Gold Key, a Gold Chest appears where it stood,
 -- and the next floor becomes their checkpoint (a new run can start right there).
 bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
@@ -790,10 +1013,25 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 			end
 		end
 	end
-	notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
+	local farewell = (boss.Def.Boss :: any).Farewell :: { string }?
+	local said = 0
+	for i, line in farewell or {} do
+		said = i
+		task.delay((i - 1) * 3.5, function()
+			notifyRemote:FireAllClients(`{title}: "{line}"`)
+		end)
+	end
+	local after = said * 3.5
+	task.delay(after, function()
+		notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
+	end)
 	if currentFloor >= Floors.MaxFloor then
-		task.delay(4, function()
-			notifyRemote:FireAllClients("Chapter I complete: the Drowned Catacombs are yours. Beyond the sealed gate, the King waits... for now.")
+		task.delay(after + 3, function()
+			greenEmber(room.Built)
+			notifyRemote:FireAllClients("Beneath the sealed gate, the red glow dies... and a small green ember stirs.")
+		end)
+		task.delay(after + 8, function()
+			notifyRemote:FireAllClients("Chapter I complete: the Drowned Catacombs are yours. But the Depths go deeper still...")
 		end)
 	end
 	task.delay(2.5, function()
@@ -844,21 +1082,20 @@ end
 
 local checkpointStone: BasePart? = nil
 
--- The waystone in floor 1's entrance: it opens the floor picker (FloorPicker on the client), so a run can
+-- Floor 1's Wardstone also opens the floor picker (FloorPicker on the client) once it's lit, so a run can
 -- start on any floor already reached, to go back and grow stronger or to go straight down.
 local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
-	local stone = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, 9), "Gold")
-	stone.Name = "CheckpointStone"
-	local base = stone:FindFirstChild("Pedestal") :: BasePart
+	local stone = wardstone :: Model
+	local base = stone.PrimaryPart :: BasePart
 	checkpointStone = base
-	local p = prompt(base, "Choose floor", "Waystone", 0.5, 9)
+	local p = prompt(base, "Choose floor", "Wardstone", 0.5, 9)
 	p.Enabled = false
 	local function refresh()
 		local best = 1
 		for _, player in Players:GetPlayers() do
 			best = math.max(best, unlockedFloor(player))
 		end
-		p.Enabled = best > 1 and currentFloor == 1
+		p.Enabled = best > 1 and currentFloor == 1 and stone:GetAttribute("Lit") == true
 	end
 	refresh()
 	task.spawn(function()
@@ -879,7 +1116,7 @@ local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
 	end)
 end
 
--- A player picked a floor at the waystone: checked again here (reached it, standing at the stone, on floor 1).
+-- A player picked a floor at the Wardstone: checked again here (reached it, standing at the stone, on floor 1).
 local function onChooseFloor(player: Player, floor: any)
 	if type(floor) ~= "number" or floor ~= math.floor(floor) or floor < 1 or floor > unlockedFloor(player) then
 		return
@@ -1111,6 +1348,7 @@ startFloor = function(floor: number)
 		if plan.Type == "Entrance" then
 			entrance = room.Center
 			setupReturnRope(room)
+			setupWardstone(room, floor)
 			if floor == 1 then
 				setupCheckpointStone(room)
 			end
@@ -1161,6 +1399,10 @@ startFloor = function(floor: number)
 				end
 			end
 		elseif plan.Type == "Treasure" then
+			local page = Lore.ByFloor[floor]
+			if page then
+				placeLorePage(room.Model, room.Center + Vector3.new(0, 0, 7), page)
+			end
 			if stairsKey.Needed and stairsKey.Where == "Treasure" then
 				local pedestal = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, -7), "Silver")
 				pedestal.Name = "StairsKeyPedestal"
@@ -1312,8 +1554,21 @@ function FloorService.Start()
 	dungeonFolder.Name = "Dungeon"
 	dungeonFolder.Parent = workspace
 
+	local fell: { [Player]: boolean } = {}
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function(character)
+			local humanoid = character:WaitForChild("Humanoid", 5) :: Humanoid?
+			if humanoid then
+				humanoid.Died:Connect(function()
+					fell[player] = true
+				end)
+			end
+			if fell[player] then
+				fell[player] = nil
+				task.delay(1.5, function()
+					notifyRemote:FireClient(player, "Your Guild Brand burns... and drags you back to the Wardstone.")
+				end)
+			end
 			if Config.TestMode and Config.TestNoDamage then
 				local shield = Instance.new("ForceField")
 				shield.Visible = false
@@ -1339,6 +1594,7 @@ function FloorService.Start()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		keys[player] = nil
+		fell[player] = nil
 	end)
 	DataService.OnLoaded(function(player, _data)
 		pushRun(player)

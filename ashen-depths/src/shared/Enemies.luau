@@ -39,6 +39,7 @@
 --         health fraction in At, it calls Count of Minion up out of the ground (RiseAt seconds into the clip).
 --         Intro: the scene when the lair locks: the camera turns to the boss, it speaks its Lines, and its name
 --         comes up with Subtitle. It doesn't fight until the scene is over.
+--         Farewell: what it says as it falls, one line after another.
 
 export type HeldProp = { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }
 
@@ -57,6 +58,7 @@ export type BossDef = {
 		Rain: { Count: number, Radius: number, Delay: number, DamageScale: number }?,
 	},
 	Intro: { Subtitle: string, Lines: { string }, Pose: string? }, -- Pose: the clip it plays as it speaks
+	Farewell: { string }?,
 	-- Below At of its health it roars (Id) and fights faster: moves SpeedScale quicker, attacks every
 	-- CooldownScale as often, runs (Run) and lunges (Lunge, used in place of its Slam).
 	Rage: {
@@ -191,6 +193,11 @@ local Enemies: { [string]: EnemyDef } = {
 					"Your Guild sends children to die at my feet, year after year. Come, child. Let us keep the tradition.",
 				},
 			},
+			Farewell = {
+				"...There is a name. Carved over my heart. Read it to me.",
+				"Hadric. Ser Hadric. Yes... I remember now.",
+				"Beware, child. The King does not sleep. And beneath my gate... something else is waking.",
+			},
 			Rage = {
 				Id = "rbxassetid://125215761877496",
 				At = 0.3,
@@ -233,6 +240,10 @@ local Enemies: { [string]: EnemyDef } = {
 					"I buried the people of Valdren when the mountain fell. I have buried every fool since.",
 					"The King sleeps below. Nobody wakes him. Lie down, little hero... the earth is soft here.",
 				},
+			},
+			Farewell = {
+				"So cold... I kept them company so long.",
+				"Bury me with them, little hero. And mind the knight at the gate. He still remembers his oath.",
 			},
 		},
 	},

@@ -30,6 +30,7 @@ local EVENT_NAMES = {
 	"QuestsUpdated", -- server -> client: every quest's state and progress, rank points and rank
 	"QuestAction", -- client -> server: Accept / TurnIn / Abandon a quest (only at the Guild)
 	"QuestBoardOpen", -- server -> client: open the quest board window
+	"LoreShow", -- server -> client: show a page of Ilvane's journal (its id, and how many the player has found)
 }
 
 local FUNCTION_NAMES = {}

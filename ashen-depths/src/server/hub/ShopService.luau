@@ -104,7 +104,7 @@ function ShopService.Start()
 		end
 		if key == "Brakka" and action == "Trade" then
 			openBrakka(player)
-		elseif action == "Quests" and (key == "Aldric" or key == "OldPip") then
+		elseif action == "Quests" and (key == "Aldric" or key == "OldPip" or key == "Seraphine") then
 			QuestService.SetGiver(player, key)
 			QuestService.Push(player)
 			Remotes.Event("QuestBoardOpen"):FireClient(player, true, key)
@@ -123,6 +123,16 @@ function ShopService.Start()
 			Remotes.Event("QuestBoardOpen"):FireClient(player, true, "Aldric")
 		end)
 	end
+	-- the Wall of the Fallen beside it
+	local wall = town.Model:FindFirstChild("WallOfTheFallen", true)
+	local slab = wall and wall:FindFirstChild("Slab") :: BasePart?
+	if slab then
+		local read = prompt(slab, "Read", "Wall of the Fallen")
+		read.Triggered:Connect(function(player)
+			Remotes.Event("Notify"):FireClient(player, "The names of adventurers who never came back up. Hundreds of them. The oldest row is worn almost smooth: one of the names reads \"A. Vane\".")
+		end)
+	end
+
 	RunService.Heartbeat:Connect(function()
 		for _, player in Players:GetPlayers() do
 			local giver = player:GetAttribute("QuestGiver")

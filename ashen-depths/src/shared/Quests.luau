@@ -4,6 +4,7 @@
 --   Kill: slay Count of Target (an enemy name; a boss counts too)
 --   Collect: bring Count of Target (an item) to Aldric; they're taken when the quest is turned in
 --   Reach: get down to floor Count
+--   Lore: find Count of Ilvane's pages (shared/Lore); reading one keeps it, nothing is taken
 -- A player can carry MaxActive quests at once. Bounties (Repeatable) can be taken again and again.
 -- Ranks go up with rank points: five ranks of ten tiers each (Copper I .. Mythril X), each tier costing more
 -- than the last, so the top takes a long time (about 13,000 points in all).
@@ -12,7 +13,7 @@ export type Quest = {
 	Id: string,
 	Title: string,
 	Text: string,
-	Kind: "Kill" | "Collect" | "Reach",
+	Kind: "Kill" | "Collect" | "Reach" | "Lore",
 	Target: string?,
 	Count: number,
 	Gold: number,
@@ -39,6 +40,8 @@ Quests.List = {
 	{ Id = "PastTheGuardians", Title = "Past the Guardians", Text = "Break through the Guardians' hall and reach the eleventh floor.", Kind = "Reach", Count = 11, Gold = 600, XP = 500, Points = 200, Needs = "Gravekeeper" },
 	{ Id = "BoneWarden", Title = "The Last Knight", Text = "The Bone Warden guards the sealed gate on the fifteenth floor. End his watch.", Kind = "Kill", Target = "BoneWarden", Count = 1, Gold = 1500, XP = 1200, Points = 400, Needs = "PastTheGuardians" },
 	-- Side quests, from the townsfolk.
+	{ Id = "ATornPage", Title = "A Torn Page", Text = "Seraphine believes Ilvane's journal was scattered through the Depths. Find one page and bring her word of it.", Kind = "Lore", Count = 1, Gold = 120, XP = 150, Points = 20, Giver = "Seraphine", Thanks = "Seraphine reads it three times, lips moving. \"Her own hand. Oh, this is real. Find the rest. Please.\"" },
+	{ Id = "IlvanesJournal", Title = "Ilvane's Journal", Text = "Recover all eight pages of Ilvane's journal from the Drowned Catacombs.", Kind = "Lore", Count = 8, Gold = 800, XP = 1000, Points = 120, Giver = "Seraphine", Needs = "ATornPage", Thanks = "Seraphine goes very quiet at the last page. \"Something green, beneath the gate... I need to read more. Much more.\"" },
 	{ Id = "FoxHelmet", Title = "The Fox Helmet", Text = "Old Pip's son went down to the twelfth floor last spring and never came back. Find his helmet, the one with the fox.", Kind = "Collect", Target = "FoxHelmet", Count = 1, Gold = 350, XP = 600, Points = 60, Giver = "OldPip", Thanks = "Pip turns the helmet over in his hands for a long while. \"...Thank you. Your drinks are on the house. For good.\"" },
 } :: { Quest }
 

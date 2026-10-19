@@ -10,24 +10,25 @@ local Dialogues: { [string]: Dialogue } = {
 		Name = "Gate Guard",
 		Title = "Keeper of the Descent",
 		Lines = {
-			"Another one for the Well? Good. The Guild pays by the floor.",
+			"Another one for the Well? Show me your hand. Good, the Brand's still warm.",
 			"Down there the dead still guard their king's halls. Strike first, and don't stop to listen to them.",
 		},
 		More = {
-			"If it goes bad, climb the rope in any floor's entrance. No shame in coming back alive.",
-			"Past the fifth floor something digs graves for the living. Bring potions. Bring friends.",
+			"Every floor has a Wardstone by the stairs you come down. Light it. Every stone lit pushes the ash back a little further.",
+			"If you fall, the Brand drags you back to the last stone. It always does. I've just never asked what it charges.",
+			"Come back alive. Most of you don't, the first time.",
 		},
 	},
 	Aldric = {
 		Name = "Aldric Vane",
 		Title = "Master of the Adventurers' Guild",
 		Lines = {
-			"Welcome to Emberhold, adventurer. The Guild needs every blade it can get.",
-			"Bring back what you find below. Treasure, relics... anything that still burns.",
+			"Welcome to Emberhold. That mark on your hand is the Guild Brand. Wear it with pride.",
+			"Below us, the old Wardstones are going dark, and the ash is climbing through them. Go down and light them again. Bring back whatever you find.",
 		},
 		More = {
-			"The ash rises a little more every year. We go down so that it never reaches us.",
-			"Why do so many go down? Because the Depths take so many. Don't trouble yourself with the Guild's reasons. Trouble yourself with coming back.",
+			"The Brand is what lights the stones. And if you fall, it brings you home. No one else in the world can promise you that.",
+			"The wall behind me holds the names of those who didn't come home. Read it, if you want. Then go and make sure yours isn't added.",
 		},
 		Action = "Quests",
 	},
@@ -35,6 +36,10 @@ local Dialogues: { [string]: Dialogue } = {
 		Name = "Brakka",
 		Title = "Blacksmith",
 		Lines = { "Don't just stand there dripping on my floor. Buying, selling, or getting that blade sharpened?" },
+		More = {
+			"My family's been smiths since before the mountain fell. Valdren's best, they say. Not that it did anyone much good.",
+			"Bring me bones and scraps from below. Old Valdren steel remembers what it was. I just have to remind it.",
+		},
 		Action = "Trade",
 	},
 	Thorne = {
@@ -42,18 +47,20 @@ local Dialogues: { [string]: Dialogue } = {
 		Title = "Ironhide Armory",
 		Lines = { "Armor? Not today. My forge is still cold. Come back when the Armory opens its doors." },
 		More = {
-			"This eye? Left it on the thirty-third floor. Something down there breathes frost.",
-			"One day I'll go back for it. Or for whatever took it.",
+			"This eye? Left it a long way down. Something there breathes frost.",
+			"Forty years I've known Aldric. Forty years, and he hasn't aged a day. Good blood, he says.",
+			"...Forget I said that.",
 		},
 	},
 	Seraphine = {
 		Name = "Seraphine",
 		Title = "The Gilded Tome",
-		Lines = { "Oh! A new face! Have you been down yet? Did you see writing on the walls? Pages? Anything?" },
+		Lines = { "Oh! A new face! Have you been down yet? Did you see writing down there? Pages? Anything?" },
 		More = {
-			"Malachar's court wizard kept a spellbook. It was torn apart when the city fell.",
-			"Every page is a spell nobody has cast in a thousand years. If you find one, bring it to me. Please! My shop isn't open yet, but I'll make it worth your while.",
+			"Ilvane, the old king's wizard, built the Wardstones. She kept a journal, and it was torn apart when the city fell.",
+			"If anyone knew how to stop the ash for good, it was her. Find her pages and bring them to me. Please! I'll make it worth your while.",
 		},
+		Action = "Quests",
 	},
 	OldPip = {
 		Name = "Old Pip",
@@ -62,6 +69,7 @@ local Dialogues: { [string]: Dialogue } = {
 		More = {
 			"My boy went down last spring. Floor twelve, they say. Never came back up.",
 			"If you ever get that deep, keep an eye out for a dented helmet with a fox painted on it. That's all I ask.",
+			"Funny thing. Aldric's been coming in here thirty years and I've never once seen him eat. Not a crumb.",
 		},
 		Action = "Quests",
 	},

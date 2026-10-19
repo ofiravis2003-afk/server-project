@@ -14,6 +14,8 @@ return {
 	DeepestFloor = 0,
 	Checkpoint = 0, -- last boss floor beaten; a new run can start right after it
 	Quests = {},
+	Pages = {}, -- [pageId] = true: the pages of Ilvane's journal this player has found (shared/Lore)
+	WardLit = 0, -- the deepest floor whose Wardstone this player has relit
 	Receipts = {}, -- ids of the last Robux purchases already given, so none is ever given twice
 	JoinCount = 0,
 	FirstJoinTime = 0,
