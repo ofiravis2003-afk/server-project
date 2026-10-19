@@ -33,7 +33,7 @@ local function applyHealth(player: Player)
 	if not data or not humanoid then
 		return
 	end
-	humanoid.MaxHealth = Leveling.MaxHealth(data.Level)
+	humanoid.MaxHealth = Leveling.MaxHealth(data.Level) + ((player:GetAttribute("BonusHealth") :: number?) or 0) -- armor (ArmorService)
 	humanoid.Health = humanoid.MaxHealth
 end
 

@@ -13,6 +13,7 @@ local Items = require(ReplicatedStorage.Shared.Items)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local WeaponBuilder = require(ReplicatedStorage.Shared.WeaponBuilder)
 local DataService = require(script.Parent.DataService)
+local ArmorService = require(script.Parent.ArmorService)
 local ProgressService = require(script.Parent.ProgressService)
 local RateLimiter = require(script.Parent.RateLimiter)
 
@@ -410,6 +411,14 @@ local function onAction(player: Player, action: any, itemId: any)
 		if def.Slot == "Weapon" and data.Equipped.Weapon ~= itemId then
 			data.Equipped.Weapon = itemId
 			InventoryService.RefreshTools(player)
+		elseif def.Set and data.Equipped[def.Slot] ~= itemId then
+			data.Equipped[def.Slot] = itemId
+			ArmorService.Refresh(player)
+		end
+	elseif action == "Unequip" then
+		if def.Set and data.Equipped[def.Slot] == itemId then
+			data.Equipped[def.Slot] = nil
+			ArmorService.Refresh(player)
 		end
 	elseif action == "Sell" or action == "Drop" then
 		if data.Equipped[def.Slot] == itemId or def.Keepsake then

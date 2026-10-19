@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local ArmorService = require(script.Parent.Parent.Common.ArmorService)
 
 local ACTIVE_RANGE = 70
 local IRON = Color3.fromRGB(40, 38, 38)
@@ -63,8 +64,7 @@ local function anyoneNear(position: Vector3): boolean
 end
 
 local function hurt(target: { Humanoid: Humanoid, Root: BasePart }, damage: number)
-	local amount = math.floor(damage + 0.5)
-	target.Humanoid:TakeDamage(amount)
+	local amount = ArmorService.Hurt(target.Humanoid, damage)
 	damageNumberRemote:FireAllClients(target.Root.Position + Vector3.new(0, 2.5, 0), amount, "Hurt")
 end
 

@@ -17,6 +17,7 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local ArmorService = require(script.Parent.Parent.Common.ArmorService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local QuestService = require(script.Parent.Parent.Common.QuestService)
 local Items = require(ReplicatedStorage.Shared.Items)
@@ -1096,8 +1097,7 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 		local flat = Vector3.new(offset.X, 0, offset.Z)
 		local inFront = flat.Magnitude < 1 or enemy.Root.CFrame.LookVector:Dot(flat.Unit) > 0.2
 		if targetHumanoid.Health > 0 and flat.Magnitude <= enemy.Def.AttackRange + 1.5 and inFront then
-			local damage = math.floor(enemy.Damage + 0.5)
-			targetHumanoid:TakeDamage(damage)
+			local damage = ArmorService.Hurt(targetHumanoid, enemy.Damage)
 			damageNumberRemote:FireAllClients(targetRoot.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
 		end
 	end
@@ -1128,15 +1128,15 @@ local function shoot(enemy: Enemy, targetRoot: BasePart)
 		local aim = targetRoot.Position
 		local travel = (aim - from).Magnitude / ranged.ProjectileSpeed
 		effectRemote:FireAllClients("Arrow", from, aim, travel)
-		local damage = math.floor(enemy.Damage + 0.5)
+		local damage = enemy.Damage
 		task.delay(travel, function()
 			for _, player in Players:GetPlayers() do
 				local character = player.Character
 				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 				local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 				if root and humanoid and humanoid.Health > 0 and (root.Position - aim).Magnitude <= ranged.HitRadius then
-					humanoid:TakeDamage(damage)
-					damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
+					local dealt = ArmorService.Hurt(humanoid, damage)
+					damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), dealt, "Hurt")
 				end
 			end
 		end)
@@ -1165,8 +1165,7 @@ local function playersNear(center: Vector3, radius: number): { { Player: Player,
 end
 
 local function hurt(humanoid: Humanoid, root: BasePart, amount: number)
-	local damage = math.floor(amount + 0.5)
-	humanoid:TakeDamage(damage)
+	local damage = ArmorService.Hurt(humanoid, amount)
 	damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
 end
 

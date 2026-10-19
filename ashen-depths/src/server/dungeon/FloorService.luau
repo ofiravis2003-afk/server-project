@@ -598,7 +598,10 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 		end
 	end
 	if rng:NextNumber() < loot.WeaponChance then
-		local itemName = Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
+		-- half the time a weapon, half the time a piece of armor
+		local itemName = if rng:NextNumber() < 0.5
+			then Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
+			else Items.ArmorPieces[rng:NextInteger(1, #Items.ArmorPieces)]
 		local rarity = rollRarity(rng, loot.Rarities)
 		InventoryService.GiveItem(player, itemName, rarity)
 		text ..= `   {rarity} {Items.NameFor(itemName, rarity)}!`

@@ -8,12 +8,14 @@ require(ReplicatedStorage.Shared.Remotes)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local Common = script.Parent.Parent.Common
+local ArmorService = require(Common.ArmorService)
 local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
 local ShopService = require(script.Parent.ShopService)
 
+ArmorService.Start()
 InventoryService.Start()
 ProgressService.Start()
 QuestService.Start()

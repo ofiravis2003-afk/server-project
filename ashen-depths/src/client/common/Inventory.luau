@@ -9,6 +9,7 @@ local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Armor = require(ReplicatedStorage.Shared.Armor)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Items = require(ReplicatedStorage.Shared.Items)
@@ -209,14 +210,26 @@ function Inventory.Start()
 	empty.TextXAlignment = Enum.TextXAlignment.Center
 	empty.Text = "Choose an item"
 
+	local function isWorn(id: string?): boolean
+		if not id then
+			return false
+		end
+		for _, wornId in snapshot.Equipped do
+			if wornId == id then
+				return true
+			end
+		end
+		return false
+	end
+
 	local function sortedIds(): { string }
 		local ids = {}
 		for id in snapshot.Items do
 			table.insert(ids, id)
 		end
 		table.sort(ids, function(a, b)
-			local equippedA = snapshot.Equipped.Weapon == a
-			local equippedB = snapshot.Equipped.Weapon == b
+			local equippedA = isWorn(a)
+			local equippedB = isWorn(b)
 			if equippedA ~= equippedB then
 				return equippedA
 			end
@@ -270,7 +283,12 @@ function Inventory.Start()
 		name.Text = Items.NameFor(saved.Item, saved.Rarity) .. (if upgrade > 0 then ` +{upgrade}` else "")
 		name.TextColor3 = info.Color
 		local gear = Items.IsGear(saved.Item)
-		kind.Text = if def and def.WeaponType then `{saved.Rarity} {def.WeaponType}` elseif def then def.Slot else saved.Rarity
+		local set = def and def.Set and Armor.SetByName[def.Set]
+		kind.Text = if def and def.WeaponType then `{saved.Rarity} {def.WeaponType}`
+			elseif set then `{saved.Rarity} {set.Kind} · {def.Slot}`
+			elseif def and def.Set == "Ring" then `{saved.Rarity} Ring`
+			elseif def then def.Slot
+			else saved.Rarity
 		kind.TextColor3 = if gear then info.Color else Color3.fromRGB(190, 180, 165)
 		if not gear then
 			name.TextColor3 = TEXT
@@ -284,6 +302,38 @@ function Inventory.Start()
 				sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(80, 55, 25)
 			else
 				sell.Text = if confirmSell then "Sure? Drop them all" else "Drop all"
+				sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(70, 40, 40)
+			end
+			return
+		end
+
+		if def and def.Set then
+			local wornId = snapshot.Equipped[def.Slot]
+			local current = wornId and wornId ~= selected and snapshot.Items[wornId] or nil
+			local mine = Armor.StatsOf(saved.Item, saved.Rarity, upgrade)
+			local theirs = current and Armor.StatsOf(current.Item, current.Rarity, current.Upgrade or 0)
+			local lines = { `Defense {compare(mine.Defense, theirs and theirs.Defense)}` }
+			if mine.Health > 0 or (theirs and theirs.Health > 0) then
+				table.insert(lines, `Health +{compare(mine.Health, theirs and theirs.Health)}`)
+			end
+			if mine.Speed ~= 0 then
+				table.insert(lines, `Speed {if mine.Speed > 0 then "+" else ""}{math.floor(mine.Speed * 100 + 0.5)}%`)
+			end
+			if mine.SpellPower > 0 then
+				table.insert(lines, `Spell power +{compare(mine.SpellPower * 100, theirs and theirs.SpellPower * 100)}%`)
+			end
+			stats.Text = table.concat(lines, "\n")
+			local worn = wornId == selected
+			equip.Text = if worn then "Take off" else "Wear"
+			equip.AutoButtonColor = true
+			equip.BackgroundColor3 = if worn then Color3.fromRGB(70, 55, 40) else Color3.fromRGB(40, 70, 45)
+			local armorPrice = Items.SellPrice(saved.Item, saved.Rarity, upgrade)
+			sell.Visible = not worn
+			if player:GetAttribute("AtShop") then
+				sell.Text = if confirmSell then `Sure? Sell for {armorPrice}` else `Sell ({armorPrice} gold)`
+				sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(80, 55, 25)
+			else
+				sell.Text = if confirmSell then "Sure? Drop it for good" else "Drop"
 				sell.BackgroundColor3 = if confirmSell then Color3.fromRGB(130, 40, 30) else Color3.fromRGB(70, 40, 40)
 			end
 			return
@@ -350,7 +400,7 @@ function Inventory.Start()
 				count.ZIndex = 2
 				count.Text = `x{saved.Count}`
 			end
-			if snapshot.Equipped.Weapon == id then
+			if isWorn(id) then
 				local badge = label(cell, Fonts.Title, 14, GOLD)
 				badge.Position = UDim2.fromOffset(4, 2)
 				badge.Size = UDim2.fromOffset(20, 16)
@@ -396,7 +446,11 @@ function Inventory.Start()
 		setOpen(false)
 	end)
 	equip.Activated:Connect(function()
-		if selected and snapshot.Equipped.Weapon ~= selected then
+		local saved = selected and snapshot.Items[selected]
+		local def = saved and Items.Defs[saved.Item]
+		if selected and def and def.Set then
+			actionRemote:FireServer(if snapshot.Equipped[def.Slot] == selected then "Unequip" else "Equip", selected)
+		elseif selected and snapshot.Equipped.Weapon ~= selected then
 			actionRemote:FireServer("Equip", selected)
 		end
 	end)

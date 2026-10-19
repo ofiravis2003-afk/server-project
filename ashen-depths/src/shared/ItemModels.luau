@@ -5,6 +5,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Armor = require(script.Parent.Armor)
 local WeaponBuilder = require(script.Parent.WeaponBuilder)
 local Items = require(script.Parent.Items)
 
@@ -100,6 +101,37 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 			end
 		end
 		tool:Destroy()
+		return model
+	end
+	-- armor: its Tripo piece (ReplicatedStorage.ArmorModels) or a plain shape in the set's colour; rings: a band and a stone
+	local piece = Armor.Pieces[itemName]
+	if piece then
+		local models = ReplicatedStorage:FindFirstChild("ArmorModels")
+		local source = models and piece.Look and models:FindFirstChild(piece.Look)
+		if source and source:IsA("Model") then
+			local copy = source:Clone()
+			copy:PivotTo(CFrame.new())
+			return copy
+		end
+		local set = Armor.SetByName[piece.Set]
+		local color = if set then set.Color else Color3.fromRGB(214, 170, 64)
+		local material = if piece.Set == "Heavy" or piece.Set == "Medium" then Enum.Material.Metal elseif piece.Set == "Light" then Enum.Material.Leather else Enum.Material.Fabric
+		if piece.Slot == "Ring" then
+			local band = part(model, Vector3.new(0.3, 1.4, 1.4), CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(214, 170, 64), Enum.Material.Metal, Enum.PartType.Cylinder)
+			band.Size = Vector3.new(0.3, 1.4, 1.4)
+			part(model, Vector3.new(0.32, 1, 1), CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(30, 26, 22), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+			part(model, Vector3.new(0.45, 0.45, 0.45), CFrame.new(0, 0.75, 0), if piece.Name == "EmberBand" then Color3.fromRGB(255, 120, 40) else Color3.fromRGB(150, 30, 40), Enum.Material.Neon, Enum.PartType.Ball)
+		elseif piece.Slot == "Head" then
+			part(model, Vector3.new(1.4, 1.35, 1.4), CFrame.new(), color, material)
+		elseif piece.Slot == "Chest" then
+			part(model, Vector3.new(2.2, 1.8, 1.2), CFrame.new(), color, material)
+			for _, side in { -1, 1 } do
+				part(model, Vector3.new(0.9, 0.5, 1.15), CFrame.new(side * 1.3, 0.75, 0), color, material)
+			end
+		else
+			part(model, Vector3.new(0.75, 1.5, 0.75), CFrame.new(0, 0.3, 0), color, material)
+			part(model, Vector3.new(0.8, 0.45, 1.1), CFrame.new(0, -0.55, if piece.Slot == "Legs" then -0.2 else 0), color, material)
+		end
 		return model
 	end
 	local folder = ReplicatedStorage:FindFirstChild("ItemModels")

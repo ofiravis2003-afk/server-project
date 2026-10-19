@@ -15,6 +15,7 @@ export type ItemDef = {
 	HealFraction: number?, -- potions: part of max health given back
 	Description: string?,
 	Keepsake: boolean?, -- a quest item: can't be sold or dropped
+	Set: string?, -- armor: Heavy, Medium, Light, Robes or Ring (shared/Armor has its numbers)
 	WeaponType: string?,
 	Damage: number?,
 	Heal: number?, -- tome only: health given back per cast
@@ -72,6 +73,16 @@ Items.Defs = {
 	-- Potions: drunk from the hotbar (slot 2).
 	HealthPotion = { DisplayName = "Health Potion", Slot = "Potion", Stack = 5, Limit = 5, Price = 8, HealFraction = 0.4, Description = "Gives back 40% of your health." },
 } :: { [string]: ItemDef }
+
+-- Armor pieces and rings (shared/Armor): worn in their slot, one per bag place.
+local Armor = require(script.Parent.Armor)
+for _, piece in Armor.List do
+	Items.Defs[piece.Name] = { DisplayName = piece.DisplayName, Slot = piece.Slot :: any, Set = piece.Set }
+end
+Items.ArmorPieces = {} :: { string }
+for _, piece in Armor.List do
+	table.insert(Items.ArmorPieces, piece.Name)
+end
 
 -- One starter weapon of each type, in hotbar order.
 Items.StarterWeapons = { "RustySword", "WoodcutterAxe", "ApprenticeStaff", "AcolyteTome" }

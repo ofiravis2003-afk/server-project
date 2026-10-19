@@ -89,6 +89,10 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 	lastAttack[player] = now
 
 	local damage = Items.WeaponDamage(item.Item, item.Rarity, item.Upgrade) * Leveling.DamageMultiplier(data.Level)
+	local spell = Items.Defs[item.Item]
+	if spell and (spell.WeaponType == "Staff" or spell.WeaponType == "Tome") then
+		damage *= 1 + ((player:GetAttribute("SpellPower") :: number?) or 0) -- robes and rings (ArmorService)
+	end
 	if weapon.Combo then
 		local count = if last and now - last < weapon.Cooldown * 2.5 then (comboCount[player] or 0) + 1 else 1
 		comboCount[player] = count
@@ -191,7 +195,7 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 			end
 		end
 		if patient and patientRoot then
-			local amount = Items.WeaponHeal(item.Item, item.Rarity, item.Upgrade) * Leveling.DamageMultiplier(data.Level)
+			local amount = Items.WeaponHeal(item.Item, item.Rarity, item.Upgrade) * Leveling.DamageMultiplier(data.Level) * (1 + ((player:GetAttribute("SpellPower") :: number?) or 0))
 			if patient == humanoid then
 				amount *= weapon.SelfHeal or 1
 			end
