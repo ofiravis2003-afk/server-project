@@ -1,14 +1,15 @@
 --!strict
 -- Armor on the body, in both places.
---   * Every character gets the same body (standard R15 size and shape), keeping the player's face, skin,
---     clothes and accessories, so armor sits the same on everyone.
+--   * Every character gets the same body (Roblox's free "Man" body, at standard size), keeping the player's
+--     face, skin, clothes and accessories, so armor sits the same on everyone. A human shape, not the blocky
+--     one: real armor looks wrong on boxes.
 --   * What's worn (data.Equipped Head / Chest / Hands / Legs / Ring) is dressed on the character: the Tripo
 --     piece from ReplicatedStorage.ArmorModels when there is one, a plain stand-in otherwise. Hair and hats
 --     hide under a helmet, jackets under a chest piece, shoes and trousers under boots.
 --   * Its numbers (shared/Armor) go on the player: Defense (attribute, used by ArmorService.Hurt), max
 --     health (attribute BonusHealth, read by ProgressService), walk speed, and SpellPower (attribute, read
 --     by CombatService for staves and tomes).
--- A Tripo model in ArmorModels is prepared at the size of the standard body, with its WorldPivot where it
+-- A Tripo model in ArmorModels is prepared at the size of that body, with its WorldPivot where it
 -- mounts: Head on the head's centre, Chest on the upper torso's, Hands on the right lower arm's, Legs on the
 -- right lower leg's, all facing -Z. The left glove and boot are the right ones turned round.
 
@@ -23,6 +24,8 @@ local DataService = require(script.Parent.DataService)
 local ArmorService = {}
 
 local BASE_SPEED = 16
+-- the "Man" body (catalog bundle 238): torso, arms and legs; the head stays the player's own size
+local BODY = { Torso = 86500008, RightArm = 86500036, LeftArm = 86500054, LeftLeg = 86500064, RightLeg = 86500078 }
 local ARMOR_SLOTS = { "Head", "Chest", "Hands", "Legs", "Ring" }
 
 -- Accessories that would poke through each piece.
@@ -74,18 +77,18 @@ local function normalizeBody(player: Player, character: Model)
 	if not ok or not description then
 		return
 	end
-	local same = description.Head == 0 and description.Torso == 0 and description.LeftArm == 0 and description.RightArm == 0
-		and description.LeftLeg == 0 and description.RightLeg == 0 and description.HeightScale == 1 and description.WidthScale == 1
+	local same = description.Head == 0 and description.Torso == BODY.Torso and description.LeftArm == BODY.LeftArm and description.RightArm == BODY.RightArm
+		and description.LeftLeg == BODY.LeftLeg and description.RightLeg == BODY.RightLeg and description.HeightScale == 1 and description.WidthScale == 1
 		and description.DepthScale == 1 and description.HeadScale == 1 and description.BodyTypeScale == 0 and description.ProportionScale == 0
 	if same then
 		return
 	end
 	description.Head = 0
-	description.Torso = 0
-	description.LeftArm = 0
-	description.RightArm = 0
-	description.LeftLeg = 0
-	description.RightLeg = 0
+	description.Torso = BODY.Torso
+	description.LeftArm = BODY.LeftArm
+	description.RightArm = BODY.RightArm
+	description.LeftLeg = BODY.LeftLeg
+	description.RightLeg = BODY.RightLeg
 	description.HeightScale = 1
 	description.WidthScale = 1
 	description.DepthScale = 1
