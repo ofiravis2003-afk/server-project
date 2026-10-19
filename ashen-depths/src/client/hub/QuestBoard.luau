@@ -44,7 +44,6 @@ local function goalText(quest: Quests.Quest): string
 	elseif quest.Kind == "Collect" then
 		local def = Items.Defs[quest.Target :: string]
 		return `Bring {quest.Count} {def and def.DisplayName or quest.Target}`
-	end
 	elseif quest.Kind == "Lore" then
 		return if quest.Count == 1 then "Find a page of Ilvane's journal" else `Find {quest.Count} pages of Ilvane's journal`
 	end
