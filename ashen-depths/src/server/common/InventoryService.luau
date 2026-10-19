@@ -455,6 +455,28 @@ function InventoryService.Start()
 	game:GetService("Players").PlayerRemoving:Connect(function(player)
 		nextPotion[player] = nil
 	end)
+	-- Studio only: ServerStorage.DevGive:Invoke(player, itemName, rarity, wear) gives an item (and wears it),
+	-- for trying things out from the command bar. Never in a live server.
+	if game:GetService("RunService"):IsStudio() then
+		local give = Instance.new("BindableFunction")
+		give.Name = "DevGive"
+		give.OnInvoke = function(player: Player, itemName: string, rarity: string?, wear: boolean?)
+			local data = DataService.GetData(player)
+			local def = Items.Defs[itemName]
+			if not data or not def then
+				return false
+			end
+			local id = InventoryService.AddItem(data, itemName, rarity or "Common")
+			if wear then
+				data.Equipped[def.Slot] = id
+			end
+			ArmorService.Refresh(player)
+			InventoryService.RefreshTools(player)
+			InventoryService.PushInventory(player)
+			return id
+		end
+		give.Parent = game:GetService("ServerStorage")
+	end
 end
 
 return InventoryService
