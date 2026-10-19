@@ -798,7 +798,7 @@ themes.ThroneRoom = function(ctx)
 			againstWall(ctx, "KnightStatue", frame, side * S / 5, 0.8)
 			ghost((againstWall(ctx, "BrokenPillarRoyal", frame, side * S / 2.6, 1.5, rng:NextNumber(0, math.pi * 2))))
 		end
-		royalBanner(ctx, frame, 0, 3, 1.2)
+		royalBanner(ctx, frame, 0, 3.4, 0) -- the model has empty space above and below the cloth
 	end
 	-- royal braziers round the fighting ring
 	for i = 0, 3 do
