@@ -194,6 +194,8 @@ local function royalBanner(ctx: Context, frame: CFrame, along: number, scale: nu
 	if prop then
 		local _, size = prop:GetBoundingBox()
 		width, top = size.X, height + size.Y
+		-- deep at this size: brought out so its rod isn't buried in the wall
+		prop:PivotTo(prop:GetPivot() + base.LookVector * math.max(size.Z / 2 - 1.2, 0))
 		for _, d in prop:GetDescendants() do
 			if d:IsA("BasePart") then
 				d.CanCollide = false
