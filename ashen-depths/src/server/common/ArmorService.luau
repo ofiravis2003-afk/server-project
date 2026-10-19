@@ -234,6 +234,63 @@ local function setHidden(character: Model, slot: string, hidden: boolean)
 	end
 end
 
+-- Under the armor: the body parts a piece covers turn into a padded undergarment in its set's colour, and
+-- the player's 2D shirt or trousers come off while a chest or leg piece is on. So no skin shows in the gaps
+-- between rigid pieces (shoulders, elbows, thighs). Taken off again, everything is as it was.
+local UNDER: { [string]: { Color: Color3, Material: Enum.Material } } = {
+	Heavy = { Color = Color3.fromRGB(52, 52, 58), Material = Enum.Material.Fabric },
+	Medium = { Color = Color3.fromRGB(64, 58, 50), Material = Enum.Material.Fabric },
+	Light = { Color = Color3.fromRGB(50, 38, 28), Material = Enum.Material.Leather },
+	Robes = { Color = Color3.fromRGB(66, 22, 28), Material = Enum.Material.Fabric },
+}
+local COVERS: { [string]: { string } } = {
+	Chest = { "UpperTorso", "LowerTorso", "RightUpperArm", "LeftUpperArm" },
+	Hands = { "RightLowerArm", "LeftLowerArm", "RightHand", "LeftHand" },
+	Legs = { "RightUpperLeg", "LeftUpperLeg", "RightLowerLeg", "LeftLowerLeg", "RightFoot", "LeftFoot" },
+}
+
+local function underlayer(character: Model, slot: string, setName: string?)
+	local under = setName and UNDER[setName]
+	for _, name in COVERS[slot] or {} do
+		local part = character:FindFirstChild(name)
+		if part and part:IsA("BasePart") then
+			if under then
+				if part:GetAttribute("BareColor") == nil then
+					part:SetAttribute("BareColor", part.Color)
+					part:SetAttribute("BareMaterial", part.Material.Name)
+				end
+				part.Color = under.Color
+				part.Material = under.Material
+			elseif part:GetAttribute("BareColor") ~= nil then
+				part.Color = part:GetAttribute("BareColor")
+				part.Material = (Enum.Material :: any)[part:GetAttribute("BareMaterial")]
+				part:SetAttribute("BareColor", nil)
+				part:SetAttribute("BareMaterial", nil)
+			end
+		end
+	end
+	-- the 2D shirt (chest) and trousers (legs) wait in a folder of their own while covered
+	local clothing = if slot == "Chest" then "Shirt" elseif slot == "Legs" then "Pants" else nil
+	if clothing then
+		local stowed = character:FindFirstChild("StowedClothes") or Instance.new("Folder")
+		stowed.Name = "StowedClothes"
+		stowed.Parent = character
+		if under then
+			for _, c in character:GetChildren() do
+				if c.ClassName == clothing then
+					c.Parent = stowed
+				end
+			end
+		else
+			for _, c in stowed:GetChildren() do
+				if c.ClassName == clothing then
+					c.Parent = character
+				end
+			end
+		end
+	end
+end
+
 local function dress(character: Model, worn: { [string]: { Item: string, Rarity: string, Upgrade: number? } })
 	local old = character:FindFirstChild("Armor")
 	if old then
@@ -245,6 +302,7 @@ local function dress(character: Model, worn: { [string]: { Item: string, Rarity:
 		local item = worn[slot]
 		local piece = item and Armor.Pieces[item.Item]
 		setHidden(character, slot, piece ~= nil)
+		underlayer(character, slot, piece and piece.Set)
 		if item and piece then
 			if slot == "Head" then
 				local head = character:FindFirstChild("Head") :: BasePart?
