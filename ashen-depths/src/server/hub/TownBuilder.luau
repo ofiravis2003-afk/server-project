@@ -249,7 +249,7 @@ local function wallOfTheFallen(parent: Instance, frame: CFrame)
 		column.BackgroundTransparency = 1
 		column.Position = UDim2.new(c / columns, 6, 0, 66)
 		column.Size = UDim2.new(1 / columns, -12, 1, -120)
-		column.FontFace = Fonts.Body
+		column.FontFace = Fonts.Title -- carved
 		column.TextSize = 17
 		column.LineHeight = 1.05
 		column.TextColor3 = Color3.fromRGB(176, 168, 152)
@@ -264,7 +264,7 @@ local function wallOfTheFallen(parent: Instance, frame: CFrame)
 	oldest.AnchorPoint = Vector2.new(0, 1)
 	oldest.Position = UDim2.new(0, 0, 1, -14)
 	oldest.Size = UDim2.new(1, 0, 0, 30)
-	oldest.FontFace = Fonts.Body
+	oldest.FontFace = Fonts.Title
 	oldest.TextSize = 16
 	oldest.TextColor3 = Color3.fromRGB(150, 144, 132)
 	oldest.TextTransparency = 0.55

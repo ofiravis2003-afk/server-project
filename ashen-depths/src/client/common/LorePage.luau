@@ -79,7 +79,7 @@ function LorePage.Start()
 	rule.BackgroundColor3 = FADED
 	rule.BorderSizePixel = 0
 	rule.Parent = sheet
-	local body = label(sheet, Fonts.Body, 18, INK)
+	local body = label(sheet, Fonts.Title, 20, INK) -- an old hand
 	body.Position = UDim2.fromOffset(34, 134)
 	body.Size = UDim2.new(1, -68, 1, -210)
 	body.TextXAlignment = Enum.TextXAlignment.Left
