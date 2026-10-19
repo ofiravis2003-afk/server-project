@@ -851,14 +851,18 @@ local wardstone: Model? = nil
 local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
 	local stone = buildWardstone(room.Model, room.Center + Vector3.new(0, 0, 9))
 	wardstone = stone
-	local lit = #Players:GetPlayers() > 0
-	for _, player in Players:GetPlayers() do
-		local data = DataService.GetData(player)
-		if not data or (data.WardLit or 0) < floor then
-			lit = false
+	-- lit already when everyone here has lit it before
+	local function everyoneLit(): boolean
+		local players = Players:GetPlayers()
+		for _, player in players do
+			local data = DataService.GetData(player)
+			if not data or (data.WardLit or 0) < floor then
+				return false
+			end
 		end
+		return #players > 0
 	end
-	if lit then
+	if everyoneLit() then
 		setWardstoneLit(stone, true)
 		return
 	end
@@ -879,7 +883,13 @@ local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
 		notifyRemote:FireAllClients(`{player.DisplayName} relights the Wardstone. The ash recedes from floor {floor}.`)
 	end)
 	task.delay(6, function()
-		if currentFloor == floor and stone.Parent and not stone:GetAttribute("Lit") then
+		if currentFloor ~= floor or not stone.Parent or stone:GetAttribute("Lit") then
+			return
+		end
+		if everyoneLit() then -- the server started empty; the players who came had lit it before
+			relight.Enabled = false
+			setWardstoneLit(stone, true)
+		else
 			notifyRemote:FireAllClients("This floor's Wardstone has gone dark. Relight it with your Guild Brand.")
 		end
 	end)
