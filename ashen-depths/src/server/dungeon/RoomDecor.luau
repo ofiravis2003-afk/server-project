@@ -186,7 +186,7 @@ local function banner(ctx: Context, frame: CFrame, along: number)
 end
 
 -- A great hall banner: the banner itself `scale` times its model size, its bottom `height` above the floor,
--- hung from a gilded pole with round finials on two iron brackets, and lit warm from below.
+-- with a flaming sconce either side, and lit warm from below.
 local function royalBanner(ctx: Context, frame: CFrame, along: number, scale: number, height: number)
 	local base = onWall(ctx, frame, along, 1.4)
 	local width, top = 3.4 * scale, height + 6 * scale
@@ -204,11 +204,18 @@ local function royalBanner(ctx: Context, frame: CFrame, along: number, scale: nu
 		deco(ctx.Model, "Banner", Vector3.new(width, top - height, 0.15), base * CFrame.new(0, (height + top) / 2, 0), CLOTH, Enum.Material.Fabric)
 		deco(ctx.Model, "BannerEmblem", Vector3.new(width * 0.35, width * 0.35, 0.17), base * CFrame.new(0, top - (top - height) * 0.35, -0.02) * CFrame.Angles(0, 0, math.rad(45)), GOLD, Enum.Material.Metal)
 	end
-	local pole = onWall(ctx, frame, along, 1.1) * CFrame.new(0, top + 0.35, 0)
-	deco(ctx.Model, "BannerPole", Vector3.new(width + 2.2, 0.4, 0.4), pole, GOLD, Enum.Material.Metal, Enum.PartType.Cylinder)
+	-- an iron sconce with a flame either side, halfway up
 	for _, side in { -1, 1 } do
-		deco(ctx.Model, "BannerFinial", Vector3.new(0.9, 0.9, 0.9), pole * CFrame.new(side * (width / 2 + 1.4), 0, 0), GOLD, Enum.Material.Metal, Enum.PartType.Ball)
-		deco(ctx.Model, "BannerBracket", Vector3.new(0.3, 0.3, 1.2), onWall(ctx, frame, along, 0.5) * CFrame.new(side * width / 2.6, top + 0.35, 0), IRON, Enum.Material.Metal)
+		local at = onWall(ctx, frame, along + side * (width / 2 + 1.6), 0) * CFrame.new(0, height + (top - height) * 0.55, 0)
+		deco(ctx.Model, "SconceArm", Vector3.new(0.3, 0.3, 1.4), at * CFrame.new(0, 0, -0.7), IRON, Enum.Material.Metal)
+		local cup = deco(ctx.Model, "SconceCup", Vector3.new(0.5, 0.9, 0.9), at * CFrame.new(0, 0.2, -1.4) * CFrame.Angles(0, 0, math.rad(90)), IRON, Enum.Material.Metal, Enum.PartType.Cylinder)
+		local fire = Instance.new("Fire")
+		fire.Size = 2.2
+		fire.Heat = 6
+		fire.Color = Color3.fromRGB(255, 140, 60)
+		fire.SecondaryColor = Color3.fromRGB(200, 50, 20)
+		fire.Parent = cup
+		light(cup, Color3.fromRGB(255, 150, 80), 12, 0.9)
 	end
 	local wash = deco(ctx.Model, "BannerLight", Vector3.new(1, 1, 1), onWall(ctx, frame, along, 4) * CFrame.new(0, height + 1, 0), Color3.new(), Enum.Material.SmoothPlastic)
 	wash.Transparency = 1
@@ -796,7 +803,7 @@ themes.ThroneRoom = function(ctx)
 		end
 		-- tall banners either side of the gate, past the knights
 		for _, side in { -1, 1 } do
-			royalBanner(ctx, back, side * (gateWidth / 2 + 11), 1.6, 5)
+			royalBanner(ctx, back, side * (gateWidth / 2 + 10), 1.6, 5)
 		end
 	end
 	-- knights and broken pillars along the side walls, a great banner between them
@@ -808,7 +815,7 @@ themes.ThroneRoom = function(ctx)
 			againstWall(ctx, "KnightStatue", frame, side * S / 5, 0.8)
 			ghost((againstWall(ctx, "BrokenPillarRoyal", frame, side * S / 2.6, 1.5, rng:NextNumber(0, math.pi * 2))))
 		end
-		royalBanner(ctx, frame, 0, 2.2, 4.5)
+		royalBanner(ctx, frame, 0, 2.7, 2.5)
 	end
 	-- royal braziers round the fighting ring
 	for i = 0, 3 do
