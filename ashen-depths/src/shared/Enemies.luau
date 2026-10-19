@@ -166,7 +166,7 @@ local Enemies: { [string]: EnemyDef } = {
 		RespawnTime = 5,
 		Animations = BONE_WARDEN_ANIMATIONS,
 		AnimationSpeeds = { Walk = 0.9 },
-		Sink = 1.6,
+		Sink = 0.5, -- measured: the idle stance lifts the feet only a little
 		AttackClips = { { Id = "rbxassetid://80380547311498", HitAt = 0.6 } },
 		HeldProps = { { Prop = "WardenSword", Bone = "mixamorig:RightHand" } },
 		Boss = {

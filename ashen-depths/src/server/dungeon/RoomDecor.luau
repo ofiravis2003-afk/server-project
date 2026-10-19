@@ -185,6 +185,36 @@ local function banner(ctx: Context, frame: CFrame, along: number)
 	deco(ctx.Model, "BannerTail", Vector3.new(3.4, 0.6, 0.12), cf * CFrame.new(0, 4.3, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(70, 16, 18), Enum.Material.Fabric)
 end
 
+-- A great hall banner: the banner itself `scale` times its model size, its bottom `height` above the floor,
+-- hung from a gilded pole with round finials on two iron brackets, and lit warm from below.
+local function royalBanner(ctx: Context, frame: CFrame, along: number, scale: number, height: number)
+	local base = onWall(ctx, frame, along, 1.4)
+	local width, top = 3.4 * scale, height + 6 * scale
+	local prop = Props.Place("Banner", ctx.Model, base * CFrame.new(0, height, 0), scale)
+	if prop then
+		local _, size = prop:GetBoundingBox()
+		width, top = size.X, height + size.Y
+		for _, d in prop:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CanCollide = false
+				d.CanQuery = false
+			end
+		end
+	else
+		deco(ctx.Model, "Banner", Vector3.new(width, top - height, 0.15), base * CFrame.new(0, (height + top) / 2, 0), CLOTH, Enum.Material.Fabric)
+		deco(ctx.Model, "BannerEmblem", Vector3.new(width * 0.35, width * 0.35, 0.17), base * CFrame.new(0, top - (top - height) * 0.35, -0.02) * CFrame.Angles(0, 0, math.rad(45)), GOLD, Enum.Material.Metal)
+	end
+	local pole = onWall(ctx, frame, along, 1.1) * CFrame.new(0, top + 0.35, 0)
+	deco(ctx.Model, "BannerPole", Vector3.new(width + 2.2, 0.4, 0.4), pole, GOLD, Enum.Material.Metal, Enum.PartType.Cylinder)
+	for _, side in { -1, 1 } do
+		deco(ctx.Model, "BannerFinial", Vector3.new(0.9, 0.9, 0.9), pole * CFrame.new(side * (width / 2 + 1.4), 0, 0), GOLD, Enum.Material.Metal, Enum.PartType.Ball)
+		deco(ctx.Model, "BannerBracket", Vector3.new(0.3, 0.3, 1.2), onWall(ctx, frame, along, 0.5) * CFrame.new(side * width / 2.6, top + 0.35, 0), IRON, Enum.Material.Metal)
+	end
+	local wash = deco(ctx.Model, "BannerLight", Vector3.new(1, 1, 1), onWall(ctx, frame, along, 4) * CFrame.new(0, height + 1, 0), Color3.new(), Enum.Material.SmoothPlastic)
+	wash.Transparency = 1
+	light(wash, Color3.fromRGB(255, 160, 90), 9 + 2 * scale, 0.9)
+end
+
 local themes: { [string]: (Context) -> () } = {}
 
 themes.Crypt = function(ctx)
@@ -759,12 +789,17 @@ themes.ThroneRoom = function(ctx)
 		-- the red carpet up to the throne
 		local length = S - throneAt - throneDepth - 6
 		local carpetMid = floorAtWall + inward * (throneAt + throneDepth + length / 2)
-		deco(ctx.Model, "Carpet", Vector3.new(7, 0.12, length), CFrame.lookAt(carpetMid + Vector3.new(0, 0.07, 0), carpetMid + Vector3.new(0, 0.07, 0) + inward), Color3.fromRGB(110, 18, 22), Enum.Material.Fabric)
+		-- (it lies over the arena stone, whose top is 0.14 up)
+		deco(ctx.Model, "Carpet", Vector3.new(7, 0.1, length), CFrame.lookAt(carpetMid + Vector3.new(0, 0.13, 0), carpetMid + Vector3.new(0, 0.13, 0) + inward), Color3.fromRGB(110, 18, 22), Enum.Material.Fabric)
 		for _, side in { -1, 1 } do
-			deco(ctx.Model, "CarpetHem", Vector3.new(0.5, 0.14, length), CFrame.lookAt(carpetMid, carpetMid + inward) * CFrame.new(side * 3.7, 0.08, 0), Color3.fromRGB(200, 160, 60), Enum.Material.Fabric)
+			deco(ctx.Model, "CarpetHem", Vector3.new(0.5, 0.12, length), CFrame.lookAt(carpetMid, carpetMid + inward) * CFrame.new(side * 3.7, 0.14, 0), Color3.fromRGB(200, 160, 60), Enum.Material.Fabric)
+		end
+		-- tall banners either side of the gate, past the knights
+		for _, side in { -1, 1 } do
+			royalBanner(ctx, back, side * (gateWidth / 2 + 11), 1.6, 5)
 		end
 	end
-	-- knights and broken pillars along the side walls, banners above
+	-- knights and broken pillars along the side walls, a great banner between them
 	for _, frame in ctx.PlainWalls do
 		if frame == back then
 			continue
@@ -773,7 +808,7 @@ themes.ThroneRoom = function(ctx)
 			againstWall(ctx, "KnightStatue", frame, side * S / 5, 0.8)
 			ghost((againstWall(ctx, "BrokenPillarRoyal", frame, side * S / 2.6, 1.5, rng:NextNumber(0, math.pi * 2))))
 		end
-		banner(ctx, frame, 0)
+		royalBanner(ctx, frame, 0, 2.2, 4.5)
 	end
 	-- royal braziers round the fighting ring
 	for i = 0, 3 do
