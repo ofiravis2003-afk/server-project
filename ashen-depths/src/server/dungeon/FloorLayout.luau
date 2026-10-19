@@ -108,7 +108,11 @@ local function tryGenerate(floor: number, rng: Random): Layout?
 	if not attach("Treasure", 28, false) then
 		return nil
 	end
-	if rng:NextNumber() < SECRET_CHANCE then
+	if floor == 12 then
+		if not attach("Secret", 24, true) then
+			return nil -- Old Pip's boy lies in floor 12's secret room
+		end
+	elseif rng:NextNumber() < SECRET_CHANCE then
 		attach("Secret", 24, true)
 	end
 

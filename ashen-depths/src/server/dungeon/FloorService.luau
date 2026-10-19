@@ -10,12 +10,14 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Floors = require(ReplicatedStorage.Shared.Floors)
 local Items = require(ReplicatedStorage.Shared.Items)
+local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
@@ -642,6 +644,50 @@ local function placeChest(parent: Instance, cframe: CFrame, tier: string)
 	end)
 end
 
+-- Floor 12's secret room: what's left of Old Pip's boy, and his fox helmet beside him. Each player can take
+-- it once, if they haven't handed it to Pip already.
+local function placeFoxHelmet(parent: Instance, position: Vector3)
+	local spot = Instance.new("Model")
+	spot.Name = "FoxHelmetRemains"
+	spot.Parent = parent
+	local props = ServerStorage:FindFirstChild("DungeonProps")
+	local skulls = props and props:FindFirstChild("SkullPile")
+	if skulls and skulls:IsA("Model") then
+		local pile = skulls:Clone()
+		pile:ScaleTo(pile:GetScale() * 0.6)
+		pile:PivotTo(CFrame.new(position + Vector3.new(-2.2, 0, 1)) * CFrame.Angles(0, math.rad(35), 0))
+		pile.Parent = spot
+	end
+	local helmet = ItemModels.Build("FoxHelmet", "Common")
+	local _, size = helmet:GetBoundingBox()
+	helmet:PivotTo(CFrame.new(position + Vector3.new(0, size.Y / 2, 0)) * CFrame.Angles(0, math.rad(-60), math.rad(10)))
+	for _, p in helmet:GetDescendants() do
+		if p:IsA("BasePart") then
+			p.Anchored = true
+			p.CanCollide = false
+		end
+	end
+	helmet.Parent = spot
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(255, 170, 90)
+	glow.Brightness = 1.2
+	glow.Range = 9
+	glow.Parent = helmet.PrimaryPart or helmet:FindFirstChildWhichIsA("BasePart", true)
+	local anchor = helmet:FindFirstChildWhichIsA("BasePart", true) :: BasePart
+	local take = prompt(anchor, "Take", "Dented Fox Helmet", 0.6, 8)
+	take.Triggered:Connect(function(player)
+		if not QuestService.Wants(player, "FoxHelmet") then
+			notifyRemote:FireClient(player, "You've already found what was left of him.")
+			return
+		end
+		if InventoryService.GiveItem(player, "FoxHelmet", "Common", 1) > 0 then
+			notifyRemote:FireClient(player, "A dented helmet with a fox painted on it. Old Pip will want to know.")
+		else
+			notifyRemote:FireClient(player, "Your bag is full.")
+		end
+	end)
+end
+
 local function placeKeyPedestal(parent: Instance, position: Vector3, tier: string)
 	local pedestal = FloorBuilder.KeyPedestal(parent, position, tier)
 	local takenBy: { [Player]: boolean } = {}
@@ -1139,6 +1185,9 @@ startFloor = function(floor: number)
 		elseif plan.Type == "Secret" then
 			placeKeyPedestal(room.Model, room.Center, "Silver")
 			placeChest(room.Model, CFrame.new(room.Center + Vector3.new(0, 0, 6)), "Bronze")
+			if floor == 12 then
+				placeFoxHelmet(room.Model, room.Center + Vector3.new(6, 0, -5))
+			end
 		elseif plan.Type == "Stairs" then
 			setupStairs(room)
 		end

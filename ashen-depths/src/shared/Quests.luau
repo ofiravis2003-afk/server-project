@@ -20,6 +20,8 @@ export type Quest = {
 	Points: number,
 	Needs: string?, -- another quest that must be done first
 	Repeatable: boolean?, -- a bounty: can be taken again once turned in
+	Giver: string?, -- who hands it out and takes it back (Aldric and the Guild board if not set)
+	Thanks: string?, -- what the giver says when it's turned in
 }
 
 local Quests = {}
@@ -36,6 +38,8 @@ Quests.List = {
 	{ Id = "SlimeSamples", Title = "Slime Samples", Text = "Seraphine wants slime for her experiments. Don't ask.", Kind = "Collect", Target = "SlimeGel", Count = 10, Gold = 180, XP = 140, Points = 40, Repeatable = true, Needs = "Gravekeeper" },
 	{ Id = "PastTheGuardians", Title = "Past the Guardians", Text = "Break through the Guardians' hall and reach the eleventh floor.", Kind = "Reach", Count = 11, Gold = 600, XP = 500, Points = 200, Needs = "Gravekeeper" },
 	{ Id = "BoneWarden", Title = "The Last Knight", Text = "The Bone Warden guards the sealed gate on the fifteenth floor. End his watch.", Kind = "Kill", Target = "BoneWarden", Count = 1, Gold = 1500, XP = 1200, Points = 400, Needs = "PastTheGuardians" },
+	-- Side quests, from the townsfolk.
+	{ Id = "FoxHelmet", Title = "The Fox Helmet", Text = "Old Pip's son went down to the twelfth floor last spring and never came back. Find his helmet, the one with the fox.", Kind = "Collect", Target = "FoxHelmet", Count = 1, Gold = 350, XP = 600, Points = 60, Giver = "OldPip", Thanks = "Pip turns the helmet over in his hands for a long while. \"...Thank you. Your drinks are on the house. For good.\"" },
 } :: { Quest }
 
 Quests.ById = {} :: { [string]: Quest }
@@ -81,6 +85,11 @@ function Quests.Standing(points: number): Standing
 		Need = Quests.StepCost(step),
 		Top = step >= last,
 	}
+end
+
+-- Who hands out a quest.
+function Quests.GiverOf(quest: Quest): string
+	return quest.Giver or "Aldric"
 end
 
 function Quests.ColorOf(rankName: string): Color3

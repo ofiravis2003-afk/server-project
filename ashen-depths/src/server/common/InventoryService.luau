@@ -412,7 +412,7 @@ local function onAction(player: Player, action: any, itemId: any)
 			InventoryService.RefreshTools(player)
 		end
 	elseif action == "Sell" or action == "Drop" then
-		if data.Equipped[def.Slot] == itemId then
+		if data.Equipped[def.Slot] == itemId or def.Keepsake then
 			return -- what's in hand can't be sold or dropped; equip something else first
 		end
 		if action == "Sell" and not player:GetAttribute("AtShop") then

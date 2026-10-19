@@ -63,6 +63,7 @@ local Dialogues: { [string]: Dialogue } = {
 			"My boy went down last spring. Floor twelve, they say. Never came back up.",
 			"If you ever get that deep, keep an eye out for a dented helmet with a fox painted on it. That's all I ask.",
 		},
+		Action = "Quests",
 	},
 }
 

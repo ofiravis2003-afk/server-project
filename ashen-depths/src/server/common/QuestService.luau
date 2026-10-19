@@ -1,7 +1,8 @@
 --!strict
 -- Quest progress, in both places. Kills and floors reached count in the Depths; quests are taken and turned
--- in at the Guild in Emberhold (Aldric or the quest board). Saved in data.Quests[id] = { Progress, State }
--- where State is "Active" or "Done"; data.RankPoints adds up to the Guild rank (data.GuildRank).
+-- in at the Guild in Emberhold (Aldric or the quest board), or with the townsperson who gave them (Old Pip).
+-- Saved in data.Quests[id] = { Progress, State } where State is "Active" or "Done"; data.RankPoints adds up
+-- to the Guild rank (data.GuildRank).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -101,7 +102,7 @@ local function onAction(player: Player, action: any, id: any)
 	end
 	local quest = Quests.ById[id]
 	local data = DataService.GetData(player)
-	if not quest or not data or not player:GetAttribute("AtGuild") then
+	if not quest or not data or player:GetAttribute("QuestGiver") ~= Quests.GiverOf(quest) then
 		return
 	end
 	local saved = data.Quests[id]
@@ -137,6 +138,9 @@ local function onAction(player: Player, action: any, id: any)
 		data.RankPoints = (data.RankPoints or 0) + quest.Points
 		setRank(player, data)
 		InventoryService.PushInventory(player)
+		if quest.Thanks then
+			notifyRemote:FireClient(player, quest.Thanks)
+		end
 		notifyRemote:FireClient(player, `{quest.Title} done: +{quest.Gold} gold, +{quest.XP} XP.`)
 	elseif action == "Abandon" then
 		if saved and saved.State == "Active" then
@@ -148,9 +152,21 @@ local function onAction(player: Player, action: any, id: any)
 	QuestService.Push(player)
 end
 
--- Players at the Guild (talking to Aldric or at the board) may take and turn in quests.
-function QuestService.SetAtGuild(player: Player, at: boolean)
-	player:SetAttribute("AtGuild", if at then true else nil)
+-- Players talking to a quest giver (Aldric or the Guild board count as "Aldric") may take and turn in
+-- that giver's quests. nil when they walk away.
+function QuestService.SetGiver(player: Player, giver: string?)
+	player:SetAttribute("QuestGiver", giver)
+end
+
+-- Whether the player still has to find a quest's item (it's taken, and not yet in the bag or handed over).
+function QuestService.Wants(player: Player, questId: string): boolean
+	local data = DataService.GetData(player)
+	local quest = Quests.ById[questId]
+	if not data or not quest then
+		return false
+	end
+	local saved = data.Quests[questId]
+	return not (saved and saved.State == "Done") and InventoryService.CountOf(player, quest.Target :: string) < quest.Count
 end
 
 function QuestService.Start()

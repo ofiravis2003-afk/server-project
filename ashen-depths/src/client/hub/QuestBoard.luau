@@ -1,5 +1,5 @@
 --!strict
--- The Guild's quest board: the player's rank and rank points at the top, then every quest that isn't locked:
+-- The Guild's quest board (also a townsperson's own requests, like Old Pip's): the player's rank and rank points at the top, then every quest that isn't locked:
 -- its title, what to do, progress (12 / 20), the reward, and Accept / Turn in / Abandon. Done quests show a
 -- tick. The server closes it when the player walks away from the Guild.
 
@@ -51,6 +51,7 @@ function QuestBoard.Start()
 	local player = Players.LocalPlayer
 	local action = Remotes.Event("QuestAction")
 	local snapshot: Snapshot = { Quests = {}, Points = 0 }
+	local giver = "Aldric"
 
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "QuestBoard"
@@ -146,7 +147,7 @@ function QuestBoard.Start()
 		local order = { Active = 1, Open = 2, Done = 3 }
 		local shown = {}
 		for _, e in snapshot.Quests do
-			if e.State ~= "Locked" then
+			if e.State ~= "Locked" and Quests.GiverOf(Quests.ById[e.Id]) == giver then
 				table.insert(shown, e)
 			end
 		end
@@ -202,11 +203,13 @@ function QuestBoard.Start()
 			redraw()
 		end
 	end)
-	Remotes.Event("QuestBoardOpen").OnClientEvent:Connect(function(open: boolean?)
+	Remotes.Event("QuestBoardOpen").OnClientEvent:Connect(function(open: boolean?, who: string?)
 		if open == false then
 			gui.Enabled = false
 			return
 		end
+		giver = if type(who) == "string" then who else "Aldric"
+		title.Text = if giver == "Aldric" then "Guild Quests" else "Old Pip's Request"
 		local screen = workspace.CurrentCamera.ViewportSize
 		fit.Scale = math.min(1, (screen.Y - 90) / panel.Size.Y.Offset, (screen.X - 24) / panel.Size.X.Offset)
 		gui.Enabled = true

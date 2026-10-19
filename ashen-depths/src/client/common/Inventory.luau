@@ -277,7 +277,7 @@ function Inventory.Start()
 			local count = saved.Count or 1
 			stats.Text = `{(def and def.Description) or ""}\nYou have {count}.`
 			equip.Visible = false
-			sell.Visible = true
+			sell.Visible = not (def and def.Keepsake)
 			local price = Items.SellPrice(saved.Item, saved.Rarity, 0, count)
 			if player:GetAttribute("AtShop") then
 				sell.Text = if confirmSell then `Sure? Sell all for {price}` else `Sell all ({price} gold)`

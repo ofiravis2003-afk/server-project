@@ -14,6 +14,7 @@ export type ItemDef = {
 	Price: number?, -- what a merchant pays for one (materials and potions; gear goes by rarity)
 	HealFraction: number?, -- potions: part of max health given back
 	Description: string?,
+	Keepsake: boolean?, -- a quest item: can't be sold or dropped
 	WeaponType: string?,
 	Damage: number?,
 	Heal: number?, -- tome only: health given back per cast
@@ -64,6 +65,9 @@ Items.Defs = {
 	RatTail = { DisplayName = "Rat Tail", Slot = "Material", Stack = 99, Price = 1, Description = "Dropped by giant rats." },
 	SlimeGel = { DisplayName = "Slime Gel", Slot = "Material", Stack = 99, Price = 2, Description = "What's left of a slime." },
 	GraveShroud = { DisplayName = "Grave Shroud", Slot = "Material", Stack = 99, Price = 60, Description = "Torn from the Gravekeeper's coat. Rare." },
+
+	-- Keepsakes: quest items, carried until they're handed over.
+	FoxHelmet = { DisplayName = "Dented Fox Helmet", Slot = "Material", Stack = 1, Limit = 1, Keepsake = true, Description = "A dented helmet with a fox painted on it. Old Pip's boy wore it." },
 
 	-- Potions: drunk from the hotbar (slot 2).
 	HealthPotion = { DisplayName = "Health Potion", Slot = "Potion", Stack = 5, Limit = 5, Price = 8, HealFraction = 0.4, Description = "Gives back 40% of your health." },

@@ -104,10 +104,10 @@ function ShopService.Start()
 		end
 		if key == "Brakka" and action == "Trade" then
 			openBrakka(player)
-		elseif key == "Aldric" and action == "Quests" then
-			QuestService.SetAtGuild(player, true)
+		elseif action == "Quests" and (key == "Aldric" or key == "OldPip") then
+			QuestService.SetGiver(player, key)
 			QuestService.Push(player)
-			Remotes.Event("QuestBoardOpen"):FireClient(player, true)
+			Remotes.Event("QuestBoardOpen"):FireClient(player, true, key)
 		end
 	end)
 
@@ -118,23 +118,24 @@ function ShopService.Start()
 	if boardPart then
 		local read = prompt(boardPart, "Read", "Quest Board")
 		read.Triggered:Connect(function(player)
-			QuestService.SetAtGuild(player, true)
+			QuestService.SetGiver(player, "Aldric")
 			QuestService.Push(player)
-			Remotes.Event("QuestBoardOpen"):FireClient(player, true)
+			Remotes.Event("QuestBoardOpen"):FireClient(player, true, "Aldric")
 		end)
 	end
 	RunService.Heartbeat:Connect(function()
 		for _, player in Players:GetPlayers() do
-			if player:GetAttribute("AtGuild") then
+			local giver = player:GetAttribute("QuestGiver")
+			if giver then
 				local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 				local near = false
-				for _, spot in { board, aldric } do
+				for _, spot in (if giver == "Aldric" then { board, aldric } else { town.Model:FindFirstChild(giver, true) }) do
 					if root and spot and spot:IsA("Model") and (root.Position - spot:GetPivot().Position).Magnitude <= SHOP_RANGE + 4 then
 						near = true
 					end
 				end
 				if not near then
-					QuestService.SetAtGuild(player, false)
+					QuestService.SetGiver(player, nil)
 					Remotes.Event("QuestBoardOpen"):FireClient(player, false)
 				end
 			end

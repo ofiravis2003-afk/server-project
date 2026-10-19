@@ -28,6 +28,20 @@ end
 local BONE = Color3.fromRGB(214, 204, 178)
 
 local builders: { [string]: (Model) -> () } = {
+	FoxHelmet = function(m)
+		local iron = Color3.fromRGB(105, 102, 98)
+		local dome = part(m, Vector3.new(1.7, 1.5, 1.8), CFrame.Angles(math.rad(-8), 0, math.rad(6)), iron, Enum.Material.Metal, Enum.PartType.Ball)
+		part(m, Vector3.new(0.18, 1.95, 1.95), dome.CFrame * CFrame.new(0, -0.45, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(80, 76, 72), Enum.Material.Metal, Enum.PartType.Cylinder) -- the rim
+		part(m, Vector3.new(0.12, 0.9, 0.22), dome.CFrame * CFrame.new(0, 0.05, -0.9), Color3.fromRGB(80, 76, 72), Enum.Material.Metal)
+		-- the fox, painted on the side
+		local fox = Color3.fromRGB(215, 110, 40)
+		part(m, Vector3.new(0.05, 0.42, 0.55), dome.CFrame * CFrame.new(0.84, 0.15, 0) * CFrame.Angles(0, 0, math.rad(12)), fox, Enum.Material.SmoothPlastic)
+		for _, z in { -0.18, 0.18 } do
+			part(m, Vector3.new(0.05, 0.22, 0.14), dome.CFrame * CFrame.new(0.8, 0.45, z) * CFrame.Angles(0, 0, math.rad(12)), fox, Enum.Material.SmoothPlastic)
+		end
+		-- the dent
+		part(m, Vector3.new(0.5, 0.35, 0.5), dome.CFrame * CFrame.new(-0.55, 0.45, 0.3), Color3.fromRGB(70, 68, 66), Enum.Material.Metal, Enum.PartType.Ball)
+	end,
 	Bone = function(m)
 		local tilt = CFrame.Angles(0, 0, math.rad(30))
 		part(m, Vector3.new(2.4, 0.42, 0.42), tilt, BONE, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
