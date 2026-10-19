@@ -4,7 +4,9 @@
 #         end over end) and `roll` (degrees round its axis) as needed after a look at the renders.
 #   boot: turned round Z so the toe points -Y.
 # `cut` drops faces below that height (model units, after centring), e.g. a display stand under a vest.
-# Run: blender -b --factory-startup --python prep_armor.py -- <in.glb> <out.glb> <kind> [flip 0|1] [roll deg] [cut z]
+# `double` 1 adds a back face to every face, so a thin shell whose normals Tripo got wrong (some boots) is
+# seen from both sides; Studio draws one side only.
+# Run: blender -b --factory-startup --python prep_armor.py -- <in.glb> <out.glb> <kind> [flip 0|1] [roll deg] [cut z] [double 0|1]
 import bpy, sys, math, bmesh
 from mathutils import Matrix, Vector
 
@@ -12,7 +14,8 @@ argv = sys.argv[sys.argv.index("--") + 1:]
 src, out, kind = argv[0], argv[1], argv[2]
 flip = len(argv) > 3 and argv[3] == "1"
 roll = float(argv[4]) if len(argv) > 4 else 0.0
-cut = float(argv[5]) if len(argv) > 5 else None
+cut = float(argv[5]) if len(argv) > 5 and float(argv[5]) > 0 else None
+double = len(argv) > 6 and argv[6] == "1"
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=src)
@@ -101,6 +104,21 @@ if cut is not None:
     lo = Vector((min(v.x for v in co), min(v.y for v in co), min(v.z for v in co)))
     hi = Vector((max(v.x for v in co), max(v.y for v in co), max(v.z for v in co)))
     me.transform(Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z))))
+if double:
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    uv = bm.loops.layers.uv.active
+    faces = list(bm.faces)
+    for f in faces:
+        verts = [bm.verts.new(v.co) for v in reversed(f.verts)]
+        nf = bm.faces.new(verts)
+        nf.material_index = f.material_index
+        if uv:
+            for new_loop, old_loop in zip(nf.loops, reversed(list(f.loops))):
+                new_loop[uv].uv = old_loop[uv].uv
+    bm.normal_update()
+    bm.to_mesh(me)
+    bm.free()
 me.update()
 
 bpy.ops.export_scene.gltf(filepath=out, export_format="GLB", use_selection=False)

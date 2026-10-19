@@ -11,7 +11,7 @@
 --     by CombatService for staves and tomes).
 -- A Tripo model in ArmorModels is prepared at the size of that body, with its WorldPivot where it
 -- mounts: Head on the head's centre, Chest on the upper torso's, Hands on the right lower arm's, Legs on the
--- right lower leg's, all facing -Z. The left glove and boot are the right ones turned round.
+-- right lower leg's, all facing -Z. The left glove is the right one turned round; boots go on as they are.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -198,7 +198,8 @@ local function mount(folder: Folder, piece: Armor.Piece, rarity: string, bodyPar
 	local model: Model
 	if source and source:IsA("Model") then
 		model = source:Clone()
-		local turn = if left then CFrame.Angles(0, math.pi, 0) else CFrame.new()
+		-- the right glove turned round fits the left arm; a boot fits either leg as it is
+		local turn = if left and piece.Slot == "Hands" then CFrame.Angles(0, math.pi, 0) else CFrame.new()
 		model:PivotTo(bodyPart.CFrame * turn)
 	else
 		model = standIn(piece.Set, piece.Slot, bodyPart, extra)
