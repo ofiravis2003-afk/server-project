@@ -659,7 +659,7 @@ function TownBuilder.Build(): Town
 			scaled("WallTower", CFrame.new(math.cos(corner) * WALL_RADIUS, 0, math.sin(corner) * WALL_RADIUS), 1.75, 0.3)
 		end
 	end
-	scaled("Gatehouse", CFrame.lookAt(Vector3.new(0, 0, WALL_RADIUS), Vector3.new(0, 0, 0)), 1.9, 0.3)
+	scaled("Gatehouse", CFrame.new(0, 0, WALL_RADIUS), 1.9, 0.3) -- (its arch runs along its X, like the wall)
 
 	-- life round the plaza and the doors: benches by the Well, barrels and crates by the shops, hay carts,
 	-- two more market stalls
