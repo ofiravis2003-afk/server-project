@@ -646,7 +646,7 @@ function TownBuilder.Build(): Town
 
 	-- the town wall: stone sections in a ring, a tower every few sections, and the gatehouse where the road
 	-- leaves to the south. The oaks stand inside it.
-	local WALL_RADIUS, SECTIONS = 126, 36
+	local WALL_RADIUS, SECTIONS = 126, 46 -- (enough sections to close the ring once it is spread out)
 	for i = 0, SECTIONS - 1 do
 		local angle = (i + 0.5) / SECTIONS * math.pi * 2
 		local deg = math.deg(angle)
