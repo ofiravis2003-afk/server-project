@@ -365,13 +365,14 @@ local function setLighting()
 	rays.Parent = Lighting
 end
 
--- The land the village stands on, in terrain: a grass meadow far past the houses, a round cobbled plaza
+-- The land the village stands on, in terrain (filled 2 studs below where it should show: Roblox draws a filled
+-- surface about 2 studs above the fill): a grass meadow far past the houses, a round cobbled plaza
 -- round the Well, paths of packed earth from the plaza to every door, the old road leaving south, and green
 -- hills all round (rock showing on their crowns) so the world doesn't end at the last house.
 local function path(terrain: Terrain, from: Vector3, to: Vector3, width: number, material: Enum.Material)
 	local length = (to - from).Magnitude
 	local mid = (from + to) / 2
-	terrain:FillBlock(CFrame.lookAt(Vector3.new(mid.X, -4, mid.Z), Vector3.new(to.X, -4, to.Z)), Vector3.new(width, 8, length + width * 0.6), material)
+	terrain:FillBlock(CFrame.lookAt(Vector3.new(mid.X, -6, mid.Z), Vector3.new(to.X, -6, to.Z)), Vector3.new(width, 8, length + width * 0.6), material)
 end
 
 local function landscape()
@@ -386,12 +387,12 @@ local function landscape()
 		(terrain :: any).Decoration = true -- grass blades out in the fields
 	end)
 	-- the meadow (its top at y = 0, where everything stands)
-	terrain:FillBlock(CFrame.new(0, -6, 0), Vector3.new(1024, 12, 1024), Enum.Material.Grass)
+	terrain:FillBlock(CFrame.new(0, -8, 0), Vector3.new(1024, 12, 1024), Enum.Material.Grass)
 	-- inside the village a mown lawn (LeafyGrass grows no tall blades), so paths and feet show
-	terrain:FillCylinder(CFrame.new(0, -4, 0), 8, 96, Enum.Material.LeafyGrass)
-	terrain:FillBlock(CFrame.new(0, -4, 150), Vector3.new(44, 8, 120), Enum.Material.LeafyGrass)
+	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 130, Enum.Material.LeafyGrass)
+	terrain:FillBlock(CFrame.new(0, -6, 190), Vector3.new(44, 8, 140), Enum.Material.LeafyGrass)
 	-- the plaza round the Well
-	terrain:FillCylinder(CFrame.new(0, -4, 0), 8, 30, Enum.Material.Cobblestone)
+	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 30, Enum.Material.Cobblestone)
 	-- earth paths to every door, a cobbled road to the forge and out of town to the south
 	local plaza = 26
 	path(terrain, Vector3.new(0, 0, -plaza), Vector3.new(0, 0, -52), 12, Enum.Material.Cobblestone)
@@ -399,7 +400,7 @@ local function landscape()
 	for _, door in { Vector3.new(-44, 0, -50), Vector3.new(44, 0, -50), Vector3.new(-50, 0, -20), Vector3.new(-50, 0, 20), Vector3.new(50, 0, -20), Vector3.new(50, 0, 20), Vector3.new(-44, 0, 50), Vector3.new(44, 0, 50) } do
 		local dir = Vector3.new(door.X, 0, door.Z).Unit
 		path(terrain, dir * (plaza - 2), door, 9, Enum.Material.Ground)
-		terrain:FillBlock(CFrame.new(door.X, -4, door.Z), Vector3.new(14, 8, 10), Enum.Material.Ground)
+		terrain:FillBlock(CFrame.new(door.X, -6, door.Z), Vector3.new(14, 8, 10), Enum.Material.Ground)
 	end
 	-- hills all round, the road leaving through a gap between them
 	local rng = Random.new(7)
@@ -571,14 +572,14 @@ function TownBuilder.Build(): Town
 
 	-- the other shops and houses around the square (opening in later updates)
 	local inset = edge - 16
-	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 30, "Guild Hall")
-	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 30, "Ironhide Armory")
-	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 28, "The Gilded Tome")
-	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 28, nil)
-	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 28, "The Sunken Tankard")
-	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 28, nil)
-	house(model, CFrame.new(-44, 0, inset), 30, nil)
-	house(model, CFrame.new(44, 0, inset), 30, nil)
+	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 38, "Guild Hall")
+	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 38, "Ironhide Armory")
+	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 34, "The Gilded Tome")
+	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 30, nil)
+	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 34, "The Sunken Tankard")
+	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 30, nil)
+	house(model, CFrame.new(-44, 0, inset), 34, nil)
+	house(model, CFrame.new(44, 0, inset), 34, nil)
 
 	-- the shops' wares out front, and market stalls in the square (each facing the middle)
 	local function facing(at: Vector3): CFrame
@@ -620,7 +621,7 @@ function TownBuilder.Build(): Town
 		for z = 80, 200, 40 do
 			scaled("OakTree", CFrame.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.8, 1.1), 0.6)
 		end
-		for z = 64, 150, 6 do
+		for z = 64, 112, 6 do
 			scaled("Fence", CFrame.new(side * 11, 0, z) * CFrame.Angles(0, math.pi / 2, 0), 1, 0.2)
 		end
 	end
@@ -631,6 +632,37 @@ function TownBuilder.Build(): Town
 		CFrame.lookAt(Vector3.new(38, 0, 50.5), Vector3.new(38, 0, 0)) } do
 		scaled("FlowerBox", at, 1.3)
 	end
+
+	-- the town wall: stone sections in a ring, a tower every few sections, and the gatehouse where the road
+	-- leaves to the south. The oaks stand inside it.
+	local WALL_RADIUS, SECTIONS = 126, 36
+	for i = 0, SECTIONS - 1 do
+		local angle = (i + 0.5) / SECTIONS * math.pi * 2
+		local deg = math.deg(angle)
+		local at = Vector3.new(math.cos(angle) * WALL_RADIUS, 0, math.sin(angle) * WALL_RADIUS)
+		if math.abs(deg - 90) > 9 then
+			scaled("TownWall", CFrame.lookAt(at, Vector3.new(0, 0, 0)), 0.95, 0.3)
+		end
+		if i % 4 == 0 and math.abs(deg - 90) > 18 then
+			local corner = (i / SECTIONS) * math.pi * 2
+			scaled("WallTower", CFrame.new(math.cos(corner) * WALL_RADIUS, 0, math.sin(corner) * WALL_RADIUS), 1.3, 0.3)
+		end
+	end
+	scaled("Gatehouse", CFrame.lookAt(Vector3.new(0, 0, WALL_RADIUS), Vector3.new(0, 0, 0)), 1.45, 0.3)
+
+	-- life round the plaza and the doors: benches by the Well, barrels and crates by the shops, hay carts,
+	-- two more market stalls
+	for _, deg in { 20, 160, 200, 340 } do
+		local a = math.rad(deg)
+		scaled("Bench", CFrame.lookAt(Vector3.new(math.cos(a) * 24, 0, math.sin(a) * 24), Vector3.new(0, 0, 0)), 1.4)
+	end
+	for _, at in { Vector3.new(-30, 0, -56), Vector3.new(30, 0, -56), Vector3.new(-56, 0, -30), Vector3.new(56, 0, -30), Vector3.new(-56, 0, 32), Vector3.new(56, 0, 32), Vector3.new(-32, 0, 56), Vector3.new(14, 0, -52) } do
+		scaled("Barrels", CFrame.new(at) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 1.6)
+	end
+	scaled("HayCart", CFrame.new(-26, 0, 60) * CFrame.Angles(0, math.rad(20), 0), 1.4)
+	scaled("HayCart", CFrame.new(62, 0, 4) * CFrame.Angles(0, math.rad(-70), 0), 1.4)
+	prop("MarketStall", model, facing(Vector3.new(-40, 0, 36)))
+	prop("MarketStall", model, facing(Vector3.new(40, 0, 36)))
 
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0), Vector3.new(30, 0, -48) } do
