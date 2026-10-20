@@ -365,8 +365,7 @@ local function setLighting()
 	rays.Parent = Lighting
 end
 
--- The land the village stands on, in terrain (filled 2 studs below where it should show: Roblox draws a filled
--- surface about 2 studs above the fill): a grass meadow far past the houses, a round cobbled plaza
+-- The land the village stands on, in terrain: a grass meadow far past the houses, a round cobbled plaza
 -- round the Well, paths of packed earth from the plaza to every door, the old road leaving south, and green
 -- hills all round (rock showing on their crowns) so the world doesn't end at the last house.
 local function path(terrain: Terrain, from: Vector3, to: Vector3, width: number, material: Enum.Material)
@@ -375,7 +374,7 @@ local function path(terrain: Terrain, from: Vector3, to: Vector3, width: number,
 	terrain:FillBlock(CFrame.lookAt(Vector3.new(mid.X, -6, mid.Z), Vector3.new(to.X, -6, to.Z)), Vector3.new(width, 8, length + width * 0.6), material)
 end
 
-local function landscape()
+local function landscape(): number
 	local terrain = workspace.Terrain
 	terrain:Clear()
 	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(88, 120, 56))
@@ -425,6 +424,12 @@ local function landscape()
 			terrain:FillBall(centre, 30, Enum.Material.LeafyGrass)
 		end
 	end
+	-- where the ground really shows (the terrain snaps to its 4-stud grid): the whole village is lifted onto it
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { terrain }
+	local hit = workspace:Raycast(Vector3.new(40, 60, 0), Vector3.new(0, -120, 0), params)
+	return if hit then hit.Position.Y else 0
 end
 
 -- Brakka's Forge: an open-fronted smithy on the north side of the square, with the forge glowing at the back,
@@ -510,7 +515,7 @@ function TownBuilder.Build(): Town
 	if base then
 		base:Destroy() -- the terrain is the ground now
 	end
-	landscape()
+	local groundY = landscape()
 	local model = Instance.new("Model")
 	model.Name = "Town"
 
@@ -669,13 +674,15 @@ function TownBuilder.Build(): Town
 		lampPost(model, at)
 	end
 
+	-- everything was laid out at y = 0; lift it onto the ground as the terrain shows it
+	model:PivotTo(model:GetPivot() + Vector3.new(0, groundY, 0))
 	model.Parent = workspace
 
 	-- players arrive at the south end of the square, looking at the well
-	local spawn = CFrame.lookAt(Vector3.new(0, 3, 52), Vector3.new(0, 3, 0))
+	local spawn = CFrame.lookAt(Vector3.new(0, 3 + groundY, 52), Vector3.new(0, 3 + groundY, 0))
 	local spawnPart = workspace:FindFirstChildOfClass("SpawnLocation")
 	if spawnPart then
-		spawnPart.CFrame = CFrame.new(0, 0.5, 52)
+		spawnPart.CFrame = CFrame.new(0, 0.5 + groundY, 52)
 		spawnPart.Transparency = 1
 		spawnPart.CanCollide = false
 		local decal = spawnPart:FindFirstChildOfClass("Decal")
