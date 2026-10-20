@@ -651,7 +651,7 @@ function TownBuilder.Build(): Town
 		local angle = (i + 0.5) / SECTIONS * math.pi * 2
 		local deg = math.deg(angle)
 		local at = Vector3.new(math.cos(angle) * WALL_RADIUS, 0, math.sin(angle) * WALL_RADIUS)
-		if math.abs(deg - 90) > 9 then
+		if math.abs(deg - 90) > 4 then -- only the section right behind the gatehouse is left out
 			scaled("TownWall", CFrame.lookAt(at, Vector3.new(0, 0, 0)), 0.95, 0.3)
 		end
 		if i % 4 == 0 and math.abs(deg - 90) > 18 then
