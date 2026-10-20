@@ -378,16 +378,18 @@ local function landscape()
 	local terrain = workspace.Terrain
 	terrain:Clear()
 	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(88, 120, 56))
-	terrain:SetMaterialColor(Enum.Material.LeafyGrass, Color3.fromRGB(84, 116, 52))
+	terrain:SetMaterialColor(Enum.Material.LeafyGrass, Color3.fromRGB(92, 124, 58))
 	terrain:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(110, 86, 62))
 	terrain:SetMaterialColor(Enum.Material.Cobblestone, Color3.fromRGB(122, 114, 104))
 	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(110, 106, 98))
 	pcall(function()
-		(terrain :: any).Decoration = true -- grass blades, kept short so paths and feet show
-		(terrain :: any).GrassLength = 0.35
+		(terrain :: any).Decoration = true -- grass blades out in the fields
 	end)
 	-- the meadow (its top at y = 0, where everything stands)
 	terrain:FillBlock(CFrame.new(0, -6, 0), Vector3.new(1024, 12, 1024), Enum.Material.Grass)
+	-- inside the village a mown lawn (LeafyGrass grows no tall blades), so paths and feet show
+	terrain:FillCylinder(CFrame.new(0, -4, 0), 8, 96, Enum.Material.LeafyGrass)
+	terrain:FillBlock(CFrame.new(0, -4, 150), Vector3.new(44, 8, 120), Enum.Material.LeafyGrass)
 	-- the plaza round the Well
 	terrain:FillCylinder(CFrame.new(0, -4, 0), 8, 30, Enum.Material.Cobblestone)
 	-- earth paths to every door, a cobbled road to the forge and out of town to the south
