@@ -377,13 +377,14 @@ end
 local function landscape()
 	local terrain = workspace.Terrain
 	terrain:Clear()
-	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(96, 128, 60))
+	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(88, 120, 56))
 	terrain:SetMaterialColor(Enum.Material.LeafyGrass, Color3.fromRGB(84, 116, 52))
 	terrain:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(110, 86, 62))
 	terrain:SetMaterialColor(Enum.Material.Cobblestone, Color3.fromRGB(122, 114, 104))
 	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(110, 106, 98))
 	pcall(function()
-		(terrain :: any).Decoration = true -- grass blades
+		(terrain :: any).Decoration = true -- grass blades, kept short so paths and feet show
+		(terrain :: any).GrassLength = 0.35
 	end)
 	-- the meadow (its top at y = 0, where everything stands)
 	terrain:FillBlock(CFrame.new(0, -6, 0), Vector3.new(1024, 12, 1024), Enum.Material.Grass)
