@@ -692,7 +692,13 @@ function TownBuilder.Build(): Town
 			piece:PivotTo(piece:GetPivot() + Vector3.new(pos.X, 0, pos.Z) * (SPREAD - 1))
 		end
 	end
-	-- an unseen wall round the ring keeps everyone in, however they jump (the gate's own doors are shut)
+	-- the arch is shut by tall oak doors with iron bands, and an unseen wall round the ring keeps everyone in,
+	-- however they jump
+	part(model, "GateDoors", Vector3.new(12.5, 21, 1.2), CFrame.new(0, 10.5, wallRadius), Color3.fromRGB(72, 46, 28), Enum.Material.WoodPlanks)
+	for _, y in { 4, 11, 18 } do
+		part(model, "GateBand", Vector3.new(12.7, 0.8, 1.4), CFrame.new(0, y, wallRadius), Color3.fromRGB(42, 40, 40), Enum.Material.Metal)
+	end
+	part(model, "GateSeam", Vector3.new(0.3, 21, 1.4), CFrame.new(0, 10.5, wallRadius), Color3.fromRGB(30, 22, 16), Enum.Material.Wood)
 	local wallRadius = WALL_RADIUS * SPREAD
 	local barrier = Instance.new("Model")
 	barrier.Name = "TownBarrier"
