@@ -9,6 +9,9 @@
 --     staves and tomes).
 -- A helmet in ArmorModels is sized for a standard head (1.16 x 1.18 x 1.16) with its WorldPivot on the head's
 -- centre, facing -Z; a bigger or smaller head gets it stretched to match.
+-- Body pieces that have been made into layered clothing (ReplicatedStorage.ArmorLayered[Look], an Accessory
+-- with a WrapLayer and cages, built with tools/retarget/layer_armor.py) are worn too: Roblox fits them to
+-- any avatar and bends them with it, so they show no gaps (2026-10-20). Pieces without one stay unseen.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -82,6 +85,34 @@ local function hideUnderHelmet(character: Model, hidden: boolean)
 					end
 				end
 			end
+		end
+	end
+end
+
+-- The layered body pieces: whatever is worn and has a garment goes on; the rest come off.
+local function dressLayered(character: Model, worn: { [string]: { Item: string, Rarity: string, Upgrade: number? } })
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then
+		return
+	end
+	for _, child in character:GetChildren() do
+		if child:IsA("Accessory") and child:GetAttribute("ArmorPiece") then
+			child:Destroy()
+		end
+	end
+	local garments = ReplicatedStorage:FindFirstChild("ArmorLayered")
+	for _, slot in { "Chest", "Hands", "Legs" } do
+		local item = worn[slot]
+		local piece = item and Armor.Pieces[item.Item]
+		local garment = piece and piece.Look and garments and garments:FindFirstChild(piece.Look)
+		if item and garment and garment:IsA("Accessory") then
+			local accessory = garment:Clone()
+			accessory:SetAttribute("ArmorPiece", slot)
+			local handle = accessory:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				rarityTouch(handle, item.Rarity)
+			end
+			humanoid:AddAccessory(accessory)
 		end
 	end
 end
@@ -169,6 +200,7 @@ function ArmorService.Refresh(player: Player)
 	local worn = wornItems(data)
 	if player.Character then
 		dress(player.Character, worn.Head)
+		dressLayered(player.Character, worn)
 	end
 	applyStats(player, worn)
 end
