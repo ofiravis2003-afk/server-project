@@ -12,7 +12,8 @@
 # named _InnerCage / _OuterCage outside its own layered-clothing import), all in place, and <out>.glb.txt
 # with their centres.
 # Run: blender -b --factory-startup --python layer_armor.py -- <template.blend> <piece.glb> <out.glb> <Name>
-#        <mode> <size> [bottom z] [depth]   (torso: size = width; legs: size = height; arms: size = extra length)
+#        <mode> <size> [bottom z] [depth]   (torso: size = width; legs: size = height; arms: size = extra length,
+#        depth = thickness round the arm)
 import bpy, sys, math
 from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
@@ -104,7 +105,8 @@ elif mode == "arms":
     x_axis = y_axis.cross(axis).normalized()
     rot = Matrix((x_axis, y_axis, axis)).transposed().to_4x4()
     centre = Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)))
-    me.transform(Matrix.Translation(tip) @ rot @ Matrix.Scale(s, 4) @ centre)
+    thick = Matrix.Scale(depth, 4, Vector((1, 0, 0))) @ Matrix.Scale(depth, 4, Vector((0, 1, 0)))  # `depth`: thicker round the arm
+    me.transform(Matrix.Translation(tip) @ rot @ thick @ Matrix.Scale(s, 4) @ centre)
     mirrored_copy()
     say("arms: length", round(length, 3), "scale", round(s, 3), "axis", [round(v, 3) for v in axis])
 elif mode == "legs":

@@ -12,6 +12,8 @@
 -- Body pieces that have been made into layered clothing (ReplicatedStorage.ArmorLayered[Look], an Accessory
 -- with a WrapLayer and cages, built with tools/retarget/layer_armor.py) are worn too: Roblox fits them to
 -- any avatar and bends them with it, so they show no gaps (2026-10-20). Pieces without one stay unseen.
+-- Layered clothing bends badly on the blocky body, so everyone gets Roblox's free "Man" body (a human shape)
+-- at standard size, keeping their own face, head, skin, clothes and accessories.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,6 +26,8 @@ local DataService = require(script.Parent.DataService)
 local ArmorService = {}
 
 local BASE_SPEED = 16
+-- the "Man" body (catalog bundle 238): torso, arms and legs
+local BODY = { Torso = 86500008, RightArm = 86500036, LeftArm = 86500054, LeftLeg = 86500064, RightLeg = 86500078 }
 local STANDARD_HEAD = Vector3.new(1.16, 1.18, 1.16)
 local ARMOR_SLOTS = { "Head", "Chest", "Hands", "Legs", "Ring" }
 -- what would poke through a helmet
@@ -170,6 +174,40 @@ local function dress(character: Model, helmet: { Item: string, Rarity: string, U
 end
 
 ------------------------------------------------------------------------------------------------
+-- The same human body for everyone
+
+local function normalizeBody(character: Model)
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.RigType ~= Enum.HumanoidRigType.R15 then
+		return
+	end
+	local ok, description = pcall(function()
+		return humanoid:GetAppliedDescription()
+	end)
+	if not ok or not description then
+		return
+	end
+	if description.Torso == BODY.Torso and description.RightArm == BODY.RightArm and description.LeftArm == BODY.LeftArm
+		and description.RightLeg == BODY.RightLeg and description.LeftLeg == BODY.LeftLeg and description.HeightScale == 1
+		and description.WidthScale == 1 and description.DepthScale == 1 and description.BodyTypeScale == 0 and description.ProportionScale == 0 then
+		return
+	end
+	description.Torso = BODY.Torso
+	description.RightArm = BODY.RightArm
+	description.LeftArm = BODY.LeftArm
+	description.RightLeg = BODY.RightLeg
+	description.LeftLeg = BODY.LeftLeg
+	description.HeightScale = 1
+	description.WidthScale = 1
+	description.DepthScale = 1
+	description.BodyTypeScale = 0
+	description.ProportionScale = 0
+	pcall(function()
+		humanoid:ApplyDescription(description)
+	end)
+end
+
+------------------------------------------------------------------------------------------------
 -- Numbers
 
 local function applyStats(player: Player, worn: { [string]: { Item: string, Rarity: string, Upgrade: number? } })
@@ -226,6 +264,9 @@ function ArmorService.Start()
 				while not player:HasAppearanceLoaded() and os.clock() - start < 6 and character.Parent do
 					task.wait(0.1)
 				end
+			end
+			if character.Parent then
+				normalizeBody(character)
 			end
 			if character.Parent then
 				ArmorService.Refresh(player)
