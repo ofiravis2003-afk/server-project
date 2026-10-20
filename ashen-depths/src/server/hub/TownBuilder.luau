@@ -595,6 +595,40 @@ function TownBuilder.Build(): Town
 	townsperson("Seraphine", model, CFrame.lookAt(Vector3.new(-52, 0, -16), Vector3.new(0, 0, -16)))
 	townsperson("OldPip", model, CFrame.lookAt(Vector3.new(52, 0, -20), Vector3.new(0, 0, -20)))
 
+	-- the green round the village: oaks behind the houses and along the road out, fences along the road,
+	-- flower boxes under the shop windows
+	local function scaled(name: string, cframe: CFrame, scale: number, sink: number?)
+		local p = prop(name, model, cframe)
+		if p then
+			p:ScaleTo(p:GetScale() * scale)
+			local box, size = p:GetBoundingBox()
+			p:PivotTo(p:GetPivot() + (cframe.Position - (box.Position - Vector3.new(0, size.Y / 2, 0))) - Vector3.new(0, sink or 0, 0))
+		end
+	end
+	local rng = Random.new(31)
+	for i = 0, 17 do
+		local angle = math.rad(i * 20 + rng:NextNumber(-6, 6))
+		if math.abs(math.deg(angle) - 90) > 14 then -- not on the road south
+			local reach = rng:NextNumber(92, 112)
+			scaled("OakTree", CFrame.new(math.cos(angle) * reach, 0, math.sin(angle) * reach) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.85, 1.25), 0.6)
+		end
+	end
+	for _, side in { -1, 1 } do
+		for z = 80, 200, 40 do
+			scaled("OakTree", CFrame.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.8, 1.1), 0.6)
+		end
+		for z = 64, 150, 6 do
+			scaled("Fence", CFrame.new(side * 11, 0, z) * CFrame.Angles(0, math.pi / 2, 0), 1, 0.2)
+		end
+	end
+	for _, at in { CFrame.lookAt(Vector3.new(-40, 0, -50.5), Vector3.new(-40, 0, 0)), CFrame.lookAt(Vector3.new(48, 0, -50.5), Vector3.new(48, 0, 0)),
+		CFrame.lookAt(Vector3.new(-51, 0, -12), Vector3.new(0, 0, -12)), CFrame.lookAt(Vector3.new(51, 0, -26), Vector3.new(0, 0, -26)),
+		CFrame.lookAt(Vector3.new(51, 0, -14), Vector3.new(0, 0, -14)), CFrame.lookAt(Vector3.new(-51, 0, 26), Vector3.new(0, 0, 26)),
+		CFrame.lookAt(Vector3.new(51, 0, 26), Vector3.new(0, 0, 26)), CFrame.lookAt(Vector3.new(-38, 0, 50.5), Vector3.new(-38, 0, 0)),
+		CFrame.lookAt(Vector3.new(38, 0, 50.5), Vector3.new(38, 0, 0)) } do
+		scaled("FlowerBox", at, 1.3)
+	end
+
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0), Vector3.new(30, 0, -48) } do
 		lampPost(model, at)
