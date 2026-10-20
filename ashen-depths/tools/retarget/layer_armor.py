@@ -1,18 +1,26 @@
 # Turns a Tripo armor piece into layered clothing for Roblox, on Roblox's official Combined-Template.blend
-# (create.roblox.com, layered accessories project files): the piece is placed on the template body, and the
+# (create.roblox.com, layered accessories project files). The piece is placed on the template body; the
 # template's full-body clothing cages come with it: the inner cage as it is (the body), the outer cage pushed
-# out wherever the piece stands off the body, so Roblox stretches and bends the piece with any avatar.
-# Exports one GLB with three meshes, <Name>, <Name>_InnerCage and <Name>_OuterCage, in place.
+# out wherever the piece stands off the body. In Studio the piece becomes an Accessory whose WrapLayer uses
+# the two cages, so Roblox stretches and bends it with any avatar (AutoSkin gives it the body's skinning).
+#   torso: the piece centred on the chest, `width` wide, its bottom at `bottom`, `depth` times as deep
+#   arms:  a glove (as prep_armor.py leaves it: along +Z, hand at the bottom) laid along the right forearm
+#          from the fingertips to the elbow, and a mirror copy on the left one, as one mesh
+#   legs:  a boot (upright, toe -Y) on the right lower leg from the sole up `height`, and a mirror copy
+# Exports <out>.glb with three meshes: <Name>, <Name>CageIn and <Name>CageOut (Studio's importer drops meshes
+# named _InnerCage / _OuterCage outside its own layered-clothing import), all in place, and <out>.glb.txt
+# with their centres.
 # Run: blender -b --factory-startup --python layer_armor.py -- <template.blend> <piece.glb> <out.glb> <Name>
-#        <width> <bottom z> <top z> [centre y]    (template units: the body is ~5.5 tall, front is -Y)
+#        <mode> <size> [bottom z] [depth]   (torso: size = width; legs: size = height; arms: size = extra length)
 import bpy, sys, math
 from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
 argv = sys.argv[sys.argv.index("--") + 1:]
-template, piece_path, out, name = argv[0], argv[1], argv[2], argv[3]
-width, bottom, top = float(argv[4]), float(argv[5]), float(argv[6])
-centre_y = float(argv[7]) if len(argv) > 7 else None
+template, piece_path, out, name, mode = argv[0], argv[1], argv[2], argv[3], argv[4]
+size = float(argv[5])
+bottom = float(argv[6]) if len(argv) > 6 else 0.0
+depth = float(argv[7]) if len(argv) > 7 else 1.0
 log = open(out + ".txt", "w")
 def say(*a): log.write(" ".join(str(x) for x in a) + chr(10)); log.flush()
 
@@ -23,6 +31,16 @@ for cage in (inner, outer):
     world = cage.matrix_world.copy()
     cage.parent = None
     cage.matrix_world = world
+
+def centroid(obj_name):
+    o = bpy.data.objects[obj_name]
+    pts = [o.matrix_world @ v.co for v in o.data.vertices]
+    return sum(pts, Vector()) / len(pts), pts
+
+def bounds(pts):
+    return (Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts))),
+            Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts))))
+
 before = set(bpy.data.objects)
 bpy.ops.import_scene.gltf(filepath=piece_path)
 new = [o for o in bpy.data.objects if o not in before]
@@ -40,44 +58,76 @@ armor.matrix_world = world
 for o in new:
     if o != armor and o.name in bpy.data.objects:
         bpy.data.objects.remove(o)
-
-# place it: scaled to `width`, its bottom at `bottom` (a top above that is only reported), centred on the
-# torso in x and (unless given) in y
-bpy.context.view_layer.objects.active = armor
 bpy.ops.object.select_all(action="DESELECT")
 armor.select_set(True)
+bpy.context.view_layer.objects.active = armor
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-co = [v.co for v in armor.data.vertices]
-lo = Vector((min(v.x for v in co), min(v.y for v in co), min(v.z for v in co)))
-hi = Vector((max(v.x for v in co), max(v.y for v in co), max(v.z for v in co)))
-s = width / (hi.x - lo.x)
-height = (hi.z - lo.z) * s
-if top > bottom:
-    s_h = (top - bottom) / (hi.z - lo.z)
-    say("width scale", round(s, 3), "height scale", round(s_h, 3))
-torso = bpy.data.objects.get("UpperTorso_OuterCage")
-ty = centre_y
-if ty is None and torso:
-    tco = [torso.matrix_world @ v.co for v in torso.data.vertices]
-    ty = (min(p.y for p in tco) + max(p.y for p in tco)) / 2
-ty = ty or 0.0
-m = Matrix.Translation(Vector((0, ty, bottom))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)))
-armor.data.transform(m)
+me = armor.data
+lo, hi = bounds([v.co for v in me.vertices])
+
+def mirrored_copy():
+    # the left one: the right one mirrored across x (faces turned so they still face out)
+    bpy.ops.object.select_all(action="DESELECT")
+    armor.select_set(True)
+    bpy.context.view_layer.objects.active = armor
+    bpy.ops.object.duplicate()
+    left = bpy.context.view_layer.objects.active
+    left.data.transform(Matrix.Scale(-1, 4, Vector((1, 0, 0))))
+    left.data.flip_normals()
+    bpy.ops.object.select_all(action="DESELECT")
+    armor.select_set(True)
+    left.select_set(True)
+    bpy.context.view_layer.objects.active = armor
+    bpy.ops.object.join()
+
+if mode == "torso":
+    s = size / (hi.x - lo.x)
+    tc, tp = centroid("UpperTorso_OuterCage")
+    tlo, thi = bounds(tp)
+    ty = (tlo.y + thi.y) / 2
+    me.transform(Matrix.Translation(Vector((0, ty, bottom))) @ Matrix.Scale(depth, 4, Vector((0, 1, 0))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z))))
+    say("torso: width", size, "height", round((hi.z - lo.z) * s, 3), "from z", bottom)
+elif mode == "arms":
+    hand_c, hand_p = centroid("RightHand_OuterCage")
+    arm_c, arm_p = centroid("RightLowerArm_OuterCage")
+    axis = (arm_c - hand_c).normalized()           # up the forearm, toward the elbow
+    tip = min(hand_p, key=lambda p: (p - hand_c).dot(axis))   # the fingertips
+    elbow = max(arm_p, key=lambda p: (p - hand_c).dot(axis))
+    length = (elbow - tip).dot(axis) + size
+    s = length / (hi.z - lo.z)
+    # glove frame: +Z along the forearm; its palm (-X as prepared) turned to face the body (+X here)
+    to_body = Vector((1, 0, 0))
+    palm = (to_body - axis * to_body.dot(axis)).normalized()
+    x_axis = -palm
+    y_axis = axis.cross(x_axis).normalized()
+    x_axis = y_axis.cross(axis).normalized()
+    rot = Matrix((x_axis, y_axis, axis)).transposed().to_4x4()
+    centre = Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)))
+    me.transform(Matrix.Translation(tip) @ rot @ Matrix.Scale(s, 4) @ centre)
+    mirrored_copy()
+    say("arms: length", round(length, 3), "scale", round(s, 3), "axis", [round(v, 3) for v in axis])
+elif mode == "legs":
+    leg_c, leg_p = centroid("RightLowerLeg_OuterCage")
+    foot_c, foot_p = centroid("RightFoot_OuterCage")
+    flo, fhi = bounds(foot_p)
+    llo, lhi = bounds(leg_p)
+    s = size / (hi.z - lo.z)
+    # the heel at the back of the leg, the sole on the foot's bottom
+    me.transform(Matrix.Translation(Vector((leg_c.x, lhi.y, flo.z + bottom))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -hi.y, -lo.z))))
+    mirrored_copy()
+    say("legs: height", size, "scale", round(s, 3))
+armor = bpy.context.view_layer.objects.active
 armor.data.update()
-say("armor placed: width", width, "height", round(height, 3), "depth", round((hi.y - lo.y) * s, 3), "from z", bottom, "to", round(bottom + height, 3))
 
 # the outer cage: each vertex pushed out along its normal past the piece, where the piece is close
 bvh = BVHTree.FromObject(armor, bpy.context.evaluated_depsgraph_get())
-inner_me, outer_me = inner.data, outer.data
-iw, ow = inner.matrix_world, outer.matrix_world
-iw_inv = ow.inverted()
+iw, ow_inv = inner.matrix_world, outer.matrix_world.inverted()
 moved = 0
 MARGIN, REACH = 0.04, 0.9
-for i, v in enumerate(inner_me.vertices):
+for i, v in enumerate(inner.data.vertices):
     p = iw @ v.co
     n = (iw.to_3x3() @ v.normal).normalized()
     far = None
-    # every surface of the piece out along the normal, the farthest one counts
     origin = p - n * 0.02
     travelled = 0.0
     while travelled < REACH:
@@ -86,30 +136,30 @@ for i, v in enumerate(inner_me.vertices):
             break
         d = (hit[0] - p).dot(n)
         far = d if far is None else max(far, d)
-        step = (hit[0] - origin).length + 0.001
+        travelled += (hit[0] - origin).length + 0.001
         origin = hit[0] + n * 0.001
-        travelled += step
     target = p
     if far is not None and far > -0.05:
         target = p + n * (max(far, 0) + MARGIN)
         moved += 1
-    outer_me.vertices[i].co = iw_inv @ target
-outer_me.update()
-say("outer cage vertices pushed out:", moved, "of", len(inner_me.vertices))
+    outer.data.vertices[i].co = ow_inv @ target
+outer.data.update()
+say("outer cage vertices pushed out:", moved, "of", len(inner.data.vertices))
 
-# keep just the three meshes, named for Roblox
 for o in list(bpy.data.objects):
     if o not in (armor, inner, outer):
         bpy.data.objects.remove(o)
 armor.name = name
-inner.name = name + "_InnerCage"
-outer.name = name + "_OuterCage"
+inner.name = name + "CageIn"
+outer.name = name + "CageOut"
+cage_mat = bpy.data.materials.new("CageMat")
 for o in (inner, outer):
+    o.data.name = o.name
     o.data.materials.clear()
+    o.data.materials.append(cage_mat)
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.export_scene.gltf(filepath=out, export_format="GLB", use_selection=False, export_apply=True)
 for o in (armor, inner, outer):
     c = [o.matrix_world @ v.co for v in o.data.vertices]
-    lo = [min(p[k] for p in c) for k in range(3)]
-    hi = [max(p[k] for p in c) for k in range(3)]
+    lo, hi = bounds(c)
     say(o.name, "centre", [round((lo[k] + hi[k]) / 2, 4) for k in range(3)], "size", [round(hi[k] - lo[k], 4) for k in range(3)])
