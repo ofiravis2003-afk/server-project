@@ -1,5 +1,5 @@
 --!strict
--- Builds Emberhold's town square when the server starts: a cobbled square at dusk with the Great Well (the
+-- Builds Emberhold when the server starts: a village on a grass meadow, late in the afternoon, with the Great Well (the
 -- way down, The Descent) in the middle and the gate guard beside it, Brakka's Forge on the north side, the
 -- other shops' houses around it (closed for now), lamp posts, and the lighting and fog of a mining town at dusk.
 -- Tripo models come from ServerStorage.TownProps (GreatWell, Anvil, Forge, WeaponRack, Brakka, GateGuard,
@@ -333,30 +333,94 @@ local function standIn(parent: Instance, name: string, cframe: CFrame, height: n
 end
 
 local function setLighting()
-	Lighting.ClockTime = 18.4
-	Lighting.Brightness = 1.6
-	Lighting.Ambient = Color3.fromRGB(60, 50, 52)
-	Lighting.OutdoorAmbient = Color3.fromRGB(96, 80, 86)
-	Lighting.EnvironmentDiffuseScale = 0.4
-	Lighting.EnvironmentSpecularScale = 0.5
+	-- late afternoon, golden and warm: the village looks lived in, the Well's glow still shows
+	Lighting.ClockTime = 16.8
+	Lighting.GeographicLatitude = 35
+	Lighting.Brightness = 2.6
+	Lighting.Ambient = Color3.fromRGB(86, 78, 72)
+	Lighting.OutdoorAmbient = Color3.fromRGB(150, 132, 118)
+	Lighting.EnvironmentDiffuseScale = 0.6
+	Lighting.EnvironmentSpecularScale = 0.6
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-	atmosphere.Density = 0.38
-	atmosphere.Offset = 0.1
-	atmosphere.Color = Color3.fromRGB(150, 120, 120)
-	atmosphere.Decay = Color3.fromRGB(90, 60, 70)
-	atmosphere.Glare = 0.2
-	atmosphere.Haze = 1.6
+	atmosphere.Density = 0.3
+	atmosphere.Offset = 0.15
+	atmosphere.Color = Color3.fromRGB(214, 186, 150)
+	atmosphere.Decay = Color3.fromRGB(120, 100, 90)
+	atmosphere.Glare = 0.35
+	atmosphere.Haze = 1.4
 	atmosphere.Parent = Lighting
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect") or Instance.new("BloomEffect")
-	bloom.Intensity = 0.6
-	bloom.Size = 30
-	bloom.Threshold = 1.6
+	bloom.Intensity = 0.5
+	bloom.Size = 28
+	bloom.Threshold = 1.8
 	bloom.Parent = Lighting
 	local grade = Lighting:FindFirstChildOfClass("ColorCorrectionEffect") or Instance.new("ColorCorrectionEffect")
-	grade.TintColor = Color3.fromRGB(255, 236, 222)
-	grade.Contrast = 0.12
-	grade.Saturation = -0.05
+	grade.TintColor = Color3.fromRGB(255, 240, 222)
+	grade.Contrast = 0.1
+	grade.Saturation = 0.08
 	grade.Parent = Lighting
+	local rays = Lighting:FindFirstChildOfClass("SunRaysEffect") or Instance.new("SunRaysEffect")
+	rays.Intensity = 0.06
+	rays.Spread = 0.6
+	rays.Parent = Lighting
+end
+
+-- The land the village stands on, in terrain: a grass meadow far past the houses, a round cobbled plaza
+-- round the Well, paths of packed earth from the plaza to every door, the old road leaving south, and green
+-- hills all round (rock showing on their crowns) so the world doesn't end at the last house.
+local function path(terrain: Terrain, from: Vector3, to: Vector3, width: number, material: Enum.Material)
+	local length = (to - from).Magnitude
+	local mid = (from + to) / 2
+	terrain:FillBlock(CFrame.lookAt(Vector3.new(mid.X, -4, mid.Z), Vector3.new(to.X, -4, to.Z)), Vector3.new(width, 8, length + width * 0.6), material)
+end
+
+local function landscape()
+	local terrain = workspace.Terrain
+	terrain:Clear()
+	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(96, 128, 60))
+	terrain:SetMaterialColor(Enum.Material.LeafyGrass, Color3.fromRGB(84, 116, 52))
+	terrain:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(110, 86, 62))
+	terrain:SetMaterialColor(Enum.Material.Cobblestone, Color3.fromRGB(122, 114, 104))
+	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(110, 106, 98))
+	pcall(function()
+		(terrain :: any).Decoration = true -- grass blades
+	end)
+	-- the meadow (its top at y = 0, where everything stands)
+	terrain:FillBlock(CFrame.new(0, -6, 0), Vector3.new(1024, 12, 1024), Enum.Material.Grass)
+	-- the plaza round the Well
+	terrain:FillCylinder(CFrame.new(0, -4, 0), 8, 30, Enum.Material.Cobblestone)
+	-- earth paths to every door, a cobbled road to the forge and out of town to the south
+	local plaza = 26
+	path(terrain, Vector3.new(0, 0, -plaza), Vector3.new(0, 0, -52), 12, Enum.Material.Cobblestone)
+	path(terrain, Vector3.new(0, 0, plaza), Vector3.new(0, 0, 420), 14, Enum.Material.Cobblestone)
+	for _, door in { Vector3.new(-44, 0, -50), Vector3.new(44, 0, -50), Vector3.new(-50, 0, -20), Vector3.new(-50, 0, 20), Vector3.new(50, 0, -20), Vector3.new(50, 0, 20), Vector3.new(-44, 0, 50), Vector3.new(44, 0, 50) } do
+		local dir = Vector3.new(door.X, 0, door.Z).Unit
+		path(terrain, dir * (plaza - 2), door, 9, Enum.Material.Ground)
+		terrain:FillBlock(CFrame.new(door.X, -4, door.Z), Vector3.new(14, 8, 10), Enum.Material.Ground)
+	end
+	-- hills all round, the road leaving through a gap between them
+	local rng = Random.new(7)
+	for i = 0, 35 do
+		local angle = math.rad(i * 10 + rng:NextNumber(-3, 3))
+		local southGap = math.abs(math.deg(angle) - 90) < 9 -- +Z is south, where the road goes
+		if not southGap then
+			local reach = rng:NextNumber(185, 245)
+			local radius = rng:NextNumber(45, 80)
+			local centre = Vector3.new(math.cos(angle) * reach, rng:NextNumber(-radius * 0.75, -radius * 0.35), math.sin(angle) * reach)
+			terrain:FillBall(centre, radius, Enum.Material.Grass)
+			if rng:NextNumber() < 0.45 then
+				terrain:FillBall(centre + Vector3.new(rng:NextNumber(-12, 12), radius * 0.55, rng:NextNumber(-12, 12)), radius * 0.4, Enum.Material.Rock)
+			end
+		end
+	end
+	-- low rolling ground nearer in, between the houses and the hills
+	for i = 0, 15 do
+		local angle = math.rad(i * 22.5 + 11)
+		if math.abs(math.deg(angle) - 90) > 14 then
+			local centre = Vector3.new(math.cos(angle) * 120, -26, math.sin(angle) * 120)
+			terrain:FillBall(centre, 30, Enum.Material.LeafyGrass)
+		end
+	end
 end
 
 -- Brakka's Forge: an open-fronted smithy on the north side of the square, with the forge glowing at the back,
@@ -440,14 +504,13 @@ function TownBuilder.Build(): Town
 	end
 	local base = workspace:FindFirstChild("Baseplate") :: BasePart?
 	if base then
-		base.Color = Color3.fromRGB(46, 40, 34)
-		base.Material = Enum.Material.Ground
+		base:Destroy() -- the terrain is the ground now
 	end
+	landscape()
 	local model = Instance.new("Model")
 	model.Name = "Town"
 
-	-- the square: big cobbles, a ring of paler stones round the well
-	part(model, "Square", Vector3.new(SQUARE, 1, SQUARE), CFrame.new(0, -0.45, 0), Color3.fromRGB(70, 64, 58), Enum.Material.Cobblestone)
+	-- a ring of paler stones round the well, on the plaza
 	part(model, "WellRing", Vector3.new(0.2, 34, 34), CFrame.new(0, 0.06, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(96, 90, 82), Enum.Material.Slate, Enum.PartType.Cylinder)
 
 	-- The Great Well in the middle: the way down into the Depths
