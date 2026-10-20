@@ -28,7 +28,8 @@ local PLASTER = Color3.fromRGB(150, 132, 108)
 local ROOF = Color3.fromRGB(64, 44, 38)
 local WARM = Color3.fromRGB(255, 176, 96)
 
-local SQUARE = 150 -- the square's width
+local SQUARE = 150 -- the square's width (as laid out; everything is then spread out by SPREAD)
+local SPREAD = 1.25 -- how far apart the village is drawn: every piece's place from the Well times this
 
 -- The townsfolk's standing animations (published from ServerStorage.TownClips).
 local IDLE: { [string]: number } = {
@@ -388,15 +389,16 @@ local function landscape(): number
 	-- the meadow (its top at y = 0, where everything stands)
 	terrain:FillBlock(CFrame.new(0, -8, 0), Vector3.new(1024, 12, 1024), Enum.Material.Grass)
 	-- inside the village a mown lawn (LeafyGrass grows no tall blades), so paths and feet show
-	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 130, Enum.Material.LeafyGrass)
+	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 130 * SPREAD, Enum.Material.LeafyGrass)
 	terrain:FillBlock(CFrame.new(0, -6, 190), Vector3.new(44, 8, 140), Enum.Material.LeafyGrass)
 	-- the plaza round the Well
-	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 30, Enum.Material.Cobblestone)
+	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 30 * SPREAD, Enum.Material.Cobblestone)
 	-- earth paths to every door, a cobbled road to the forge and out of town to the south
-	local plaza = 26
-	path(terrain, Vector3.new(0, 0, -plaza), Vector3.new(0, 0, -52), 12, Enum.Material.Cobblestone)
+	local plaza = 26 * SPREAD
+	path(terrain, Vector3.new(0, 0, -plaza), Vector3.new(0, 0, -52 * SPREAD), 12, Enum.Material.Cobblestone)
 	path(terrain, Vector3.new(0, 0, plaza), Vector3.new(0, 0, 420), 14, Enum.Material.Cobblestone)
-	for _, door in { Vector3.new(-44, 0, -50), Vector3.new(44, 0, -50), Vector3.new(-50, 0, -20), Vector3.new(-50, 0, 20), Vector3.new(50, 0, -20), Vector3.new(50, 0, 20), Vector3.new(-44, 0, 50), Vector3.new(44, 0, 50) } do
+	for _, laid in { Vector3.new(-44, 0, -50), Vector3.new(44, 0, -50), Vector3.new(-50, 0, -20), Vector3.new(-50, 0, 20), Vector3.new(50, 0, -20), Vector3.new(50, 0, 20), Vector3.new(-44, 0, 50), Vector3.new(44, 0, 50) } do
+		local door = laid * SPREAD
 		local dir = Vector3.new(door.X, 0, door.Z).Unit
 		path(terrain, dir * (plaza - 2), door, 9, Enum.Material.Ground)
 		terrain:FillBlock(CFrame.new(door.X, -6, door.Z), Vector3.new(14, 8, 10), Enum.Material.Ground)
@@ -420,7 +422,7 @@ local function landscape(): number
 	for i = 0, 15 do
 		local angle = math.rad(i * 22.5 + 11)
 		if math.abs(math.deg(angle) - 90) > 14 then
-			local centre = Vector3.new(math.cos(angle) * 120, -26, math.sin(angle) * 120)
+			local centre = Vector3.new(math.cos(angle) * 120 * SPREAD, -26, math.sin(angle) * 120 * SPREAD)
 			terrain:FillBall(centre, 30, Enum.Material.LeafyGrass)
 		end
 	end
@@ -584,14 +586,14 @@ function TownBuilder.Build(): Town
 
 	-- the other shops and houses around the square (opening in later updates)
 	local inset = edge - 16
-	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 38, "Guild Hall")
-	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 38, "Ironhide Armory")
-	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 34, "The Gilded Tome")
-	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 30, nil)
-	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 34, "The Sunken Tankard")
-	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 30, nil)
-	house(model, CFrame.new(-44, 0, inset), 34, nil)
-	house(model, CFrame.new(44, 0, inset), 34, nil)
+	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 44, "Guild Hall")
+	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 44, "Ironhide Armory")
+	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 39, "The Gilded Tome")
+	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 35, nil)
+	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 39, "The Sunken Tankard")
+	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 35, nil)
+	house(model, CFrame.new(-44, 0, inset), 39, nil)
+	house(model, CFrame.new(44, 0, inset), 39, nil)
 
 	-- the shops' wares out front, and market stalls in the square (each facing the middle)
 	local function facing(at: Vector3): CFrame
@@ -633,9 +635,6 @@ function TownBuilder.Build(): Town
 		for z = 80, 200, 40 do
 			scaled("OakTree", CFrame.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.8, 1.1), 1.6)
 		end
-		for z = 64, 112, 6 do
-			scaled("Fence", CFrame.new(side * 11, 0, z) * CFrame.Angles(0, math.pi / 2, 0), 1, 0.2)
-		end
 	end
 	for _, at in { CFrame.lookAt(Vector3.new(-40, 0, -50.5), Vector3.new(-40, 0, 0)), CFrame.lookAt(Vector3.new(48, 0, -50.5), Vector3.new(48, 0, 0)),
 		CFrame.lookAt(Vector3.new(-51, 0, -12), Vector3.new(0, 0, -12)), CFrame.lookAt(Vector3.new(51, 0, -26), Vector3.new(0, 0, -26)),
@@ -657,10 +656,10 @@ function TownBuilder.Build(): Town
 		end
 		if i % 4 == 0 and math.abs(deg - 90) > 18 then
 			local corner = (i / SECTIONS) * math.pi * 2
-			scaled("WallTower", CFrame.new(math.cos(corner) * WALL_RADIUS, 0, math.sin(corner) * WALL_RADIUS), 1.3, 0.3)
+			scaled("WallTower", CFrame.new(math.cos(corner) * WALL_RADIUS, 0, math.sin(corner) * WALL_RADIUS), 1.75, 0.3)
 		end
 	end
-	scaled("Gatehouse", CFrame.lookAt(Vector3.new(0, 0, WALL_RADIUS), Vector3.new(0, 0, 0)), 1.45, 0.3)
+	scaled("Gatehouse", CFrame.lookAt(Vector3.new(0, 0, WALL_RADIUS), Vector3.new(0, 0, 0)), 1.9, 0.3)
 
 	-- life round the plaza and the doors: benches by the Well, barrels and crates by the shops, hay carts,
 	-- two more market stalls
@@ -668,7 +667,7 @@ function TownBuilder.Build(): Town
 		local a = math.rad(deg)
 		scaled("Bench", CFrame.lookAt(Vector3.new(math.cos(a) * 24, 0, math.sin(a) * 24), Vector3.new(0, 0, 0)), 1.4)
 	end
-	for _, at in { Vector3.new(-30, 0, -56), Vector3.new(30, 0, -56), Vector3.new(-56, 0, -30), Vector3.new(56, 0, -30), Vector3.new(-56, 0, 32), Vector3.new(56, 0, 32), Vector3.new(-32, 0, 56), Vector3.new(14, 0, -52) } do
+	for _, at in { Vector3.new(-30, 0, -56), Vector3.new(56, 0, -30), Vector3.new(-56, 0, 32), Vector3.new(14, 0, -52) } do
 		scaled("Barrels", CFrame.new(at) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 1.6)
 	end
 	scaled("HayCart", CFrame.new(-26, 0, 60) * CFrame.Angles(0, math.rad(20), 0), 1.4)
@@ -681,15 +680,43 @@ function TownBuilder.Build(): Town
 		lampPost(model, at)
 	end
 
+	-- spread the village out: every piece keeps its size and turn, its place from the Well grows
+	for _, piece in model:GetChildren() do
+		if piece:IsA("Model") or piece:IsA("BasePart") then
+			local pos = piece:GetPivot().Position
+			piece:PivotTo(piece:GetPivot() + Vector3.new(pos.X, 0, pos.Z) * (SPREAD - 1))
+		end
+	end
+	-- the gate is shut (heavy oak doors in the arch), and an unseen wall round the ring keeps everyone in,
+	-- however they jump
+	local wallRadius = WALL_RADIUS * SPREAD
+	local gateDoor = part(model, "GateDoors", Vector3.new(16, 22, 1.4), CFrame.new(0, 11, wallRadius - 1.5), Color3.fromRGB(70, 46, 28), Enum.Material.WoodPlanks)
+	for _, y in { 5, 15 } do
+		part(model, "GateBand", Vector3.new(16.2, 1, 1.6), CFrame.new(0, y, wallRadius - 1.6), Color3.fromRGB(40, 38, 38), Enum.Material.Metal)
+	end
+	local _ = gateDoor
+	local barrier = Instance.new("Model")
+	barrier.Name = "TownBarrier"
+	local count = 64
+	for i = 0, count - 1 do
+		local angle = i / count * math.pi * 2
+		local at = Vector3.new(math.cos(angle) * (wallRadius + 3), 50, math.sin(angle) * (wallRadius + 3))
+		local b = part(barrier, "Barrier", Vector3.new(2 * math.pi * (wallRadius + 3) / count + 2, 120, 2), CFrame.lookAt(at, Vector3.new(0, 50, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+		b.Transparency = 1
+		b.CanQuery = false
+		b.CastShadow = false
+	end
+	barrier.Parent = model
+
 	-- everything was laid out at y = 0; lift it onto the ground as the terrain shows it
 	model:PivotTo(model:GetPivot() + Vector3.new(0, groundY, 0))
 	model.Parent = workspace
 
 	-- players arrive at the south end of the square, looking at the well
-	local spawn = CFrame.lookAt(Vector3.new(0, 3 + groundY, 52), Vector3.new(0, 3 + groundY, 0))
+	local spawn = CFrame.lookAt(Vector3.new(0, 3 + groundY, 52 * SPREAD), Vector3.new(0, 3 + groundY, 0))
 	local spawnPart = workspace:FindFirstChildOfClass("SpawnLocation")
 	if spawnPart then
-		spawnPart.CFrame = CFrame.new(0, 0.5 + groundY, 52)
+		spawnPart.CFrame = CFrame.new(0, 0.5 + groundY, 52 * SPREAD)
 		spawnPart.Transparency = 1
 		spawnPart.CanCollide = false
 		local decal = spawnPart:FindFirstChildOfClass("Decal")
