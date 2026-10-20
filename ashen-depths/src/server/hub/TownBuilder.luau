@@ -428,8 +428,15 @@ local function landscape(): number
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Include
 	params.FilterDescendantsInstances = { terrain }
-	local hit = workspace:Raycast(Vector3.new(40, 60, 0), Vector3.new(0, -120, 0), params)
-	return if hit then hit.Position.Y else 0
+	-- (the new terrain can take a few frames to be hit by rays; if it never is, the plaza shows at about 1.8)
+	for _ = 1, 30 do
+		local hit = workspace:Raycast(Vector3.new(0, 60, 20), Vector3.new(0, -120, 0), params)
+		if hit then
+			return hit.Position.Y
+		end
+		task.wait()
+	end
+	return 1.8
 end
 
 -- Brakka's Forge: an open-fronted smithy on the north side of the square, with the forge glowing at the back,
