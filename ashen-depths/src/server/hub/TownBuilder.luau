@@ -586,14 +586,14 @@ function TownBuilder.Build(): Town
 
 	-- the other shops and houses around the square (opening in later updates)
 	local inset = edge - 16
-	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 44, "Guild Hall")
-	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 44, "Ironhide Armory")
-	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 39, "The Gilded Tome")
-	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 35, nil)
-	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 39, "The Sunken Tankard")
-	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 35, nil)
-	house(model, CFrame.new(-44, 0, inset), 39, nil)
-	house(model, CFrame.new(44, 0, inset), 39, nil)
+	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 50, "Guild Hall")
+	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 50, "Ironhide Armory")
+	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 45, "The Gilded Tome")
+	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 40, nil)
+	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 45, "The Sunken Tankard")
+	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 40, nil)
+	house(model, CFrame.new(-44, 0, inset), 45, nil)
+	house(model, CFrame.new(44, 0, inset), 45, nil)
 
 	-- the shops' wares out front, and market stalls in the square (each facing the middle)
 	local function facing(at: Vector3): CFrame
@@ -659,21 +659,26 @@ function TownBuilder.Build(): Town
 			scaled("WallTower", CFrame.new(math.cos(corner) * WALL_RADIUS, 0, math.sin(corner) * WALL_RADIUS), 1.75, 0.3)
 		end
 	end
-	scaled("Gatehouse", CFrame.new(0, 0, WALL_RADIUS), 1.9, 0.3) -- (its arch runs along its X, like the wall)
+	scaled("Gatehouse", CFrame.new(0, 0, WALL_RADIUS), 1.9, 0.3) -- (its towers run along its X like the wall, banners facing the town)
 
-	-- life round the plaza and the doors: benches by the Well, barrels and crates by the shops, hay carts,
-	-- two more market stalls
-	for _, deg in { 20, 160, 200, 340 } do
-		local a = math.rad(deg)
-		scaled("Bench", CFrame.lookAt(Vector3.new(math.cos(a) * 24, 0, math.sin(a) * 24), Vector3.new(0, 0, 0)), 1.4)
+	-- life round the doors: barrels and crates by the shops, hay carts
+	-- four little seating corners on the lawn between the plaza and the houses: two benches facing each
+	-- other, flowers at one end, a barrel at the other
+	for _, corner in { Vector3.new(-40, 0, -40), Vector3.new(40, 0, -40), Vector3.new(-40, 0, 40), Vector3.new(40, 0, 40) } do
+		local out = Vector3.new(corner.X, 0, corner.Z).Unit
+		local along = Vector3.new(-out.Z, 0, out.X)
+		for _, side in { -1, 1 } do
+			local seat = corner + along * side * 3.2
+			scaled("Bench", CFrame.lookAt(seat, corner), 1.4)
+		end
+		scaled("FlowerBox", CFrame.lookAt(corner + out * 4.5, corner), 1.2)
+		scaled("Barrels", CFrame.new(corner - out * 4.5) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 1.3)
 	end
 	for _, at in { Vector3.new(-30, 0, -56), Vector3.new(56, 0, -30), Vector3.new(-56, 0, 32), Vector3.new(14, 0, -52) } do
 		scaled("Barrels", CFrame.new(at) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 1.6)
 	end
 	scaled("HayCart", CFrame.new(-26, 0, 60) * CFrame.Angles(0, math.rad(20), 0), 1.4)
 	scaled("HayCart", CFrame.new(62, 0, 4) * CFrame.Angles(0, math.rad(-70), 0), 1.4)
-	prop("MarketStall", model, facing(Vector3.new(-40, 0, 36)))
-	prop("MarketStall", model, facing(Vector3.new(40, 0, 36)))
 
 	-- lamp posts round the square
 	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0), Vector3.new(30, 0, -48) } do
@@ -687,14 +692,8 @@ function TownBuilder.Build(): Town
 			piece:PivotTo(piece:GetPivot() + Vector3.new(pos.X, 0, pos.Z) * (SPREAD - 1))
 		end
 	end
-	-- the gate is shut (heavy oak doors in the arch), and an unseen wall round the ring keeps everyone in,
-	-- however they jump
+	-- an unseen wall round the ring keeps everyone in, however they jump (the gate's own doors are shut)
 	local wallRadius = WALL_RADIUS * SPREAD
-	local gateDoor = part(model, "GateDoors", Vector3.new(16, 22, 1.4), CFrame.new(0, 11, wallRadius - 1.5), Color3.fromRGB(70, 46, 28), Enum.Material.WoodPlanks)
-	for _, y in { 5, 15 } do
-		part(model, "GateBand", Vector3.new(16.2, 1, 1.6), CFrame.new(0, y, wallRadius - 1.6), Color3.fromRGB(40, 38, 38), Enum.Material.Metal)
-	end
-	local _ = gateDoor
 	local barrier = Instance.new("Model")
 	barrier.Name = "TownBarrier"
 	local count = 64
