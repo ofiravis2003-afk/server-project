@@ -101,7 +101,7 @@ local function dressLayered(character: Model, worn: { [string]: { Item: string, 
 		end
 	end
 	local garments = ReplicatedStorage:FindFirstChild("ArmorLayered")
-	for _, slot in { "Chest", "Hands", "Legs" } do
+	for _, slot in { "Head", "Chest", "Hands", "Legs" } do
 		local item = worn[slot]
 		local piece = item and Armor.Pieces[item.Item]
 		local garment = piece and piece.Look and garments and garments:FindFirstChild(piece.Look)
@@ -124,9 +124,12 @@ local function dress(character: Model, helmet: { Item: string, Rarity: string, U
 	end
 	local piece = helmet and Armor.Pieces[helmet.Item]
 	local models = ReplicatedStorage:FindFirstChild("ArmorModels")
-	local source = piece and piece.Look and models and models:FindFirstChild(piece.Look)
+	local garments = ReplicatedStorage:FindFirstChild("ArmorLayered")
+	-- a hood made into layered clothing is worn as one (dressLayered); only rigid helmets go on here
+	local layered = piece and piece.Look and garments and garments:FindFirstChild(piece.Look)
+	local source = if layered then nil else piece and piece.Look and models and models:FindFirstChild(piece.Look)
 	local head = character:FindFirstChild("Head") :: BasePart?
-	hideUnderHelmet(character, source ~= nil and head ~= nil)
+	hideUnderHelmet(character, (source ~= nil or layered ~= nil) and head ~= nil)
 	if not helmet or not source or not source:IsA("Model") or not head then
 		return
 	end

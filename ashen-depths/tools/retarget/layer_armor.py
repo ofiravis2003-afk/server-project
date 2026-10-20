@@ -7,6 +7,7 @@
 #   arms:  a glove (as prep_armor.py leaves it: along +Z, hand at the bottom) laid along the right forearm
 #          from the fingertips to the elbow, and a mirror copy on the left one, as one mesh
 #   legs:  a boot (upright, toe -Y) on the right lower leg from the sole up `height`, and a mirror copy
+#   head:  a hood or helmet on the head, `width` wide, its top `bottom` above the top of the head
 # Exports <out>.glb with three meshes: <Name>, <Name>CageIn and <Name>CageOut (Studio's importer drops meshes
 # named _InnerCage / _OuterCage outside its own layered-clothing import), all in place, and <out>.glb.txt
 # with their centres.
@@ -116,17 +117,31 @@ elif mode == "legs":
     me.transform(Matrix.Translation(Vector((leg_c.x, lhi.y, flo.z + bottom))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -hi.y, -lo.z))))
     mirrored_copy()
     say("legs: height", size, "scale", round(s, 3))
+elif mode == "head":
+    hc, hp = centroid("Head_OuterCage")
+    hlo, hhi = bounds(hp)
+    s = size / (hi.x - lo.x)
+    me.transform(Matrix.Translation(Vector((0, (hlo.y + hhi.y) / 2 + 0.03, hhi.z + bottom))) @ Matrix.Scale(depth, 4, Vector((0, 1, 0))) @ Matrix.Scale(s, 4) @ Matrix.Translation(Vector((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -hi.z))))
+    say("head: width", size, "height", round((hi.z - lo.z) * s, 3))
 armor = bpy.context.view_layer.objects.active
 armor.data.update()
 
-# the outer cage: each vertex pushed out along its normal past the piece, where the piece is close
+# the outer cage. For each vertex of the inner cage, how far out along its normal the piece reaches: through
+# every surface of the piece along the normal, and the nearest point of the piece close by (fingertips, toes
+# and edges that no normal ray meets). Then the push is spread to the neighbouring vertices a few times so
+# the outer cage stays smooth, and never less than what each vertex needs.
 bvh = BVHTree.FromObject(armor, bpy.context.evaluated_depsgraph_get())
 iw, ow_inv = inner.matrix_world, outer.matrix_world.inverted()
-moved = 0
-MARGIN, REACH = 0.04, 0.9
-for i, v in enumerate(inner.data.vertices):
+MARGIN, REACH, NEAR = 0.04, 0.9, 0.3
+verts = inner.data.vertices
+need = [None] * len(verts)
+normals = []
+points = []
+for i, v in enumerate(verts):
     p = iw @ v.co
     n = (iw.to_3x3() @ v.normal).normalized()
+    points.append(p)
+    normals.append(n)
     far = None
     origin = p - n * 0.02
     travelled = 0.0
@@ -138,13 +153,33 @@ for i, v in enumerate(inner.data.vertices):
         far = d if far is None else max(far, d)
         travelled += (hit[0] - origin).length + 0.001
         origin = hit[0] + n * 0.001
-    target = p
+    near = bvh.find_nearest(p, NEAR)
+    if near[0] is not None:
+        d = (near[0] - p).dot(n)
+        if d > -0.05:
+            far = d if far is None else max(far, d)
     if far is not None and far > -0.05:
-        target = p + n * (max(far, 0) + MARGIN)
+        need[i] = max(far, 0) + MARGIN
+neighbours = [[] for _ in verts]
+for e in inner.data.edges:
+    a_, b_ = e.vertices
+    neighbours[a_].append(b_)
+    neighbours[b_].append(a_)
+push = [x or 0.0 for x in need]
+for _ in range(4):
+    spread = []
+    for i in range(len(verts)):
+        nb = neighbours[i]
+        avg = sum(push[j] for j in nb) / len(nb) if nb else 0.0
+        spread.append(max(push[i], need[i] or 0.0, 0.6 * avg))
+    push = spread
+moved = 0
+for i in range(len(verts)):
+    if push[i] > 0.001:
         moved += 1
-    outer.data.vertices[i].co = ow_inv @ target
+    outer.data.vertices[i].co = ow_inv @ (points[i] + normals[i] * push[i])
 outer.data.update()
-say("outer cage vertices pushed out:", moved, "of", len(inner.data.vertices))
+say("outer cage vertices pushed out:", moved, "of", len(verts))
 
 for o in list(bpy.data.objects):
     if o not in (armor, inner, outer):
