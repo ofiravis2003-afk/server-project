@@ -207,8 +207,8 @@ function Shop.Start()
 				local fitText = Instance.new("UITextSizeConstraint")
 				fitText.MaxTextSize = 12
 				fitText.Parent = about
-				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}
-{Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))}`
+				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}` .. "
+" .. Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))
 			elseif def and def.WeaponType then
 				about.Text = `{offer.Rarity} {def.WeaponType}  ·  Damage {math.floor(Items.WeaponDamage(offer.Item, offer.Rarity, 0) + 0.5)}`
 			else
