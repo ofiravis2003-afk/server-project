@@ -94,7 +94,8 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 	local model = Instance.new("Model")
 	model.Name = itemName
 	-- a brew without a model of its own: the same round bottle, its liquid in the brew's colour
-	if def and def.Slot == "Potion" and def.Color and not builders[itemName] then
+	local made = ReplicatedStorage:FindFirstChild("ItemModels")
+	if def and def.Slot == "Potion" and def.Color and not builders[itemName] and not (made and made:FindFirstChild(itemName)) then
 		part(model, Vector3.new(1.4, 1.4, 1.4), CFrame.new(), def.Color, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
 		part(model, Vector3.new(0.35, 0.35, 0.35), CFrame.new(-0.35, 0.35, -0.45), def.Color:Lerp(Color3.new(1, 1, 1), 0.7), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
 		part(model, Vector3.new(0.7, 0.4, 0.4), CFrame.new(0, 0.85, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(190, 200, 205), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
