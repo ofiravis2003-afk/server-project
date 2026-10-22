@@ -65,10 +65,9 @@ end
 local function addToBag(data: { [string]: any }, itemName: string, rarity: string, count: number): number
 	local def = Items.Defs[itemName]
 	local stack = def.Stack or 1
-	local left = count
-	if def.Limit then
-		left = math.min(left, def.Limit - countOf(data, itemName))
-	end
+	-- (what's over the carry limit never goes in, and isn't counted as given)
+	local allowed = if def.Limit then math.clamp(def.Limit - countOf(data, itemName), 0, count) else count
+	local left = allowed
 	if stack > 1 then
 		for _, item in data.Inventory do
 			if left <= 0 then
@@ -89,7 +88,7 @@ local function addToBag(data: { [string]: any }, itemName: string, rarity: strin
 		end
 		left -= put
 	end
-	return count - math.max(left, 0)
+	return allowed - math.max(left, 0)
 end
 
 -- How many of `itemName` a player carries (all stacks).
