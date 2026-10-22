@@ -13,6 +13,8 @@ export type ItemDef = {
 	Limit: number?, -- the most a player can carry in all (potions)
 	Price: number?, -- what a merchant pays for one (materials and potions; gear goes by rarity)
 	HealFraction: number?, -- potions: part of max health given back
+	Buff: { Stat: string, Amount: number, Duration: number }?, -- potions: a while stronger (Defense, Speed, SpellPower)
+	Color: Color3?, -- potions: the liquid's colour in pictures
 	Description: string?,
 	Keepsake: boolean?, -- a quest item: can't be sold or dropped
 	Set: string?, -- armor: Heavy, Medium, Light, Robes or Ring (shared/Armor has its numbers)
@@ -72,6 +74,11 @@ Items.Defs = {
 
 	-- Potions: drunk from the hotbar (slot 2).
 	HealthPotion = { DisplayName = "Health Potion", Slot = "Potion", Stack = 5, Limit = 5, Price = 8, HealFraction = 0.4, Description = "Gives back 40% of your health." },
+	-- Seraphine's brews (the Gilded Tome)
+	GreaterHealthPotion = { DisplayName = "Greater Health Potion", Slot = "Potion", Stack = 3, Limit = 3, Price = 25, HealFraction = 0.75, Color = Color3.fromRGB(230, 40, 120), Description = "Gives back 75% of your health." },
+	IronskinTonic = { DisplayName = "Ironskin Tonic", Slot = "Potion", Stack = 3, Limit = 3, Price = 20, Buff = { Stat = "Defense", Amount = 40, Duration = 60 }, Color = Color3.fromRGB(150, 160, 175), Description = "Defense +40 for a minute." },
+	SwiftnessDraught = { DisplayName = "Swiftness Draught", Slot = "Potion", Stack = 3, Limit = 3, Price = 20, Buff = { Stat = "Speed", Amount = 0.25, Duration = 45 }, Color = Color3.fromRGB(70, 200, 220), Description = "25% faster for 45 seconds." },
+	EmberElixir = { DisplayName = "Ember Elixir", Slot = "Potion", Stack = 3, Limit = 3, Price = 25, Buff = { Stat = "SpellPower", Amount = 0.3, Duration = 60 }, Color = Color3.fromRGB(255, 130, 40), Description = "Staff and tome spells 30% stronger for a minute." },
 } :: { [string]: ItemDef }
 
 -- Armor pieces and rings (shared/Armor): worn in their slot, one per bag place.

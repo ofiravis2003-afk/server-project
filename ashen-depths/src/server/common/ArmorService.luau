@@ -210,12 +210,24 @@ end
 ------------------------------------------------------------------------------------------------
 -- Numbers
 
+-- Brews that make a player stronger for a while: [player] = { { Stat, Amount, Ends } }
+local buffs: { [Player]: { { Stat: string, Amount: number, Ends: number } } } = {}
+
 local function applyStats(player: Player, worn: { [string]: { Item: string, Rarity: string, Upgrade: number? } })
 	local list = {}
 	for _, item in worn do
 		table.insert(list, item)
 	end
 	local total = Armor.Total(list)
+	local now = os.clock()
+	local active = {}
+	for _, buff in buffs[player] or {} do
+		if buff.Ends > now then
+			table.insert(active, buff)
+			(total :: any)[buff.Stat] = ((total :: any)[buff.Stat] or 0) + buff.Amount
+		end
+	end
+	buffs[player] = if #active > 0 then active else nil
 	player:SetAttribute("Defense", total.Defense)
 	player:SetAttribute("SpellPower", total.SpellPower)
 	player:SetAttribute("BonusHealth", math.floor(total.Health + 0.5))
@@ -244,6 +256,25 @@ function ArmorService.Refresh(player: Player)
 		dressLayered(player.Character, worn)
 	end
 	applyStats(player, worn)
+end
+
+-- A brew's effect: `amount` more of `stat` (Defense, Speed, SpellPower) for `duration` seconds. Drinking the
+-- same brew again starts its time over.
+function ArmorService.AddBuff(player: Player, stat: string, amount: number, duration: number)
+	local list = buffs[player] or {}
+	for i = #list, 1, -1 do
+		if list[i].Stat == stat then
+			table.remove(list, i)
+		end
+	end
+	table.insert(list, { Stat = stat, Amount = amount, Ends = os.clock() + duration })
+	buffs[player] = list
+	ArmorService.Refresh(player)
+	task.delay(duration + 0.1, function()
+		if player.Parent then
+			ArmorService.Refresh(player)
+		end
+	end)
 end
 
 -- Damage to a player, lowered by their Defense. Returns what was dealt (for the damage number).
@@ -285,6 +316,9 @@ function ArmorService.Start()
 	for _, player in Players:GetPlayers() do
 		onPlayer(player)
 	end
+	Players.PlayerRemoving:Connect(function(player)
+		buffs[player] = nil
+	end)
 	DataService.OnLoaded(function(player, _data)
 		ArmorService.Refresh(player)
 	end)

@@ -356,6 +356,26 @@ drinkPotion = function(player: Player, itemName: string)
 					end)
 				end
 			end
+			if def.Buff then
+				ArmorService.AddBuff(player, def.Buff.Stat, def.Buff.Amount, def.Buff.Duration)
+				notifyRemote:FireClient(player, `{def.DisplayName}: {def.Description}`)
+				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if root then
+					local glow = Instance.new("ParticleEmitter")
+					glow.Color = ColorSequence.new(def.Color or Color3.new(1, 1, 1))
+					glow.LightEmission = 0.8
+					glow.Size = NumberSequence.new(0.3, 0)
+					glow.Lifetime = NumberRange.new(0.6, 1)
+					glow.Speed = NumberRange.new(2, 4)
+					glow.SpreadAngle = Vector2.new(180, 180)
+					glow.Acceleration = Vector3.new(0, 5, 0)
+					glow.Parent = root
+					glow:Emit(30)
+					task.delay(1.2, function()
+						glow:Destroy()
+					end)
+				end
+			end
 			InventoryService.PushInventory(player)
 		end
 	end

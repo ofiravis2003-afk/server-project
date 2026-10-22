@@ -45,6 +45,18 @@ local STOCK: { [string]: { Title: string, Line: string, Offers: { Offer } } } = 
 			{ Item = "WoodcutterAxe", Rarity = "Rare", Price = 800 },
 		},
 	},
+	-- Seraphine's Gilded Tome: healing and brews that make you stronger for a while
+	Seraphine = {
+		Title = "The Gilded Tome",
+		Line = "Careful with the orange one. It's not supposed to smoke. Well, not that much.",
+		Offers = {
+			{ Item = "HealthPotion", Rarity = "Common", Price = 25 },
+			{ Item = "GreaterHealthPotion", Rarity = "Common", Price = 80 },
+			{ Item = "IronskinTonic", Rarity = "Common", Price = 60 },
+			{ Item = "SwiftnessDraught", Rarity = "Common", Price = 60 },
+			{ Item = "EmberElixir", Rarity = "Common", Price = 75 },
+		},
+	},
 	-- Thorne's armory: every set's pieces (Common), a Rare chest piece of each, and the two rings
 	Thorne = {
 		Title = "Ironhide Armory",
@@ -127,10 +139,10 @@ function ShopService.Start()
 		end
 		if key == "Brakka" and action == "Trade" then
 			openBrakka(player)
-		elseif key == "Thorne" and action == "Trade" then
+		elseif (key == "Thorne" or key == "Seraphine") and action == "Trade" then
 			local at = person.PrimaryPart or person:FindFirstChildWhichIsA("BasePart", true)
 			if at then
-				openStore(player, "Thorne", at)
+				openStore(player, key, at)
 			end
 		elseif action == "Quests" and (key == "Aldric" or key == "OldPip" or key == "Seraphine") then
 			QuestService.SetGiver(player, key)

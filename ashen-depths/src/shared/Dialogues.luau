@@ -1,9 +1,9 @@
 --!strict
 -- What Emberhold's townsfolk say when a player talks to them: their name and title, what they say first
--- (Lines, one page at a time), and more if asked (More). Action adds a button that does something
+-- (Lines, one page at a time), and more if asked (More). Action (or Actions, for more than one) adds a button that does something
 -- (Brakka's "Trade" opens her shop). Keyed by the townsperson's model name in the town.
 
-export type Dialogue = { Name: string, Title: string, Lines: { string }, More: { string }?, Action: string? }
+export type Dialogue = { Name: string, Title: string, Lines: { string }, More: { string }?, Action: string?, Actions: { string }? }
 
 local Dialogues: { [string]: Dialogue } = {
 	GateGuard = {
@@ -56,12 +56,12 @@ local Dialogues: { [string]: Dialogue } = {
 	Seraphine = {
 		Name = "Seraphine",
 		Title = "The Gilded Tome",
-		Lines = { "Oh! A new face! Have you been down yet? Did you see writing down there? Pages? Anything?" },
+		Lines = { "Oh! A new face! Have you been down yet? Did you see writing down there? Pages? Anything?", "Oh, and the Tome is open! Potions, tonics, a few brews of my own. Mostly safe." },
 		More = {
 			"Ilvane, the old king's wizard, built the Wardstones. She kept a journal, and it was torn apart when the city fell.",
 			"If anyone knew how to stop the ash for good, it was her. Find her pages and bring them to me. Please! I'll make it worth your while.",
 		},
-		Action = "Quests",
+		Actions = { "Trade", "Quests" },
 	},
 	OldPip = {
 		Name = "Old Pip",
