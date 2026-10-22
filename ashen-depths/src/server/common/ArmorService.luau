@@ -224,7 +224,8 @@ local function applyStats(player: Player, worn: { [string]: { Item: string, Rari
 	for _, buff in buffs[player] or {} do
 		if buff.Ends > now then
 			table.insert(active, buff)
-			(total :: any)[buff.Stat] = ((total :: any)[buff.Stat] or 0) + buff.Amount
+			local sums = total :: any
+			sums[buff.Stat] = (sums[buff.Stat] or 0) + buff.Amount
 		end
 	end
 	buffs[player] = if #active > 0 then active else nil
