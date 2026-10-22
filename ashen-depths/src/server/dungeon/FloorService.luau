@@ -786,12 +786,56 @@ local function setWardstoneLit(stone: Model, lit: boolean)
 			end
 		elseif d:IsA("PointLight") or d:IsA("ParticleEmitter") then
 			d.Enabled = lit
+		elseif d:IsA("Highlight") and d.Name == "Dormant" then
+			-- the Tripo stone: dimmed while dark, the dimness lifting as it's relit
+			if lit then
+				TweenService:Create(d, TweenInfo.new(1.5), { FillTransparency = 1, OutlineTransparency = 1 }):Play()
+			else
+				d.FillTransparency = 0.35
+			end
 		end
 	end
 	stone:SetAttribute("Lit", lit)
 end
 
 local function buildWardstone(parent: Instance, position: Vector3): Model
+	-- the Tripo obelisk (DungeonProps.Wardstone) when there is one: dimmed while dark, glowing with embers
+	-- over its crystal once relit
+	local carved = Props.Place("Wardstone", parent, CFrame.new(position) * CFrame.Angles(0, math.pi, 0))
+	if carved then
+		carved.Name = "Wardstone"
+		local body = carved:FindFirstChildWhichIsA("BasePart", true) :: BasePart
+		carved.PrimaryPart = body
+		local _, size = carved:GetBoundingBox()
+		local dim = Instance.new("Highlight")
+		dim.Name = "Dormant"
+		dim.FillColor = Color3.fromRGB(10, 10, 14)
+		dim.FillTransparency = 0.35
+		dim.OutlineTransparency = 1
+		dim.DepthMode = Enum.HighlightDepthMode.Occluded
+		dim.Parent = carved
+		local top = Instance.new("Attachment")
+		top.Name = "Crystal"
+		top.WorldPosition = position + Vector3.new(0, size.Y - 0.8, 0)
+		top.Parent = body
+		local light = Instance.new("PointLight")
+		light.Color = WARD_FIRE
+		light.Range = 22
+		light.Brightness = 1.8
+		light.Parent = top
+		local embers = Instance.new("ParticleEmitter")
+		embers.Color = ColorSequence.new(Color3.fromRGB(255, 200, 120), Color3.fromRGB(255, 120, 40))
+		embers.LightEmission = 1
+		embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 0) })
+		embers.Lifetime = NumberRange.new(1.5, 2.5)
+		embers.Rate = 12
+		embers.Speed = NumberRange.new(0.5, 1.5)
+		embers.SpreadAngle = Vector2.new(180, 180)
+		embers.Acceleration = Vector3.new(0, 1, 0)
+		embers.Parent = top
+		setWardstoneLit(carved, false)
+		return carved
+	end
 	local stone = Instance.new("Model")
 	stone.Name = "Wardstone"
 	local slate = Color3.fromRGB(62, 62, 66)
