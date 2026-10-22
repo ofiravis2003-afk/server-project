@@ -200,7 +200,15 @@ function Shop.Start()
 			local piece = Armor.Pieces[offer.Item]
 			if piece then
 				local set = Armor.SetByName[piece.Set]
-				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}  ·  {Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))}`
+				-- two short lines: what it is, then its numbers
+				about.Position = UDim2.fromOffset(64, 27)
+				about.Size = UDim2.new(1, -170, 0, 30)
+				about.TextScaled = true
+				local fitText = Instance.new("UITextSizeConstraint")
+				fitText.MaxTextSize = 12
+				fitText.Parent = about
+				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}
+{Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))}`
 			elseif def and def.WeaponType then
 				about.Text = `{offer.Rarity} {def.WeaponType}  ·  Damage {math.floor(Items.WeaponDamage(offer.Item, offer.Rarity, 0) + 0.5)}`
 			else
