@@ -79,6 +79,17 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 	Players.PlayerRemoving:Connect(function(player)
 		inIntro[player] = nil
 	end)
+	-- Studio only: ServerStorage.DevIntro:Invoke(player) plays the intro again (the save isn't changed until
+	-- the Brand is taken, and taking it again changes nothing)
+	if game:GetService("RunService"):IsStudio() then
+		local dev = Instance.new("BindableFunction")
+		dev.Name = "DevIntro"
+		dev.OnInvoke = function(player: Player)
+			task.spawn(IntroService.Begin, player, town)
+			return true
+		end
+		dev.Parent = game:GetService("ServerStorage")
+	end
 
 	-- the fly-over is done: Aldric steps up
 	Remotes.Event("IntroReady").OnServerEvent:Connect(function(player)
