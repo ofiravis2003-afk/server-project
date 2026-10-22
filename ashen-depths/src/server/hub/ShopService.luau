@@ -318,6 +318,8 @@ function ShopService.Start()
 			return
 		end
 		DataService.SaveNow(player)
+		Remotes.Event("Traveling"):FireClient(player, "Depths")
+		task.wait(0.5)
 		local ok, err = pcall(function()
 			TeleportService:TeleportAsync(Config.PlaceIds.Depths, { player })
 		end)

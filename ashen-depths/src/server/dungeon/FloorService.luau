@@ -1332,6 +1332,8 @@ local function setupReturnRope(room: FloorBuilder.BuiltRoom)
 			return
 		end
 		DataService.SaveNow(player)
+		Remotes.Event("Traveling"):FireClient(player, "Emberhold")
+		task.wait(0.5)
 		local ok, err = pcall(function()
 			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, { player })
 		end)

@@ -2,6 +2,11 @@
   "name": "AshenDepths-Emberhold",
   "tree": {
     "$className": "DataModel",
+    "ReplicatedFirst": {
+      "Arrival": {
+        "$path": "src/first/Arrival.client.luau"
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
