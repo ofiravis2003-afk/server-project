@@ -21,12 +21,13 @@ function Floors.ChapterName(floor: number): string
 end
 
 -- Enemies get tougher every floor.
+-- (eased 2026-10-23: floor 12 was too much even in Legendary armor)
 function Floors.EnemyHealthMultiplier(floor: number): number
-	return 1 + 0.25 * (floor - 1)
+	return 1 + 0.2 * (floor - 1)
 end
 
 function Floors.EnemyDamageMultiplier(floor: number): number
-	return 1 + 0.12 * (floor - 1)
+	return 1 + 0.08 * (floor - 1)
 end
 
 -- Which monsters a floor's combat rooms are filled with, and how often (weights).

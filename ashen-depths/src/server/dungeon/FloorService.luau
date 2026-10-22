@@ -36,11 +36,11 @@ local CHECK_INTERVAL = 0.25
 local RESET_AFTER_EMPTY = 4 -- seconds a locked room may stand empty (everyone died) before it resets
 -- An elite in a combat room: more likely deeper down.
 local function eliteChance(floor: number): number
-	return math.min(0.15 + 0.05 * (floor - 1), 0.7)
+	return math.min(0.15 + 0.03 * (floor - 1), 0.45)
 end
 -- Between fights (not inside a room that's fighting) health slowly comes back; during a fight only potions
 -- and the Tome heal. (Roblox's own steady regeneration is turned off in ProgressService.)
-local REST_HEAL_PER_SECOND = 0.03
+local REST_HEAL_PER_SECOND = 0.05
 local EVENT_CHANCE = 0.45 -- of a floor (without a boss or the Guardians) having an event
 local TRAP_CHANCE = 0.45
 local ARROW_TRAP_CHANCE = 0.3
@@ -449,8 +449,8 @@ local function activateRoom(room: CombatRoom, floor: number)
 		room.Spawning = false
 		return
 	end
-	-- Floor 1: two or three (by room size), then one more every second floor.
-	local count = math.min(math.max(math.floor(room.Built.Size / 16), 2) + math.floor((floor - 1) / 2), 8)
+	-- Floor 1: two or three (by room size), then one more every third floor, six at most.
+	local count = math.min(math.max(math.floor(room.Built.Size / 20), 2) + math.floor((floor - 1) / 3), 6)
 	local eliteIndex = if room.HasElite then rng:NextInteger(1, count) else 0
 	for i = 1, count do
 		if not room.Active then

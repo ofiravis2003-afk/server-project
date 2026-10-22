@@ -11,7 +11,7 @@ function Leveling.XPToNext(level: number): number
 end
 
 function Leveling.MaxHealth(level: number): number
-	return 100 + (level - 1) * 12
+	return 100 + (level - 1) * 15
 end
 
 -- Every level makes the player's hits 5% stronger.
