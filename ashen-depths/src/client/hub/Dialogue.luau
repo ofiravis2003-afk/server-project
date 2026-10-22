@@ -195,6 +195,9 @@ function Dialogue.Start()
 		talking = nil
 		typing += 1
 		gui.Enabled = false
+		pcall(function()
+			game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
+		end)
 		local camera = workspace.CurrentCamera
 		camera.CameraType = if cameraBefore and cameraBefore ~= Enum.CameraType.Scriptable then cameraBefore else Enum.CameraType.Custom
 		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
@@ -231,6 +234,10 @@ function Dialogue.Start()
 		local goal = CFrame.lookAt(face + look * 6.5 + look:Cross(Vector3.yAxis) * 2.2 + Vector3.new(0, 0.3, 0), face - Vector3.new(0, 0.6, 0))
 		TweenService:Create(camera, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = goal }):Play()
 		gui.Enabled = true
+		-- the hotbar of weapons and potions would cover the buttons on a phone
+		pcall(function()
+			game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+		end)
 		showPage()
 	end
 

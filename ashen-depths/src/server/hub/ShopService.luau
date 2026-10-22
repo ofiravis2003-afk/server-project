@@ -58,7 +58,8 @@ local STOCK: { [string]: { Title: string, Line: string, Offers: { Offer } } } = 
 			{ Item = "EmberElixir", Rarity = "Common", Price = 75 },
 		},
 	},
-	-- Thorne's armory: every set's pieces (Common), a Rare chest piece of each, and the two rings
+	-- Thorne's armory: every piece of every set in Common and in Rare (Epic and better only come from the
+	-- Depths: chests, elites and bosses), and the two rings
 	Thorne = {
 		Title = "Ironhide Armory",
 		Line = "Armor won't make you brave. It'll just keep you alive long enough to learn.",
@@ -71,7 +72,9 @@ local STOCK: { [string]: { Title: string, Line: string, Offers: { Offer } } } = 
 				end
 			end
 			for _, set in { "Heavy", "Medium", "Light", "Robes" } do
-				table.insert(offers, { Item = set .. "Chest", Rarity = "Rare", Price = 900 })
+				for _, slot in { "Head", "Chest", "Hands", "Legs" } do
+					table.insert(offers, { Item = set .. slot, Rarity = "Rare", Price = price[slot] * 4 })
+				end
 			end
 			table.insert(offers, { Item = "SignetRing", Rarity = "Common", Price = 400 })
 			table.insert(offers, { Item = "EmberBand", Rarity = "Common", Price = 450 })

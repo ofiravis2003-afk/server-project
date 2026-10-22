@@ -130,7 +130,7 @@ function Inventory.Start()
 	if Device.Touch() then
 		-- (the thumb's corner is the jump button's; the bag goes up top, bigger)
 		open.AnchorPoint = Vector2.new(1, 0)
-		open.Position = UDim2.new(1, -12, 0, 8)
+		open.Position = UDim2.new(1, -12, 0, -28) -- up into the top bar's row
 		open.Size = UDim2.fromOffset(96, 48)
 		open.TextSize = 22
 	end

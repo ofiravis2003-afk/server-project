@@ -30,7 +30,7 @@ export type Layout = {
 }
 
 local DIRECTIONS = { Vector2.new(1, 0), Vector2.new(-1, 0), Vector2.new(0, 1), Vector2.new(0, -1) }
-local COMBAT_SIZES = { 32, 40, 48 }
+local COMBAT_SIZES = { 40, 48, 56 } -- (roomier since phones: the camera needs space to stand back)
 local BOSS_SIZE = 56
 local SECRET_CHANCE = 0.6
 
