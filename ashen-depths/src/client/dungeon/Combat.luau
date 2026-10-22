@@ -12,6 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 local Device = require(ReplicatedStorage.Shared.Device)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Weapons = require(ReplicatedStorage.Shared.Weapons)
+local Audio = require(script.Parent.Parent.Common.Audio)
 
 local ACTION = "AshenAttack"
 local AUTO_AIM_REACH = 1.3 -- melee weapons look for targets a bit past their reach
@@ -152,6 +153,7 @@ local function tryAttack()
 		root.CFrame = CFrame.lookAt(root.Position, root.Position + flat)
 	end
 	playSwing(weapon, sinceLast)
+	Audio.Play(if weapon.Kind == "Melee" then "Swing" else "Spell")
 	attackRemote:FireServer(tool:GetAttribute("ItemId"), flat, aimPoint)
 end
 

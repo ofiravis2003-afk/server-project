@@ -99,6 +99,7 @@ local templates: { [string]: Model } = {}
 local folder: Folder
 local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
+local soundRemote = Remotes.Event("Sound")
 
 local function weld(part0: BasePart, part1: BasePart)
 	local w = Instance.new("WeldConstraint")
@@ -520,6 +521,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		return
 	end
 	enemy.Dead = true
+	soundRemote:FireAllClients("EnemyDeath", enemy.Model:GetPivot().Position)
 	CollectionService:RemoveTag(enemy.Model, ENEMY_TAG)
 	enemies[enemy.Model] = nil
 	dismissMinions(enemy)

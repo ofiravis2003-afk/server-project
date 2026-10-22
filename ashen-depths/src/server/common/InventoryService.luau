@@ -39,6 +39,7 @@ local actionRemote = Remotes.Event("InventoryAction")
 local notifyRemote = Remotes.Event("Notify")
 local actionLimiter = RateLimiter.new(0.2)
 local damageNumberRemote = Remotes.Event("DamageNumber")
+local soundRemote = Remotes.Event("Sound")
 local nextPotion: { [Player]: number } = {}
 
 local function countItems(data: { [string]: any }): number
@@ -325,6 +326,7 @@ drinkPotion = function(player: Player, itemName: string)
 			notifyRemote:FireClient(player, "You're already at full health.")
 		else
 			nextPotion[player] = now + POTION_COOLDOWN
+			soundRemote:FireClient(player, "Potion")
 			for id, item in data.Inventory do
 				if item.Item == itemName then
 					item.Count = (item.Count or 1) - 1

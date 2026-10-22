@@ -35,6 +35,7 @@ local EVENT_NAMES = {
 	"Objective", -- server -> client: what to do next and where (a line on screen, a pillar of light)
 	"Traveling", -- server -> client: the player is about to teleport (where to), show the travel card
 	"LoreShow", -- server -> client: show a page of Ilvane's journal (its id, and how many the player has found)
+	"Sound", -- server -> client: play a sound effect from shared/Sounds (its name, and where, or nowhere for flat)
 }
 
 local FUNCTION_NAMES = {}

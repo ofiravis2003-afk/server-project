@@ -91,6 +91,7 @@ local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
 local bossIntroRemote = Remotes.Event("BossIntro")
 local loreRemote = Remotes.Event("LoreShow")
+local soundRemote = Remotes.Event("Sound")
 local BOSS_INTRO_SECONDS = 11
 
 local function keysOf(player: Player): Keys
@@ -181,6 +182,9 @@ local function setGates(room: CombatRoom, closed: boolean)
 		TweenService:Create(gate.Part, TweenInfo.new(if closed then 0.6 else 1.2, Enum.EasingStyle.Quad), {
 			CFrame = if closed then gate.Closed else gate.Open,
 		}):Play()
+	end
+	if closed and room.Built.Gates[1] then
+		soundRemote:FireAllClients("GateSlam", room.Built.Gates[1].Part.Position)
 	end
 end
 
@@ -645,6 +649,7 @@ local function placeChest(parent: Instance, cframe: CFrame, tier: string)
 				end
 			end
 		end
+		soundRemote:FireClient(player, "Chest", base.Position)
 		giveLoot(player, tier, base.Position)
 	end)
 end

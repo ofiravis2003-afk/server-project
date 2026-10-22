@@ -9,6 +9,7 @@ local DataService = require(script.Parent.DataService)
 
 local statsRemote = Remotes.Event("StatsUpdated")
 local notifyRemote = Remotes.Event("Notify")
+local soundRemote = Remotes.Event("Sound")
 
 local ProgressService = {}
 
@@ -63,6 +64,7 @@ function ProgressService.AddXP(player: Player, amount: number)
 	end
 	if leveledUp then
 		applyHealth(player)
+		soundRemote:FireClient(player, "LevelUp")
 		notifyRemote:FireClient(player, `Level up! You are now level {data.Level}.`)
 	end
 	ProgressService.PushStats(player)

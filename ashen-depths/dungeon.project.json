@@ -5,6 +5,9 @@
     "ReplicatedFirst": {
       "Arrival": {
         "$path": "src/first/Arrival.client.luau"
+      },
+      "Logo": {
+        "$path": "src/first/Logo.luau"
       }
     },
     "ReplicatedStorage": {

@@ -8,6 +8,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local Common = script.Parent.Parent.Common
+local Audio = require(Common.Audio)
 local DamageNumbers = require(Common.DamageNumbers)
 local Hud = require(Common.Hud)
 local Inventory = require(Common.Inventory)

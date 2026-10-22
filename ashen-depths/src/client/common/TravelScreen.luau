@@ -4,11 +4,13 @@
 -- loading and the next place takes it over (first/Arrival.client.luau fades it out once that place is ready).
 
 local Players = game:GetService("Players")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
+local Logo = require(ReplicatedFirst:WaitForChild("Logo"))
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local TravelScreen = {}
@@ -36,11 +38,15 @@ function TravelScreen.Build(where: string): ScreenGui
 	glow.Color = ColorSequence.new(Color3.fromRGB(60, 24, 10), Color3.fromRGB(8, 6, 6))
 	glow.Rotation = 90
 	glow.Parent = back
+	-- the logo above the place's name
+	local camera = workspace.CurrentCamera
+	local logo = Logo.Build(back, if camera then math.min(camera.ViewportSize.X * 0.55, 480) else 420)
+	logo.Position = UDim2.fromScale(0.5, 0.36)
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.AnchorPoint = Vector2.new(0.5, 0.5)
-	title.Position = UDim2.fromScale(0.5, 0.45)
-	title.Size = UDim2.new(0.8, 0, 0, 70)
+	title.Position = UDim2.fromScale(0.5, 0.62)
+	title.Size = UDim2.new(0.8, 0, 0, 48)
 	title.BackgroundTransparency = 1
 	title.FontFace = Fonts.Title
 	title.TextScaled = true
@@ -50,7 +56,7 @@ function TravelScreen.Build(where: string): ScreenGui
 	local sub = Instance.new("TextLabel")
 	sub.Name = "Sub"
 	sub.AnchorPoint = Vector2.new(0.5, 0)
-	sub.Position = UDim2.fromScale(0.5, 0.53)
+	sub.Position = UDim2.new(0.5, 0, 0.62, 30)
 	sub.Size = UDim2.new(0.8, 0, 0, 28)
 	sub.BackgroundTransparency = 1
 	sub.FontFace = Fonts.Body
@@ -70,10 +76,15 @@ function TravelScreen.Start()
 		local gui = TravelScreen.Build(if type(where) == "string" then where else "Emberhold")
 		local back = gui:FindFirstChild("Back") :: Frame
 		back.BackgroundTransparency = 1
+		local logo = back:FindFirstChild("Logo") :: Frame
+		local copy = gui:Clone() -- (for the next place, before the fade-in below touches it)
+		Logo.Hide(logo)
 		gui.Parent = player:WaitForChild("PlayerGui")
 		TweenService:Create(back, TweenInfo.new(0.4), { BackgroundTransparency = 0 }):Play()
+		Logo.Fade(logo, true, 0.6)
+		Logo.Embers(logo)
 		pcall(function()
-			TeleportService:SetTeleportGui(gui:Clone())
+			TeleportService:SetTeleportGui(copy)
 		end)
 	end)
 end
