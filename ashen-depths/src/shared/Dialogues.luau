@@ -3,7 +3,7 @@
 -- (Lines, one page at a time), and more if asked (More). Action (or Actions, for more than one) adds a button that does something
 -- (Brakka's "Trade" opens her shop). Keyed by the townsperson's model name in the town.
 
-export type Dialogue = { Name: string, Title: string, Lines: { string }, More: { string }?, Action: string?, Actions: { string }? }
+export type Dialogue = { Name: string, Title: string, Lines: { string }, More: { string }?, Action: string?, Actions: { string }?, Required: boolean? }
 
 local Dialogues: { [string]: Dialogue } = {
 	GateGuard = {
@@ -43,6 +43,7 @@ local Dialogues: { [string]: Dialogue } = {
 			"Hold out your hand. This is the Guild Brand. It lights the stones... and if you fall, it brings you home.",
 		},
 		Action = "Take the Brand",
+		Required = true, -- read to the end; the Brand is the only way out
 	},
 	Brakka = {
 		Name = "Brakka",

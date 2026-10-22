@@ -664,7 +664,7 @@ function TownBuilder.Build(): Town
 	-- life round the doors: barrels and crates by the shops, hay carts
 	-- four little seating corners on the lawn between the plaza and the houses: two benches facing each
 	-- other, flowers at one end, a barrel at the other
-	for _, corner in { Vector3.new(-40, 0, -40), Vector3.new(40, 0, -40), Vector3.new(-40, 0, 40), Vector3.new(40, 0, 40) } do
+	for _, corner in { Vector3.new(-30, 0, -32), Vector3.new(40, 0, -40), Vector3.new(-40, 0, 40), Vector3.new(40, 0, 40) } do -- (the first kept clear of the Guild door)
 		local out = Vector3.new(corner.X, 0, corner.Z).Unit
 		local along = Vector3.new(-out.Z, 0, out.X)
 		for _, side in { -1, 1 } do

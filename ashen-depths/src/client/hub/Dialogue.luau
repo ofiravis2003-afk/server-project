@@ -166,15 +166,18 @@ function Dialogue.Start()
 			end
 		end
 		-- their own button (Trade, Quests) is there from the first page
-		for i, action in d.Actions or { d.Action } do
+		-- (a Required talk shows its button only on the last page, and can't be left)
+		for i, action in if d.Required and not last then {} else d.Actions or { d.Action } do
 			button(action, 1 + i, Color3.fromRGB(120, 70, 25), function()
 				actionRemote:FireServer(key, action)
 				close()
 			end)
 		end
-		button("Goodbye", 9, Color3.fromRGB(60, 30, 30), function()
-			close()
-		end)
+		if not d.Required then
+			button("Goodbye", 9, Color3.fromRGB(60, 30, 30), function()
+				close()
+			end)
+		end
 	end
 
 	close = function()
