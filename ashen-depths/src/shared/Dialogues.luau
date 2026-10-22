@@ -45,12 +45,13 @@ local Dialogues: { [string]: Dialogue } = {
 	Thorne = {
 		Name = "Thorne",
 		Title = "Ironhide Armory",
-		Lines = { "Armor? Not today. My forge is still cold. Come back when the Armory opens its doors." },
+		Lines = { "Ironhide Armory. Plate, scale, leather, robes. Pick what suits how you fight, not how you look." },
 		More = {
 			"This eye? Left it a long way down. Something there breathes frost.",
 			"Forty years I've known Aldric. Forty years, and he hasn't aged a day. Good blood, he says.",
 			"...Forget I said that.",
 		},
+		Action = "Trade",
 	},
 	Seraphine = {
 		Name = "Seraphine",

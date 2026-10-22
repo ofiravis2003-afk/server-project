@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Armor = require(ReplicatedStorage.Shared.Armor)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Items = require(ReplicatedStorage.Shared.Items)
@@ -182,9 +183,10 @@ function Shop.Start()
 			row.BackgroundColor3 = ROW
 			row.Parent = list
 			corner(row, 8)
-			stroke(row, if def and def.Slot == "Weapon" then info.Color else EDGE, 1.2)
+			local gear = def and (def.Slot == "Weapon" or def.Set ~= nil)
+			stroke(row, if gear then info.Color else EDGE, 1.2)
 			picture(row, offer)
-			local name = label(row, Fonts.Title, 17, if def and def.Slot == "Weapon" then info.Color else TEXT)
+			local name = label(row, Fonts.Title, 17, if gear then info.Color else TEXT)
 			name.Position = UDim2.fromOffset(64, 6)
 			name.Size = UDim2.new(1, -170, 0, 22)
 			name.TextScaled = true
@@ -195,7 +197,11 @@ function Shop.Start()
 			local about = label(row, Fonts.Body, 13, Color3.fromRGB(180, 170, 158))
 			about.Position = UDim2.fromOffset(64, 30)
 			about.Size = UDim2.new(1, -170, 0, 22)
-			if def and def.WeaponType then
+			local piece = Armor.Pieces[offer.Item]
+			if piece then
+				local set = Armor.SetByName[piece.Set]
+				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}  ·  {Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))}`
+			elseif def and def.WeaponType then
 				about.Text = `{offer.Rarity} {def.WeaponType}  ·  Damage {math.floor(Items.WeaponDamage(offer.Item, offer.Rarity, 0) + 0.5)}`
 			else
 				about.Text = def and def.Description or ""

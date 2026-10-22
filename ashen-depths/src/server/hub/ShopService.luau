@@ -45,6 +45,26 @@ local STOCK: { [string]: { Title: string, Line: string, Offers: { Offer } } } = 
 			{ Item = "WoodcutterAxe", Rarity = "Rare", Price = 800 },
 		},
 	},
+	-- Thorne's armory: every set's pieces (Common), a Rare chest piece of each, and the two rings
+	Thorne = {
+		Title = "Ironhide Armory",
+		Line = "Armor won't make you brave. It'll just keep you alive long enough to learn.",
+		Offers = (function()
+			local offers = {}
+			local price = { Head = 120, Chest = 220, Hands = 90, Legs = 110 }
+			for _, set in { "Heavy", "Medium", "Light", "Robes" } do
+				for _, slot in { "Head", "Chest", "Hands", "Legs" } do
+					table.insert(offers, { Item = set .. slot, Rarity = "Common", Price = price[slot] })
+				end
+			end
+			for _, set in { "Heavy", "Medium", "Light", "Robes" } do
+				table.insert(offers, { Item = set .. "Chest", Rarity = "Rare", Price = 900 })
+			end
+			table.insert(offers, { Item = "SignetRing", Rarity = "Common", Price = 400 })
+			table.insert(offers, { Item = "EmberBand", Rarity = "Common", Price = 450 })
+			return offers
+		end)(),
+	},
 }
 
 local ShopService = {}
@@ -75,12 +95,15 @@ function ShopService.Start()
 	local openRemote = Remotes.Event("ShopOpen")
 	local notifyRemote = Remotes.Event("Notify")
 
-	-- Brakka's shop
-	local function openBrakka(player: Player)
-		local stock = STOCK.Brakka
-		openShop[player] = { Name = "Brakka", At = town.Brakka }
+	-- a shopkeeper's window (Brakka's forge, Thorne's armory); closes when the player walks away from `at`
+	local function openStore(player: Player, name: string, at: BasePart)
+		local stock = STOCK[name]
+		openShop[player] = { Name = name, At = at }
 		InventoryService.SetAtShop(player, true)
-		openRemote:FireClient(player, { Shop = "Brakka", Title = stock.Title, Line = stock.Line, Offers = stock.Offers })
+		openRemote:FireClient(player, { Shop = name, Title = stock.Title, Line = stock.Line, Offers = stock.Offers })
+	end
+	local function openBrakka(player: Player)
+		openStore(player, "Brakka", town.Brakka)
 	end
 
 	-- Talking to the townsfolk (their words in shared/Dialogues; Brakka's Trade opens her shop)
@@ -104,6 +127,11 @@ function ShopService.Start()
 		end
 		if key == "Brakka" and action == "Trade" then
 			openBrakka(player)
+		elseif key == "Thorne" and action == "Trade" then
+			local at = person.PrimaryPart or person:FindFirstChildWhichIsA("BasePart", true)
+			if at then
+				openStore(player, "Thorne", at)
+			end
 		elseif action == "Quests" and (key == "Aldric" or key == "OldPip" or key == "Seraphine") then
 			QuestService.SetGiver(player, key)
 			QuestService.Push(player)
