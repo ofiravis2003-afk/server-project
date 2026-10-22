@@ -29,6 +29,7 @@ Remotes.Event("Notify").OnClientEvent:Connect(function(message: string)
 	StarterGui:SetCore("SendNotification", { Title = "Ashen Depths", Text = message, Duration = 6 })
 end)
 
+Audio.Start("Depths")
 Hud.Start()
 DamageNumbers.Start()
 ItemPopup.Start()
