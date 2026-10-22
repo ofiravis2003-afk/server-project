@@ -30,6 +30,9 @@ local EVENT_NAMES = {
 	"QuestsUpdated", -- server -> client: every quest's state and progress, rank points and rank
 	"QuestAction", -- client -> server: Accept / TurnIn / Abandon a quest (only at the Guild)
 	"QuestBoardOpen", -- server -> client: open the quest board window
+	"IntroStart", -- server -> client: a new adventurer's fly-over of Emberhold
+	"IntroReady", -- client -> server: the fly-over is done (Aldric steps up)
+	"Objective", -- server -> client: what to do next and where (a line on screen, a pillar of light)
 	"Traveling", -- server -> client: the player is about to teleport (where to), show the travel card
 	"LoreShow", -- server -> client: show a page of Ilvane's journal (its id, and how many the player has found)
 }

@@ -88,6 +88,7 @@ function Dialogue.Start()
 	row.Parent = buttons
 
 	local talking: Model? = nil
+	local talkingKey: string? = nil
 	local pages: { string } = {}
 	local page = 0
 	local askedMore = false
@@ -126,7 +127,7 @@ function Dialogue.Start()
 	end
 
 	showPage = function()
-		local key = talking and talking.Name
+		local key = talking and (talkingKey or talking.Name)
 		local d = key and Dialogues[key]
 		if not d then
 			return
@@ -192,14 +193,15 @@ function Dialogue.Start()
 		end
 	end
 
-	local function open(model: Model)
-		local d = Dialogues[model.Name]
+	local function open(model: Model, key: string?)
+		local d = Dialogues[key or model.Name]
 		local character = player.Character
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 		if not d or not humanoid or talking then
 			return
 		end
 		talking = model
+		talkingKey = key
 		pages = d.Lines
 		page = 1
 		askedMore = false
@@ -221,9 +223,9 @@ function Dialogue.Start()
 		showPage()
 	end
 
-	Remotes.Event("DialogueOpen").OnClientEvent:Connect(function(model: Instance)
+	Remotes.Event("DialogueOpen").OnClientEvent:Connect(function(model: Instance, key: any)
 		if typeof(model) == "Instance" and model:IsA("Model") then
-			open(model)
+			open(model, if type(key) == "string" then key else nil)
 		end
 	end)
 	-- the player steps out of the shot while talking (their own screen only)

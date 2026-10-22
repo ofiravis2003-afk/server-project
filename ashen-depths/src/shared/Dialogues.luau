@@ -32,6 +32,18 @@ local Dialogues: { [string]: Dialogue } = {
 		},
 		Action = "Quests",
 	},
+	-- Aldric's words to a brand-new adventurer (IntroService), ending with the Guild Brand
+	AldricIntro = {
+		Name = "Aldric Vane",
+		Title = "Master of the Adventurers' Guild",
+		Lines = {
+			"So. Another one walks in from the road. Welcome to Emberhold, the last town above the ash.",
+			"Beneath us lies Valdren, a kingdom that fell into the earth a thousand years ago. Its ash rises a little more every year.",
+			"The old Wardstones down there hold it back, but they're going dark. The Guild sends adventurers down to light them again.",
+			"Hold out your hand. This is the Guild Brand. It lights the stones... and if you fall, it brings you home.",
+		},
+		Action = "Take the Brand",
+	},
 	Brakka = {
 		Name = "Brakka",
 		Title = "Blacksmith",

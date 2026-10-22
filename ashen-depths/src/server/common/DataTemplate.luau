@@ -18,6 +18,7 @@ return {
 	WardLit = 0, -- the deepest floor whose Wardstone this player has relit
 	Receipts = {}, -- ids of the last Robux purchases already given, so none is ever given twice
 	JoinCount = 0,
+	IntroDone = nil :: boolean?, -- the first-visit fly-over and Aldric's Brand (IntroService); nil = decide on load
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
 }

@@ -24,6 +24,7 @@ local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
 local RateLimiter = require(Common.RateLimiter)
 local Quests = require(ReplicatedStorage.Shared.Quests)
+local IntroService = require(script.Parent.IntroService)
 local TownBuilder = require(script.Parent.TownBuilder)
 
 local SHOP_RANGE = 16
@@ -104,6 +105,7 @@ end
 
 function ShopService.Start()
 	local town = TownBuilder.Build()
+	IntroService.Start(town)
 	local openRemote = Remotes.Event("ShopOpen")
 	local notifyRemote = Remotes.Event("Notify")
 
@@ -131,13 +133,15 @@ function ShopService.Start()
 		end
 	end
 	Remotes.Event("DialogueAction").OnServerEvent:Connect(function(player, key: any, action: any)
-		local person = type(key) == "string" and town.Model:FindFirstChild(key, true)
+		local person = type(key) == "string" and town.Model:FindFirstChild(if key == "AldricIntro" then "Aldric" else key, true)
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if not person or not person:IsA("Model") or not root or (root.Position - person:GetPivot().Position).Magnitude > SHOP_RANGE then
 			return
 		end
-		if key == "Brakka" and action == "Trade" then
+		if key == "AldricIntro" and action == "Take the Brand" then
+			IntroService.TakeBrand(player)
+		elseif key == "Brakka" and action == "Trade" then
 			openBrakka(player)
 		elseif (key == "Thorne" or key == "Seraphine") and action == "Trade" then
 			local at = person.PrimaryPart or person:FindFirstChildWhichIsA("BasePart", true)
