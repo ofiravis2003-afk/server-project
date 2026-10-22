@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Dialogues = require(ReplicatedStorage.Shared.Dialogues)
+local Device = require(ReplicatedStorage.Shared.Device)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
@@ -56,6 +57,13 @@ function Dialogue.Start()
 	limit.MaxSize = Vector2.new(820, 190)
 	limit.MinSize = Vector2.new(340, 190)
 	limit.Parent = panel
+	if Device.Small() then
+		-- a phone held sideways: nearly the full width, hugging the bottom
+		panel.Size = UDim2.new(0.94, 0, 0, 170)
+		panel.Position = UDim2.new(0.5, 0, 1, -8)
+		limit.MaxSize = Vector2.new(900, 170)
+		limit.MinSize = Vector2.new(300, 170)
+	end
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 10)
 	corner.Parent = panel
@@ -104,10 +112,10 @@ function Dialogue.Start()
 		b.Name = text:gsub(" ", "")
 		b.LayoutOrder = order
 		b.AutomaticSize = Enum.AutomaticSize.X
-		b.Size = UDim2.fromOffset(0, 36)
+		b.Size = UDim2.fromOffset(0, if Device.Touch() then 42 else 36)
 		b.BackgroundColor3 = color
 		b.FontFace = Fonts.Title
-		b.TextSize = 17
+		b.TextSize = if Device.Touch() then 19 else 17
 		b.TextColor3 = TEXT
 		b.Text = text
 		b.Parent = buttons

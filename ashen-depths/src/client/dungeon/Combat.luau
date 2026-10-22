@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Device = require(ReplicatedStorage.Shared.Device)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Weapons = require(ReplicatedStorage.Shared.Weapons)
 
@@ -191,9 +192,48 @@ local function onToolEquipped(tool: Tool)
 	local deactivated = tool.Deactivated:Connect(function()
 		holding = false
 	end)
-	ContextActionService:BindAction(ACTION, onAction, true)
-	ContextActionService:SetTitle(ACTION, "Attack")
-	ContextActionService:SetPosition(ACTION, UDim2.new(1, -190, 1, -120))
+	-- a gamepad trigger through ContextActionService; on a touch screen, a big round button by the jump button
+	ContextActionService:BindAction(ACTION, onAction, false, Enum.KeyCode.ButtonR2) -- (the mouse goes through tool.Activated)
+	local touchGui: ScreenGui? = nil
+	if Device.Touch() then
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "AttackButton"
+		gui.ResetOnSpawn = false
+		gui.DisplayOrder = 3
+		local b = Instance.new("TextButton")
+		b.Name = "Attack"
+		b.AnchorPoint = Vector2.new(1, 1)
+		b.Position = UDim2.new(1, -120, 1, -40)
+		b.Size = UDim2.fromOffset(96, 96)
+		b.BackgroundColor3 = Color3.fromRGB(120, 40, 30)
+		b.BackgroundTransparency = 0.15
+		b.AutoButtonColor = true
+		b.Font = Enum.Font.GothamBlack
+		b.TextSize = 40
+		b.TextColor3 = Color3.fromRGB(255, 225, 190)
+		b.Text = "⚔"
+		b.Parent = gui
+		local round = Instance.new("UICorner")
+		round.CornerRadius = UDim.new(1, 0)
+		round.Parent = b
+		local ring = Instance.new("UIStroke")
+		ring.Color = Color3.fromRGB(240, 190, 90)
+		ring.Thickness = 3
+		ring.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		ring.Parent = b
+		b.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+				startHolding()
+			end
+		end)
+		b.InputEnded:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+				holding = false
+			end
+		end)
+		gui.Parent = player:WaitForChild("PlayerGui")
+		touchGui = gui
+	end
 
 	tool.AncestryChanged:Once(function()
 		activated:Disconnect()
@@ -202,6 +242,9 @@ local function onToolEquipped(tool: Tool)
 			heldTool = nil
 			holding = false
 			ContextActionService:UnbindAction(ACTION)
+			if touchGui then
+				touchGui:Destroy()
+			end
 			if holdTrack then
 				holdTrack:Stop(0.2)
 				holdTrack = nil

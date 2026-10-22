@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Armor = require(ReplicatedStorage.Shared.Armor)
+local Device = require(ReplicatedStorage.Shared.Device)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Items = require(ReplicatedStorage.Shared.Items)
@@ -126,6 +127,13 @@ function Inventory.Start()
 	open.AnchorPoint = Vector2.new(1, 1)
 	open.Position = UDim2.new(1, -14, 1, -14)
 	open.Size = UDim2.fromOffset(84, 40)
+	if Device.Touch() then
+		-- (the thumb's corner is the jump button's; the bag goes up top, bigger)
+		open.AnchorPoint = Vector2.new(1, 0)
+		open.Position = UDim2.new(1, -12, 0, 8)
+		open.Size = UDim2.fromOffset(96, 48)
+		open.TextSize = 22
+	end
 	local dot = Instance.new("Frame")
 	dot.Size = UDim2.fromOffset(14, 14)
 	dot.Position = UDim2.new(1, -8, 0, -6)
