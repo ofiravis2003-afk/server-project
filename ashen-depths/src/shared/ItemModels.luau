@@ -116,6 +116,8 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 	if piece then
 		local models = ReplicatedStorage:FindFirstChild("ArmorModels")
 		local source = models and piece.Look and models:FindFirstChild(piece.Look)
+		local own = ReplicatedStorage:FindFirstChild("ItemModels")
+		source = source or (own and own:FindFirstChild(itemName)) -- rings have a model of their own
 		if source and source:IsA("Model") then
 			local copy = source:Clone()
 			copy:PivotTo(CFrame.new())
