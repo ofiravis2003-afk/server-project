@@ -80,8 +80,8 @@ function Logo.Build(parent: Instance, width: number?): Frame
 	round.Parent = glow
 	local soft = Instance.new("UIGradient")
 	soft.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.82),
-		NumberSequenceKeypoint.new(0.5, 0.92),
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.5, 0.78),
 		NumberSequenceKeypoint.new(1, 1),
 	})
 	soft.Parent = glow
