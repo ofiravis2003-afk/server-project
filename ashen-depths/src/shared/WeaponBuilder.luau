@@ -200,19 +200,20 @@ local function burn(handle: BasePart)
 	fire.Name = "Flames"
 	fire.Texture = "rbxasset://textures/particles/fire_main.dds"
 	fire.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 120)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 120, 30)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 40, 10)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 170, 50)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 80, 15)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(130, 25, 5)),
 	})
-	fire.LightEmission = 1
-	fire.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.55), NumberSequenceKeypoint.new(1, 0.15) })
-	fire.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) })
+	fire.LightEmission = 0.7
+	fire.Brightness = 2.5
+	fire.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.9), NumberSequenceKeypoint.new(1, 0.2) })
+	fire.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) })
 	fire.Lifetime = NumberRange.new(0.35, 0.7)
 	fire.Speed = NumberRange.new(0.5, 1.5)
 	fire.RotSpeed = NumberRange.new(-90, 90)
 	fire.Rotation = NumberRange.new(0, 360)
 	fire.Acceleration = Vector3.new(0, 5, 0)
-	fire.Rate = 45
+	fire.Rate = 80
 	fire.Shape = Enum.ParticleEmitterShape.Box
 	fire.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
 	fire.Parent = handle
@@ -225,7 +226,7 @@ local function burn(handle: BasePart)
 	embers.Speed = NumberRange.new(1, 3)
 	embers.SpreadAngle = Vector2.new(60, 60)
 	embers.Acceleration = Vector3.new(0, 3, 0)
-	embers.Rate = 12
+	embers.Rate = 20
 	embers.Shape = Enum.ParticleEmitterShape.Box
 	embers.Parent = handle
 	local light = Instance.new("PointLight")
