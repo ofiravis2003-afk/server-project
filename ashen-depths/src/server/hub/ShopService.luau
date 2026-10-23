@@ -5,7 +5,8 @@
 --   monster materials can be sold. Walking away or closing the window closes the shop.
 --   Brakka also upgrades weapons (+1 .. +10) for gold and monster materials (shared/Upgrades); from +6 an
 --   upgrade can fail, losing what was paid but never the weapon.
---   The Great Well (The Descent): takes the player down into the Depths (the dungeon place).
+--   The Great Well (The Descent): takes the player, and everyone standing at the well with them, down into
+--   the Depths (the dungeon place), in a server of their own.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,6 +29,9 @@ local IntroService = require(script.Parent.IntroService)
 local TownBuilder = require(script.Parent.TownBuilder)
 
 local SHOP_RANGE = 16
+local PARTY_SIZE = 4 -- players who can go down the well together
+local GATHER_RADIUS = 22 -- how close to the well counts as "at the well"
+local GATHER_SECONDS = 6 -- the countdown before the chains drop
 
 export type Offer = { Item: string, Rarity: string, Price: number }
 
@@ -315,24 +319,58 @@ function ShopService.Start()
 		end
 	end)
 
-	-- The Great Well: down into the Depths
+	-- The Great Well: down into the Depths. Whoever pulls the lever, everyone standing at the well goes down
+	-- with them (a party, up to PARTY_SIZE) after a short countdown, into a Depths server of their own.
 	local descend = prompt(town.Well, "Descend", "The Great Well")
 	descend.HoldDuration = 1
 	descend.MaxActivationDistance = 14
+	local gathering = false
+	local function atTheWell(first: Player): { Player }
+		local party = { first }
+		for _, other in Players:GetPlayers() do
+			local character = other.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+			if other ~= first and #party < PARTY_SIZE and root and humanoid and humanoid.Health > 0
+				and (root.Position - town.Well.Position).Magnitude <= GATHER_RADIUS then
+				table.insert(party, other)
+			end
+		end
+		return party
+	end
 	descend.Triggered:Connect(function(player)
 		if RunService:IsStudio() then
 			notifyRemote:FireClient(player, "The way down only opens in the published game (Studio can't teleport). Test the Depths in its own place.")
 			return
 		end
-		DataService.SaveNow(player)
-		Remotes.Event("Traveling"):FireClient(player, "Depths")
+		if gathering then
+			return -- (already going: standing at the well is enough to go along)
+		end
+		gathering = true
+		for _, member in atTheWell(player) do
+			notifyRemote:FireClient(member, `The chains begin to move! Everyone at the well goes down in {GATHER_SECONDS} seconds.`)
+		end
+		task.wait(GATHER_SECONDS)
+		gathering = false
+		if player.Parent ~= Players then
+			return
+		end
+		local party = atTheWell(player)
+		for _, member in party do
+			DataService.SaveNow(member)
+			Remotes.Event("Traveling"):FireClient(member, "Depths")
+		end
 		task.wait(0.5)
+		local options = Instance.new("TeleportOptions")
+		options.ShouldReserveServer = true
 		local ok, err = pcall(function()
-			TeleportService:TeleportAsync(Config.PlaceIds.Depths, { player })
+			TeleportService:TeleportAsync(Config.PlaceIds.Depths, party, options)
 		end)
 		if not ok then
 			warn(`[ShopService] Teleport to the Depths failed: {err}`)
-			notifyRemote:FireClient(player, "The well's chains won't move. Try again in a moment.")
+			for _, member in party do
+				notifyRemote:FireClient(member, "The well's chains won't move. Try again in a moment.")
+			end
 		end
 	end)
 

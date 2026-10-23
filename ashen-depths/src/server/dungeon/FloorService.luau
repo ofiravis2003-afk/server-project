@@ -1375,20 +1375,47 @@ local function setupReturnRope(room: FloorBuilder.BuiltRoom)
 	daylight.Brightness = 2
 	daylight.Parent = hole
 	local climb = prompt(rope, "Climb up", "Back to Emberhold", 1, 8)
+	local climbing = false
 	climb.Triggered:Connect(function(player)
 		if game:GetService("RunService"):IsStudio() then
 			notifyRemote:FireClient(player, "The rope only leads up in the published game (Studio can't teleport).")
 			return
 		end
-		DataService.SaveNow(player)
-		Remotes.Event("Traveling"):FireClient(player, "Emberhold")
+		if climbing then
+			return -- (already going: standing at the rope is enough to go along)
+		end
+		-- the others get a moment to come along: everyone at the rope climbs up together, into the same town
+		climbing = true
+		for _, other in Players:GetPlayers() do
+			if other ~= player then
+				notifyRemote:FireClient(other, `{player.DisplayName} is climbing back to Emberhold. Stand at the rope to go along.`)
+			end
+		end
+		task.wait(4)
+		climbing = false
+		if player.Parent ~= Players then
+			return
+		end
+		local party = { player }
+		for _, other in Players:GetPlayers() do
+			local root = aliveRoot(other)
+			if other ~= player and root and (root.Position - Vector3.new(at.X, root.Position.Y, at.Z)).Magnitude <= 12 then
+				table.insert(party, other)
+			end
+		end
+		for _, member in party do
+			DataService.SaveNow(member)
+			Remotes.Event("Traveling"):FireClient(member, "Emberhold")
+		end
 		task.wait(0.5)
 		local ok, err = pcall(function()
-			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, { player })
+			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, party)
 		end)
 		if not ok then
 			warn(`[FloorService] Teleport to Emberhold failed: {err}`)
-			notifyRemote:FireClient(player, "The rope won't hold right now. Try again in a moment.")
+			for _, member in party do
+				notifyRemote:FireClient(member, "The rope won't hold right now. Try again in a moment.")
+			end
 		end
 	end)
 end
