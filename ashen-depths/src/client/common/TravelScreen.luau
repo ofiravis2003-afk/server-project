@@ -41,11 +41,11 @@ function TravelScreen.Build(where: string): ScreenGui
 	-- the logo above the place's name
 	local camera = workspace.CurrentCamera
 	local logo = Logo.Build(back, if camera then math.min(camera.ViewportSize.X * 0.55, camera.ViewportSize.Y * 0.85, 560) else 460)
-	logo.Position = UDim2.fromScale(0.5, 0.36)
+	logo.Position = UDim2.fromScale(0.5, 0.33)
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.AnchorPoint = Vector2.new(0.5, 0.5)
-	title.Position = UDim2.fromScale(0.5, 0.62)
+	title.Position = UDim2.fromScale(0.5, 0.65)
 	title.Size = UDim2.new(0.8, 0, 0, 48)
 	title.BackgroundTransparency = 1
 	title.FontFace = Fonts.Title
@@ -56,7 +56,7 @@ function TravelScreen.Build(where: string): ScreenGui
 	local sub = Instance.new("TextLabel")
 	sub.Name = "Sub"
 	sub.AnchorPoint = Vector2.new(0.5, 0)
-	sub.Position = UDim2.new(0.5, 0, 0.62, 30)
+	sub.Position = UDim2.new(0.5, 0, 0.65, 30)
 	sub.Size = UDim2.new(0.8, 0, 0, 28)
 	sub.BackgroundTransparency = 1
 	sub.FontFace = Fonts.Body
