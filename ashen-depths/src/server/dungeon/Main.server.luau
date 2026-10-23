@@ -30,4 +30,4 @@ FloorService.Start()
 -- Last: everything that reacts to a player's data loading has registered by now.
 DataService.Start()
 
-print(`[Ashen Depths] Depths server v{Config.Version} started`)
+print(`[Emberwell] Depths server v{Config.Version} started`)

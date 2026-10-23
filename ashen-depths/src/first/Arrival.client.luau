@@ -2,7 +2,7 @@
 -- Runs first, in both places, and covers Roblox's grey loading screen until this place has loaded and the
 -- player's character stands in it, then fades away:
 --   arriving by teleport: the travel card they left with (with the logo on it, from TravelScreen)
---   joining the game: the opening screen, the Ashen Depths logo on black with embers rising
+--   joining the game: the opening screen, the Emberwell logo on black with embers rising
 
 local Players = game:GetService("Players")
 local ReplicatedFirst = game:GetService("ReplicatedFirst")
@@ -41,7 +41,7 @@ local logo = back and back:FindFirstChild("Logo") :: Frame?
 if back and not logo then
 	-- the opening: the logo grows in out of the dark
 	local camera = workspace.CurrentCamera
-	local width = if camera then math.min(camera.ViewportSize.X * 0.7, 620) else 520
+	local width = if camera then math.min(camera.ViewportSize.X * 0.7, camera.ViewportSize.Y * 1.3, 760) else 620
 	local l = Logo.Build(back, width)
 	l.Position = UDim2.fromScale(0.5, 0.46)
 	Logo.Hide(l)

@@ -24,7 +24,7 @@ local Intro = require(script.Parent.Intro)
 local QuestBoard = require(script.Parent.QuestBoard)
 
 Remotes.Event("Notify").OnClientEvent:Connect(function(message: string)
-	StarterGui:SetCore("SendNotification", { Title = "Ashen Depths", Text = message, Duration = 6 })
+	StarterGui:SetCore("SendNotification", { Title = "Emberwell", Text = message, Duration = 6 })
 end)
 
 Audio.Start("Town")
@@ -42,4 +42,4 @@ Intro.Start()
 QuestBoard.Start()
 task.spawn(TownFolk.Start)
 
-print(`[Ashen Depths] Emberhold client v{Config.Version} ready`)
+print(`[Emberwell] Emberhold client v{Config.Version} ready`)

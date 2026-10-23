@@ -40,7 +40,7 @@ function TravelScreen.Build(where: string): ScreenGui
 	glow.Parent = back
 	-- the logo above the place's name
 	local camera = workspace.CurrentCamera
-	local logo = Logo.Build(back, if camera then math.min(camera.ViewportSize.X * 0.55, 480) else 420)
+	local logo = Logo.Build(back, if camera then math.min(camera.ViewportSize.X * 0.55, camera.ViewportSize.Y * 0.85, 560) else 460)
 	logo.Position = UDim2.fromScale(0.5, 0.36)
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"

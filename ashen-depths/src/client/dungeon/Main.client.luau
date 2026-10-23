@@ -27,7 +27,7 @@ local Squish = require(script.Parent.Squish)
 local TwoHandGrip = require(script.Parent.TwoHandGrip)
 
 Remotes.Event("Notify").OnClientEvent:Connect(function(message: string)
-	StarterGui:SetCore("SendNotification", { Title = "Ashen Depths", Text = message, Duration = 6 })
+	StarterGui:SetCore("SendNotification", { Title = "Emberwell", Text = message, Duration = 6 })
 end)
 
 Audio.Start("Depths")
@@ -48,4 +48,4 @@ BossBar.Start()
 BossIntro.Start()
 TwoHandGrip.Start()
 
-print(`[Ashen Depths] Depths client v{Config.Version} ready`)
+print(`[Emberwell] Depths client v{Config.Version} ready`)
