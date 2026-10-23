@@ -25,7 +25,7 @@ local Store = {}
 -- What each pass and product is, on screen (prices come from Roblox).
 local PASSES = {
 	{ Key = "BiggerBag", Name = "Bigger Bag", About = "Your bag holds twice as much.", Owned = "BagSize" },
-	{ Key = "VIP", Name = "VIP", About = "+20% gold and XP from every kill, and a VIP tag.", Owned = "VIP" },
+	{ Key = "VIP", Name = "VIP", About = "+20% gold and XP from kills, and a VIP tag.", Owned = "VIP" },
 	{ Key = "PotionBelt", Name = "Potion Belt", About = "Carry 5 of each potion instead of 3.", Owned = "PotionBonus" },
 }
 local GOLD_PACKS = {
