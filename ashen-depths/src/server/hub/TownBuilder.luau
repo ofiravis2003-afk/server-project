@@ -36,7 +36,7 @@ local IDLE: { [string]: number } = {
 	Brakka = 92067081387599, -- Mixamo "Standing W/ Briefcase Idle"
 	GateGuard = 77116071943805, -- Mixamo "Standing Idle"
 	Aldric = 110153111695731, -- Mixamo "Unarmed Idle"
-	Thorne = 77116071943805, -- Mixamo "Standing Idle" (the "Dwarf Idle" leaned him to one side)
+	Thorne = 106330872617044, -- Mixamo "Breathing Idle" (the "Dwarf Idle" leaned him to one side)
 	Seraphine = 89523763247665, -- Mixamo "Happy Idle"
 	OldPip = 106330872617044, -- Mixamo "Breathing Idle"
 }
