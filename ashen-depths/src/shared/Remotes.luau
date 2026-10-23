@@ -36,6 +36,9 @@ local EVENT_NAMES = {
 	"Traveling", -- server -> client: the player is about to teleport (where to), show the travel card
 	"LoreShow", -- server -> client: show a page of Ilvane's journal (its id, and how many the player has found)
 	"Sound", -- server -> client: play a sound effect from shared/Sounds (its name, and where, or nowhere for flat)
+	"PartyUpdated", -- server -> client: the player's party (leader and members), or nil when not in one
+	"PartyInvite", -- server -> client: someone invites this player to their party (who, how long it stands)
+	"PartyAction", -- client -> server: Invite / Accept / Decline (a player) or Leave
 }
 
 local FUNCTION_NAMES = {}

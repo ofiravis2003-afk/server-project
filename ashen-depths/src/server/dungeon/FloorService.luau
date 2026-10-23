@@ -21,6 +21,7 @@ local Lore = require(ReplicatedStorage.Shared.Lore)
 local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
+local PartyService = require(script.Parent.Parent.Common.PartyService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local QuestService = require(script.Parent.Parent.Common.QuestService)
@@ -1343,8 +1344,8 @@ local function setupMerchant(room: FloorBuilder.BuiltRoom, floor: number)
 	end)
 end
 
--- A rope hanging from a hole in the ceiling of each floor's entrance: climbing it takes the player back up to
--- Emberhold, with everything they found.
+-- A rope hanging from a hole in the ceiling of each floor's entrance: climbing it takes the party (everyone down
+-- here) back up to Emberhold together, with everything they found.
 local function setupReturnRope(room: FloorBuilder.BuiltRoom)
 	local at = room.Center + Vector3.new(-(room.Size / 2 - 6), 0, -(room.Size / 2 - 6))
 	local rope = Instance.new("Part")
@@ -1382,26 +1383,18 @@ local function setupReturnRope(room: FloorBuilder.BuiltRoom)
 			return
 		end
 		if climbing then
-			return -- (already going: standing at the rope is enough to go along)
+			return
 		end
-		-- the others get a moment to come along: everyone at the rope climbs up together, into the same town
+		-- the party leaves together: everyone down here climbs up after a moment, into the same town
 		climbing = true
 		for _, other in Players:GetPlayers() do
-			if other ~= player then
-				notifyRemote:FireClient(other, `{player.DisplayName} is climbing back to Emberhold. Stand at the rope to go along.`)
-			end
+			notifyRemote:FireClient(other, `{player.DisplayName} leads the way back to Emberhold. Climbing in 4 seconds...`)
 		end
 		task.wait(4)
 		climbing = false
-		if player.Parent ~= Players then
+		local party = Players:GetPlayers()
+		if #party == 0 then
 			return
-		end
-		local party = { player }
-		for _, other in Players:GetPlayers() do
-			local root = aliveRoot(other)
-			if other ~= player and root and (root.Position - Vector3.new(at.X, root.Position.Y, at.Z)).Magnitude <= 12 then
-				table.insert(party, other)
-			end
 		end
 		for _, member in party do
 			DataService.SaveNow(member)
@@ -1409,7 +1402,9 @@ local function setupReturnRope(room: FloorBuilder.BuiltRoom)
 		end
 		task.wait(0.5)
 		local ok, err = pcall(function()
-			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, party)
+			local options = Instance.new("TeleportOptions")
+			options:SetTeleportData(PartyService.TeleportData(party[1]))
+			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, party, options)
 		end)
 		if not ok then
 			warn(`[FloorService] Teleport to Emberhold failed: {err}`)
