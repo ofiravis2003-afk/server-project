@@ -1,6 +1,6 @@
 --!strict
 -- The party on screen (PartyService on the server):
---   a list of the party's members under the stats (the leader with a crown), in both places
+--   a list of the party's members under the stats (the leader in gold), in both places
 --   in Emberhold: a Party button by the bag opening a window with the party (Leave) and everyone else in town
 --   (Invite), and a card at the top when someone invites this player (Accept / Decline, until it runs out)
 
@@ -115,7 +115,11 @@ function Party.Start(inTown: boolean)
 			local line = label(list, Fonts.Body, 15, TEXT)
 			line.Size = UDim2.new(1, -10, 0, 19)
 			line.LayoutOrder = i
-			line.Text = (if member.UserId == s.LeaderId then "♛ " else "• ") .. member.Name
+			local leads = member.UserId == s.LeaderId
+			line.Text = "• " .. member.Name .. (if leads then "  (leader)" else "")
+			if leads then
+				line.TextColor3 = GOLD
+			end
 		end
 	end
 
@@ -220,7 +224,7 @@ function Party.Start(inTown: boolean)
 					order += 1
 					inParty[member.UserId] = true
 					local you = member.UserId == player.UserId
-					row((if member.UserId == s.LeaderId then "♛ " else "") .. member.Name .. (if you then " (you)" else ""), order,
+					row(member.Name .. (if you then " (you)" else "") .. (if member.UserId == s.LeaderId then "  · leader" else ""), order,
 						if you then "Leave" else nil, Color3.fromRGB(70, 40, 40), if you then function()
 							action:FireServer("Leave")
 						end else nil)
