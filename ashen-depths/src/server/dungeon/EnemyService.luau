@@ -880,6 +880,10 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	end
 
 	model:PivotTo(cframe + Vector3.new(0, 3, 0))
+	if def.Boss then
+		-- every player gets the boss at once, wherever they stand (its entrance scene needs it on every screen)
+		model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	end
 	model.Parent = folder
 	root:SetNetworkOwner(nil)
 

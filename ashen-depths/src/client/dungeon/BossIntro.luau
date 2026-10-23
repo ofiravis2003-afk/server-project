@@ -45,7 +45,7 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 	local character = player.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	local bossRoot = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local bossRoot = model:WaitForChild("HumanoidRootPart", 3) :: BasePart?
 	if not humanoid or not root or not bossRoot then
 		return
 	end

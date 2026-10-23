@@ -222,7 +222,7 @@ function Shop.Start()
 			end)
 		end
 		local screen = workspace.CurrentCamera.ViewportSize
-		fit.Scale = math.min(1, (screen.Y - 100) / panel.Size.Y.Offset, (screen.X * 0.45) / panel.Size.X.Offset)
+		fit.Scale = math.min(1.3, (screen.Y - 100) / panel.Size.Y.Offset, (screen.X * 0.45) / panel.Size.X.Offset)
 		gui.Enabled = true
 	end)
 end

@@ -36,7 +36,7 @@ local IDLE: { [string]: number } = {
 	Brakka = 92067081387599, -- Mixamo "Standing W/ Briefcase Idle"
 	GateGuard = 77116071943805, -- Mixamo "Standing Idle"
 	Aldric = 110153111695731, -- Mixamo "Unarmed Idle"
-	Thorne = 91422294151634, -- Mixamo "Dwarf Idle"
+	Thorne = 77116071943805, -- Mixamo "Standing Idle" (the "Dwarf Idle" leaned him to one side)
 	Seraphine = 89523763247665, -- Mixamo "Happy Idle"
 	OldPip = 106330872617044, -- Mixamo "Breathing Idle"
 }
@@ -315,7 +315,7 @@ local function townsperson(name: string, parent: Instance, cframe: CFrame): Mode
 		track.Looped = true
 		track.Priority = Enum.AnimationPriority.Idle
 		-- not everyone breathes in step
-		track:Play(0, 1, 1)
+		track:Play(0, 1, if name == "Thorne" then 0.75 else 1) -- (Thorne takes his time)
 		task.defer(function()
 			track.TimePosition = math.random() * math.max(track.Length - 0.1, 0)
 		end)
@@ -601,8 +601,8 @@ function TownBuilder.Build(): Town
 	end
 	prop("QuestBoard", model, CFrame.lookAt(Vector3.new(-44, 0, -50), Vector3.new(-44, 0, 0)))
 	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-53.5, 0, -50.5), Vector3.new(-53.5, 0, 0)))
-	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(36, 0, -51), Vector3.new(36, 0, 0)))
-	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(52, 0, -51), Vector3.new(52, 0, 0)))
+	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(34, 0, -51), Vector3.new(34, 0, 0)))
+	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(54, 0, -51), Vector3.new(54, 0, 0)))
 	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
 	prop("MarketStall", model, facing(Vector3.new(-20, 0, 40)))
 	prop("MarketStall", model, facing(Vector3.new(20, 0, 40)))
@@ -636,7 +636,7 @@ function TownBuilder.Build(): Town
 			scaled("OakTree", CFrame.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.8, 1.1), 1.6)
 		end
 	end
-	for _, at in { CFrame.lookAt(Vector3.new(-40, 0, -50.5), Vector3.new(-40, 0, 0)), CFrame.lookAt(Vector3.new(48, 0, -50.5), Vector3.new(48, 0, 0)),
+	for _, at in { CFrame.lookAt(Vector3.new(-40, 0, -50.5), Vector3.new(-40, 0, 0)), CFrame.lookAt(Vector3.new(60, 0, -50.5), Vector3.new(60, 0, 0)),
 		CFrame.lookAt(Vector3.new(-51, 0, -12), Vector3.new(0, 0, -12)), CFrame.lookAt(Vector3.new(51, 0, -26), Vector3.new(0, 0, -26)),
 		CFrame.lookAt(Vector3.new(51, 0, -14), Vector3.new(0, 0, -14)), CFrame.lookAt(Vector3.new(-51, 0, 26), Vector3.new(0, 0, 26)),
 		CFrame.lookAt(Vector3.new(51, 0, 26), Vector3.new(0, 0, 26)), CFrame.lookAt(Vector3.new(-38, 0, 50.5), Vector3.new(-38, 0, 0)),

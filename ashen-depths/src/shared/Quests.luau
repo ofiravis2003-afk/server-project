@@ -27,7 +27,7 @@ export type Quest = {
 
 local Quests = {}
 
-Quests.MaxActive = 3
+Quests.MaxActive = 5
 
 Quests.List = {
 	{ Id = "RatProblem", Title = "Rat Problem", Text = "Giant rats are chewing through the Guild's supplies. Thin them out.", Kind = "Kill", Target = "Rat", Count = 12, Gold = 100, XP = 60, Points = 20, Repeatable = true },

@@ -157,6 +157,23 @@ local function isInside(room: FloorBuilder.BuiltRoom, position: Vector3, margin:
 	return math.abs(offset.X) <= half and math.abs(offset.Z) <= half and offset.Y > -4 and offset.Y < 20
 end
 
+-- Moves a player's character somewhere on the floor. They are held in place until the floor around that spot
+-- has streamed to their screen (otherwise they can land before it arrives and fall through it).
+local function placePlayer(player: Player, cframe: CFrame)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not character or not root then
+		return
+	end
+	root.Anchored = true
+	character:PivotTo(cframe)
+	pcall(player.RequestStreamAroundAsync, player, cframe.Position, 5)
+	task.wait(0.3)
+	if root.Parent then
+		root.Anchored = false
+	end
+end
+
 -- A random spot on a room's floor, away from the walls, the doorways and the middle (if asked).
 local function freeSpot(room: FloorBuilder.BuiltRoom, rng: Random, avoidCenter: number?): Vector3
 	local half = room.Size / 2 - 5
@@ -412,6 +429,31 @@ local function activateRoom(room: CombatRoom, floor: number)
 	room.Spawning = true
 	room.EmptySince = nil
 	setGates(room, true)
+
+	-- The party fights together: whoever is still out on the floor (not fighting in another room) is pulled in
+	-- by the Brand, just inside the first doorway.
+	local doorway = room.Built.Doorways[1]
+	for _, player in Players:GetPlayers() do
+		local root = aliveRoot(player)
+		if not root or isInside(room.Built, root.Position, 1.5) then
+			continue
+		end
+		local busy = false
+		for _, other in combatRooms do
+			if other ~= room and other.Active and isInside(other.Built, root.Position, 0) then
+				busy = true
+			end
+		end
+		if not busy then
+			local spot = room.Built.Center
+			if doorway then
+				local inward = Vector3.new(room.Built.Center.X - doorway.X, 0, room.Built.Center.Z - doorway.Z)
+				spot = if inward.Magnitude > 0.1 then doorway + inward.Unit * 7 else room.Built.Center
+			end
+			notifyRemote:FireClient(player, "Your party is fighting! The Brand pulls you to their side.")
+			task.spawn(placePlayer, player, CFrame.lookAt(spot + Vector3.new(0, 3, 0), Vector3.new(room.Built.Center.X, spot.Y + 3, room.Built.Center.Z)))
+		end
+	end
 
 	local rng = Random.new()
 	if room.Guardians then
@@ -1377,11 +1419,8 @@ end
 -- Floors
 
 local function sendToEntrance(player: Player)
-	local character = player.Character
-	if character then
-		local offset = Vector3.new(math.random(-4, 4), 4, math.random(-4, 4))
-		character:PivotTo(CFrame.new(entrance + offset))
-	end
+	local offset = Vector3.new(math.random(-4, 4), 4, math.random(-4, 4))
+	task.spawn(placePlayer, player, CFrame.new(entrance + offset))
 end
 
 startFloor = function(floor: number)

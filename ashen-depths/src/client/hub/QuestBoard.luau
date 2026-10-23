@@ -215,7 +215,7 @@ function QuestBoard.Start()
 		local person = Dialogues[giver]
 		title.Text = if giver == "Aldric" or not person then "Guild Quests" else `{person.Name}'s Requests`
 		local screen = workspace.CurrentCamera.ViewportSize
-		fit.Scale = math.min(1, (screen.Y - 90) / panel.Size.Y.Offset, (screen.X - 24) / panel.Size.X.Offset)
+		fit.Scale = math.min(1.3, (screen.Y - 90) / panel.Size.Y.Offset, (screen.X - 24) / panel.Size.X.Offset)
 		gui.Enabled = true
 		redraw()
 	end)
