@@ -28,7 +28,7 @@ local function label(parent: Instance, font: Font, size: number, color: Color3):
 	local l = Instance.new("TextLabel")
 	l.BackgroundTransparency = 1
 	l.FontFace = font
-	l.TextSize = size
+	l.TextSize = size + 2 -- (everything a little bigger, easier to read)
 	l.TextColor3 = color
 	l.TextStrokeTransparency = 0.6
 	l.TextXAlignment = Enum.TextXAlignment.Left
@@ -128,7 +128,7 @@ function QuestBoard.Start()
 		b.Size = UDim2.fromOffset(104, 32)
 		b.BackgroundColor3 = color
 		b.FontFace = Fonts.Title
-		b.TextSize = 16
+		b.TextSize = 17
 		b.TextColor3 = TEXT
 		b.Text = text
 		b.Parent = parent
@@ -162,7 +162,7 @@ function QuestBoard.Start()
 			local row = Instance.new("Frame")
 			row.Name = e.Id
 			row.LayoutOrder = i
-			row.Size = UDim2.new(1, -8, 0, 96)
+			row.Size = UDim2.new(1, -8, 0, 104)
 			row.BackgroundColor3 = ROW
 			row.BackgroundTransparency = if e.State == "Done" then 0.4 else 0
 			row.Parent = list
@@ -175,10 +175,10 @@ function QuestBoard.Start()
 			name.Text = (if e.State == "Done" then "✓ " else "") .. quest.Title .. (if quest.Repeatable then "  (bounty)" else "")
 			local about = label(row, Fonts.Body, 13, Color3.fromRGB(190, 180, 165))
 			about.Position = UDim2.fromOffset(12, 28)
-			about.Size = UDim2.new(1, -24, 0, 32)
+			about.Size = UDim2.new(1, -24, 0, 38)
 			about.Text = quest.Text
 			local goal = label(row, Fonts.Body, 14, if e.Progress >= quest.Count then GOOD else TEXT)
-			goal.Position = UDim2.fromOffset(12, 62)
+			goal.Position = UDim2.fromOffset(12, 68)
 			goal.Size = UDim2.new(1, -250, 0, 28)
 			goal.Text = if e.State == "Open"
 				then `{goalText(quest)}   ·   {quest.Gold} gold, {quest.XP} XP, {quest.Points} rank points`
@@ -215,7 +215,7 @@ function QuestBoard.Start()
 		local person = Dialogues[giver]
 		title.Text = if giver == "Aldric" or not person then "Guild Quests" else `{person.Name}'s Requests`
 		local screen = workspace.CurrentCamera.ViewportSize
-		fit.Scale = math.min(1.3, (screen.Y - 90) / panel.Size.Y.Offset, (screen.X - 24) / panel.Size.X.Offset)
+		fit.Scale = math.min(1, (screen.Y - 90) / panel.Size.Y.Offset, (screen.X - 24) / panel.Size.X.Offset)
 		gui.Enabled = true
 		redraw()
 	end)

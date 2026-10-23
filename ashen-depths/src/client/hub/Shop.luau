@@ -44,7 +44,7 @@ local function label(parent: Instance, font: Font, size: number, color: Color3):
 	local l = Instance.new("TextLabel")
 	l.BackgroundTransparency = 1
 	l.FontFace = font
-	l.TextSize = size
+	l.TextSize = size + 2 -- (everything a little bigger, easier to read)
 	l.TextColor3 = color
 	l.TextStrokeTransparency = 0.6
 	l.TextXAlignment = Enum.TextXAlignment.Left
@@ -56,7 +56,7 @@ local function button(parent: Instance, text: string, color: Color3): TextButton
 	local b = Instance.new("TextButton")
 	b.BackgroundColor3 = color
 	b.FontFace = Fonts.Title
-	b.TextSize = 17
+	b.TextSize = 18
 	b.TextColor3 = TEXT
 	b.Text = text
 	b.Parent = parent
@@ -191,7 +191,7 @@ function Shop.Start()
 			name.Size = UDim2.new(1, -170, 0, 22)
 			name.TextScaled = true
 			local limit = Instance.new("UITextSizeConstraint")
-			limit.MaxTextSize = 17
+			limit.MaxTextSize = 19
 			limit.Parent = name
 			name.Text = Items.NameFor(offer.Item, offer.Rarity)
 			local about = label(row, Fonts.Body, 13, Color3.fromRGB(180, 170, 158))
@@ -205,7 +205,7 @@ function Shop.Start()
 				about.Size = UDim2.new(1, -170, 0, 30)
 				about.TextScaled = true
 				local fitText = Instance.new("UITextSizeConstraint")
-				fitText.MaxTextSize = 12
+				fitText.MaxTextSize = 13
 				fitText.Parent = about
 				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}` .. "\n" .. Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))
 			elseif def and def.WeaponType then
@@ -222,7 +222,7 @@ function Shop.Start()
 			end)
 		end
 		local screen = workspace.CurrentCamera.ViewportSize
-		fit.Scale = math.min(1.3, (screen.Y - 100) / panel.Size.Y.Offset, (screen.X * 0.45) / panel.Size.X.Offset)
+		fit.Scale = math.min(1, (screen.Y - 100) / panel.Size.Y.Offset, (screen.X * 0.45) / panel.Size.X.Offset)
 		gui.Enabled = true
 	end)
 end

@@ -3,6 +3,7 @@
 -- the boss, it speaks its lines (typed out at the bottom), and its name comes up big before the fight begins.
 -- The player can't move or attack while it plays (attribute "Cutscene" on the player).
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
@@ -181,10 +182,21 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 end
 
 function BossIntro.Start()
-	Remotes.Event("BossIntro").OnClientEvent:Connect(function(model: Model, title: string, subtitle: string, lines: { string }, duration: number)
-		if typeof(model) == "Instance" and model:IsA("Model") then
-			task.spawn(play, model, title, subtitle, lines, duration)
-		end
+	Remotes.Event("BossIntro").OnClientEvent:Connect(function(model: Model?, title: string, subtitle: string, lines: { string }, duration: number)
+		task.spawn(function()
+			-- The boss may not have reached this screen yet (the message can arrive first): wait for it.
+			if typeof(model) ~= "Instance" then
+				model = CollectionService:GetTagged("BossIntro")[1] :: Model?
+				local waited = 0
+				while not model and waited < 5 do
+					waited += task.wait(0.1)
+					model = CollectionService:GetTagged("BossIntro")[1] :: Model?
+				end
+			end
+			if model and model:IsA("Model") then
+				play(model, title, subtitle, lines, duration)
+			end
+		end)
 	end)
 end
 

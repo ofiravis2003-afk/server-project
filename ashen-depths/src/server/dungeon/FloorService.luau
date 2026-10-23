@@ -485,6 +485,8 @@ local function activateRoom(room: CombatRoom, floor: number)
 			if not room.IntroShown then
 				-- Once a run: the gates slam, the camera turns to the boss and it speaks.
 				room.IntroShown = true
+				-- (tagged, so a screen the boss hasn't reached yet can wait for it to arrive)
+				CollectionService:AddTag(boss.Model, "BossIntro")
 				bossIntroRemote:FireAllClients(boss.Model, def.Title, def.Intro.Subtitle, def.Intro.Lines, BOSS_INTRO_SECONDS)
 				EnemyService.PlayIntro(boss, BOSS_INTRO_SECONDS, stepOut)
 			else
@@ -1656,6 +1658,17 @@ function FloorService.Start()
 	dungeonFolder = Instance.new("Folder")
 	dungeonFolder.Name = "Dungeon"
 	dungeonFolder.Parent = workspace
+
+	-- Studio only: ServerStorage.DevFloor:Invoke(n) starts floor n (to test a floor without playing down to it)
+	if RunService:IsStudio() then
+		local dev = Instance.new("BindableFunction")
+		dev.Name = "DevFloor"
+		dev.OnInvoke = function(floor: number)
+			task.spawn(startFloor, floor)
+			return true
+		end
+		dev.Parent = game:GetService("ServerStorage")
+	end
 
 	local fell: { [Player]: boolean } = {}
 	local function onPlayer(player: Player)
