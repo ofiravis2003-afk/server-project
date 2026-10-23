@@ -148,6 +148,10 @@ local function onInvite(player: Player, target: Player)
 	end
 	local theirs = invites[target] or {}
 	invites[target] = theirs
+	if (theirs[player] or 0) > os.clock() then
+		notifyRemote:FireClient(player, `{target.DisplayName} already has your invite.`)
+		return -- (one invite at a time: no flooding someone's screen)
+	end
 	theirs[player] = os.clock() + INVITE_SECONDS
 	inviteRemote:FireClient(target, player, INVITE_SECONDS)
 	notifyRemote:FireClient(player, `You invited {target.DisplayName} to your party.`)

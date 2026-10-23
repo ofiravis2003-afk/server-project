@@ -6,6 +6,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SocialService = game:GetService("SocialService")
 local TweenService = game:GetService("TweenService")
 
 local Device = require(ReplicatedStorage.Shared.Device)
@@ -158,13 +159,25 @@ function Party.Start(inTown: boolean)
 		line.Size = UDim2.new(1, -32, 0, 36)
 		line.TextWrapped = true
 		line.TextYAlignment = Enum.TextYAlignment.Top
-		line.Text = `Up to {MAX_SIZE} adventurers. The leader takes the party down the Well, and you all come back up together.`
+		line.Text = `Up to {MAX_SIZE} adventurers: +10% XP and gold together. The leader takes the party down the Well.`
 		local close = button(panel, "X", Color3.fromRGB(70, 40, 40))
 		close.AnchorPoint = Vector2.new(1, 0)
 		close.Position = UDim2.new(1, -10, 0, 10)
 		close.Size = UDim2.fromOffset(32, 32)
 		close.MouseButton1Click:Connect(function()
 			panel.Visible = false
+		end)
+		-- friends who aren't playing yet: Roblox's own invite window (ReferralService rewards both of you)
+		local bring = button(panel, "Invite friends", Color3.fromRGB(150, 100, 30))
+		bring.AnchorPoint = Vector2.new(1, 0)
+		bring.Position = UDim2.new(1, -50, 0, 10)
+		bring.Size = UDim2.fromOffset(140, 32)
+		bring.TextSize = 16
+		bring.MouseButton1Click:Connect(function()
+			local ok, can = pcall(SocialService.CanSendGameInviteAsync, SocialService, player)
+			if ok and can then
+				pcall(SocialService.PromptGameInvite, SocialService, player)
+			end
 		end)
 		local rows = Instance.new("ScrollingFrame")
 		rows.Position = UDim2.fromOffset(12, 86)

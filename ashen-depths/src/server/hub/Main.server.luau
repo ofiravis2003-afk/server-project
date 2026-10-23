@@ -14,6 +14,7 @@ local InventoryService = require(Common.InventoryService)
 local PartyService = require(Common.PartyService)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
+local ReferralService = require(script.Parent.ReferralService)
 local ShopService = require(script.Parent.ShopService)
 
 ArmorService.Start()
@@ -22,6 +23,7 @@ PartyService.Start()
 ProgressService.Start()
 QuestService.Start()
 ShopService.Start()
+ReferralService.Start()
 
 -- Last: everything that reacts to a player's data loading has registered by now.
 DataService.Start()
