@@ -22,6 +22,7 @@ local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
+local MonetizationService = require(script.Parent.Parent.Common.MonetizationService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local QuestService = require(script.Parent.Parent.Common.QuestService)
@@ -93,6 +94,7 @@ local effectRemote = Remotes.Event("Effect")
 local bossIntroRemote = Remotes.Event("BossIntro")
 local loreRemote = Remotes.Event("LoreShow")
 local soundRemote = Remotes.Event("Sound")
+local REVIVE_WINDOW = 90 -- a Revive bought this long after falling still brings you back there
 local BOSS_INTRO_SECONDS = 11
 
 local function keysOf(player: Player): Keys
@@ -1693,12 +1695,43 @@ function FloorService.Start()
 	end
 
 	local fell: { [Player]: boolean } = {}
+	local fellAt: { [Player]: { Position: Vector3, Floor: number, Time: number } } = {}
+
+	-- The Revive product (MonetizationService): back on your feet where you fell, at full health, if that was
+	-- on this floor in the last REVIVE_WINDOW seconds.
+	MonetizationService.OnProduct("Revive", function(player: Player): boolean
+		local at = fellAt[player]
+		if not at or at.Floor ~= currentFloor or os.clock() - at.Time > REVIVE_WINDOW then
+			return false
+		end
+		fellAt[player] = nil
+		task.spawn(function()
+			local waited = 0
+			while not aliveRoot(player) and waited < 15 do
+				waited += task.wait(0.2)
+			end
+			task.wait(0.4) -- (after the respawn's own trip to the entrance)
+			if aliveRoot(player) and currentFloor == at.Floor then
+				placePlayer(player, CFrame.new(at.Position + Vector3.new(0, 3, 0)))
+				local humanoid = (player.Character :: Model):FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid.Health = humanoid.MaxHealth
+				end
+				notifyRemote:FireClient(player, "The Brand flares... you rise where you fell!")
+			end
+		end)
+		return true
+	end)
 	local function onPlayer(player: Player)
 		player.CharacterAdded:Connect(function(character)
 			local humanoid = character:WaitForChild("Humanoid", 5) :: Humanoid?
 			if humanoid then
 				humanoid.Died:Connect(function()
 					fell[player] = true
+					local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+					if root then
+						fellAt[player] = { Position = root.Position, Floor = currentFloor, Time = os.clock() }
+					end
 				end)
 			end
 			if fell[player] then
@@ -1733,6 +1766,7 @@ function FloorService.Start()
 	Players.PlayerRemoving:Connect(function(player)
 		keys[player] = nil
 		fell[player] = nil
+		fellAt[player] = nil
 	end)
 	DataService.OnLoaded(function(player, _data)
 		pushRun(player)

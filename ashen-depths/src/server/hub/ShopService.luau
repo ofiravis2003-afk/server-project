@@ -223,12 +223,13 @@ function ShopService.Start()
 		local function refresh()
 			local label = (player:GetAttribute("GuildRank") :: string?) or "Copper I"
 			local founder = player:GetAttribute("Founder") :: number?
-			text.Text = label .. (if founder then `  ·  Founder #{founder}` else "")
+			text.Text = (if player:GetAttribute("VIP") then "VIP  ·  " else "") .. label .. (if founder then `  ·  Founder #{founder}` else "")
 			text.TextColor3 = Quests.ColorOf(string.split(label, " ")[1])
 		end
 		refresh()
 		player:GetAttributeChangedSignal("GuildRank"):Connect(refresh)
 		player:GetAttributeChangedSignal("Founder"):Connect(refresh)
+		player:GetAttributeChangedSignal("VIP"):Connect(refresh)
 		tag.Parent = head
 	end
 	Players.PlayerAdded:Connect(function(player)

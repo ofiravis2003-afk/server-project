@@ -61,13 +61,27 @@ local function countOf(data: { [string]: any }, itemName: string): number
 	return n
 end
 
+-- A player's bag size and carry limits: bigger with the Bigger Bag and Potion Belt passes (MonetizationService
+-- sets the attributes).
+local function bagSizeOf(player: Player?): number
+	return (player and player:GetAttribute("BagSize") :: number?) or Config.BagSize
+end
+
+local function limitOf(def: Items.ItemDef, player: Player?): number?
+	if def.Limit and def.Slot == "Potion" and player then
+		return def.Limit + ((player:GetAttribute("PotionBonus") :: number?) or 0)
+	end
+	return def.Limit
+end
+
 -- Puts `count` of an item in the bag: onto stacks that have room first, then into new places.
 -- Returns how many went in (fewer when the bag is full or the carry limit is reached).
-local function addToBag(data: { [string]: any }, itemName: string, rarity: string, count: number): number
+local function addToBag(data: { [string]: any }, itemName: string, rarity: string, count: number, player: Player?): number
 	local def = Items.Defs[itemName]
 	local stack = def.Stack or 1
 	-- (what's over the carry limit never goes in, and isn't counted as given)
-	local allowed = if def.Limit then math.clamp(def.Limit - countOf(data, itemName), 0, count) else count
+	local limit = limitOf(def, player)
+	local allowed = if limit then math.clamp(limit - countOf(data, itemName), 0, count) else count
 	local left = allowed
 	if stack > 1 then
 		for _, item in data.Inventory do
@@ -81,7 +95,7 @@ local function addToBag(data: { [string]: any }, itemName: string, rarity: strin
 			end
 		end
 	end
-	while left > 0 and countItems(data) < Config.BagSize do
+	while left > 0 and countItems(data) < bagSizeOf(player) do
 		local id = InventoryService.AddItem(data, itemName, rarity)
 		local put = math.min(left, stack)
 		if stack > 1 then
@@ -127,7 +141,7 @@ end
 function InventoryService.PushInventory(player: Player)
 	local data = DataService.GetData(player)
 	if data then
-		inventoryRemote:FireClient(player, { Items = data.Inventory, Equipped = data.Equipped, BagSize = Config.BagSize })
+		inventoryRemote:FireClient(player, { Items = data.Inventory, Equipped = data.Equipped, BagSize = bagSizeOf(player) })
 	end
 end
 
@@ -393,13 +407,14 @@ function InventoryService.GiveItem(player: Player, itemName: string, rarity: str
 		return 0
 	end
 	local wanted = count or 1
-	local added = addToBag(data, itemName, rarity, wanted)
+	local added = addToBag(data, itemName, rarity, wanted, player)
 	if added > 0 and def.Slot ~= "Material" then
 		itemReceivedRemote:FireClient(player, { Item = itemName, Rarity = rarity })
 	end
 	if added < wanted then
-		local reason = if def.Limit and countOf(data, itemName) >= def.Limit
-			then `You can't carry more than {def.Limit} {def.DisplayName}s.`
+		local limit = limitOf(def, player)
+		local reason = if limit and countOf(data, itemName) >= limit
+			then `You can't carry more than {limit} {def.DisplayName}s.`
 			else `Your bag is full! {Items.NameFor(itemName, rarity)} was left behind. Drop something to make room.`
 		notifyRemote:FireClient(player, reason)
 	end

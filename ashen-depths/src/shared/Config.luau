@@ -13,6 +13,19 @@ return {
 
 	MaxPartySize = 4,
 
+	-- Robux purchases (created in the Creator Hub, 2026-10-24). Passes are bought once; products again and again.
+	Passes = {
+		BiggerBag = 2053631231, -- the bag holds twice as much
+		VIP = 2053205147, -- +20% gold and XP from kills, a VIP tag
+		PotionBelt = 2053163152, -- carry 5 of each potion instead of 3
+	},
+	Products = {
+		GoldSmall = { Id = 2054171154, Gold = 500 }, -- Small Gold Pouch
+		GoldMedium = { Id = 2053289157, Gold = 1750 }, -- Gold Sack
+		GoldLarge = { Id = 2052131220, Gold = 5000 }, -- Gold Chest
+		Revive = { Id = 2053985154 }, -- rise where you fell (the Depths)
+	},
+
 	-- The bag holds this many items; the hotbar has this many slots (1 = the weapon, 2-4 = potions later).
 	BagSize = 30,
 	HotbarSize = 4,

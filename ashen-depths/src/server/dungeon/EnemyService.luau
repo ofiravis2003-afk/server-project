@@ -98,6 +98,7 @@ local enemies: { [Model]: Enemy } = {}
 local templates: { [string]: Model } = {}
 local folder: Folder
 local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring together
+local VIP_BONUS = 1.2 -- and 20% more for a VIP
 local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
 local soundRemote = Remotes.Event("Sound")
@@ -761,8 +762,9 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	local together = if #Players:GetPlayers() > 1 then PARTY_BONUS else 1
 	for player, dealt in enemy.Damagers do
 		if player.Parent and dealt > 0 then
-			local xp = math.ceil(enemy.Def.XP * rewards * together)
-			local gold = math.ceil(math.random(enemy.Def.Gold[1], enemy.Def.Gold[2]) * rewards * together)
+			local vip = if player:GetAttribute("VIP") then VIP_BONUS else 1 -- (the VIP pass, MonetizationService)
+			local xp = math.ceil(enemy.Def.XP * rewards * together * vip)
+			local gold = math.ceil(math.random(enemy.Def.Gold[1], enemy.Def.Gold[2]) * rewards * together * vip)
 			ProgressService.AddXP(player, xp)
 			ProgressService.AddGold(player, gold)
 			local text = `+{xp} XP   +{gold} Gold`
