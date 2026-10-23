@@ -62,6 +62,17 @@ Items.Defs = {
 		Names = { Rare = "Book of Mending", Epic = "Lantern Codex", Legendary = "Radiant Codex", Mythic = "Tome of the Dawn" },
 	},
 
+	-- The first FOUNDERS adventurers of Emberwell (FounderService): a burning blade of their own, kept forever.
+	FoundersBlade = {
+		DisplayName = "Founder's Emberblade",
+		Slot = "Weapon",
+		WeaponType = "Sword",
+		Damage = 15, -- (given Epic: a strong start, and it can be upgraded like any sword)
+		Look = "FoundersBlade",
+		Keepsake = true,
+		Description = "Forged for the first 250 adventurers to go down the Great Well. It never stops burning.",
+	},
+
 	-- Materials: every monster leaves something of itself behind.
 	Bone = { DisplayName = "Bone", Slot = "Material", Stack = 99, Price = 2, Description = "Dropped by skeletons." },
 	Fletching = { DisplayName = "Black Fletching", Slot = "Material", Stack = 99, Price = 3, Description = "Arrow feathers from skeleton archers." },

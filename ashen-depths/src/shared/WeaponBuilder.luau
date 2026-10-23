@@ -134,6 +134,12 @@ local function findModel(look: string, rarity: string): BasePart?
 	if not folder then
 		return nil
 	end
+	-- a one-of-a-kind weapon (the Founder's Emberblade) has one model, whatever its rarity
+	local own = folder:FindFirstChild(look)
+	local ownHandle = own and own:FindFirstChild("Handle")
+	if ownHandle and ownHandle:IsA("BasePart") and ownHandle:FindFirstChild("WeaponGrip") then
+		return ownHandle
+	end
 	for _, tier in TIER_LOOKS[rarity] or TIER_LOOKS.Common do
 		local model = folder:FindFirstChild(`{look}_{tier}`)
 		local handle = model and model:FindFirstChild("Handle")
@@ -183,6 +189,52 @@ local function addAura(handle: BasePart, rarity: string)
 	end
 end
 
+-- The Founder's Emberblade: fire running up the whole blade, embers, and a warm light.
+local function burn(handle: BasePart)
+	local size = handle.Size
+	local blade = Instance.new("Attachment")
+	blade.Name = "Fire"
+	blade.Position = Vector3.new(0, size.Y * 0.2, 0)
+	blade.Parent = handle
+	local fire = Instance.new("ParticleEmitter")
+	fire.Name = "Flames"
+	fire.Texture = "rbxasset://textures/particles/fire_main.dds"
+	fire.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 220, 120)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 120, 30)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 40, 10)),
+	})
+	fire.LightEmission = 1
+	fire.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.55), NumberSequenceKeypoint.new(1, 0.15) })
+	fire.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) })
+	fire.Lifetime = NumberRange.new(0.35, 0.7)
+	fire.Speed = NumberRange.new(0.5, 1.5)
+	fire.RotSpeed = NumberRange.new(-90, 90)
+	fire.Rotation = NumberRange.new(0, 360)
+	fire.Acceleration = Vector3.new(0, 5, 0)
+	fire.Rate = 45
+	fire.Shape = Enum.ParticleEmitterShape.Box
+	fire.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	fire.Parent = handle
+	local embers = Instance.new("ParticleEmitter")
+	embers.Name = "Embers"
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 190, 90), Color3.fromRGB(255, 90, 20))
+	embers.LightEmission = 1
+	embers.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.12), NumberSequenceKeypoint.new(1, 0) })
+	embers.Lifetime = NumberRange.new(0.8, 1.6)
+	embers.Speed = NumberRange.new(1, 3)
+	embers.SpreadAngle = Vector2.new(60, 60)
+	embers.Acceleration = Vector3.new(0, 3, 0)
+	embers.Rate = 12
+	embers.Shape = Enum.ParticleEmitterShape.Box
+	embers.Parent = handle
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 140, 50)
+	light.Range = 12
+	light.Brightness = 1.8
+	light.Parent = blade
+end
+
 -- Returns a ready Tool for the given look ("Sword", "Axe", "Staff", "Tome") and rarity.
 function WeaponBuilder.Build(look: string, rarity: string?): Tool
 	local tool = Instance.new("Tool")
@@ -199,7 +251,11 @@ function WeaponBuilder.Build(look: string, rarity: string?): Tool
 		handle.CanQuery = false
 		handle.Massless = true
 		tool.Grip = (handle:FindFirstChild("WeaponGrip") :: Attachment).CFrame
-		addAura(handle, rarity or "Common")
+		if look == "FoundersBlade" then
+			burn(handle)
+		else
+			addAura(handle, rarity or "Common")
+		end
 		if WeaponBuilder.LeftHanded[look] then
 			local offHand = handle
 			offHand.Name = "OffHand"
