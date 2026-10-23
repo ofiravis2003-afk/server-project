@@ -6,6 +6,8 @@ Emberwell
 ## Description
 🔥 Beneath the town of Emberhold, the Great Well burns. Go down. Survive. Come back.
 
+⭐ FOUNDERS: the first 250 adventurers get the burning Founder's Emberblade, forever!
+
 Take the Guild Brand and descend into the Depths: 15 floors of crumbling halls, locked rooms and restless dead, alone or with up to 3 friends.
 
 ⚔️ FIGHT with swords, axes, bows, staffs and tomes
