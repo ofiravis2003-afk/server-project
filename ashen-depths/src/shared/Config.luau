@@ -20,10 +20,10 @@ return {
 		PotionBelt = 2053163152, -- carry 5 of each potion instead of 3
 	},
 	Products = {
-		GoldSmall = { Id = 2054171154, Gold = 500 }, -- Small Gold Pouch
-		GoldMedium = { Id = 2053289157, Gold = 1750 }, -- Gold Sack
-		GoldLarge = { Id = 2052131220, Gold = 5000 }, -- Gold Chest
-		Revive = { Id = 2053985154 }, -- rise where you fell (the Depths)
+		GoldSmall = { Id = 3721731265, Gold = 500 }, -- Small Gold Pouch
+		GoldMedium = { Id = 3721731387, Gold = 1750 }, -- Gold Sack
+		GoldLarge = { Id = 3721731488, Gold = 5000 }, -- Gold Chest
+		Revive = { Id = 3721731566 }, -- rise where you fell (the Depths)
 	},
 
 	-- The bag holds this many items; the hotbar has this many slots (1 = the weapon, 2-4 = potions later).
