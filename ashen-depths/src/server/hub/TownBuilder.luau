@@ -138,7 +138,7 @@ local function building(name: string, parent: Instance, frame: CFrame, width: nu
 	return made
 end
 
-local HOUSE_MODELS = { ["Guild Hall"] = "GuildHall", ["Ironhide Armory"] = "Armory", ["The Gilded Tome"] = "MagicShop", ["The Sunken Tankard"] = "Tavern" }
+local HOUSE_MODELS = { ["Guild Hall"] = "GuildHall", ["Ironhide Armory"] = "Armory", ["The Gilded Tome"] = "MagicShop", ["The Sunken Hearth"] = "Tavern" }
 local plainHouse = 0
 
 local function house(parent: Instance, frame: CFrame, width: number, name: string?)
@@ -590,7 +590,7 @@ function TownBuilder.Build(): Town
 	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 50, "Ironhide Armory")
 	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 45, "The Gilded Tome")
 	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 40, nil)
-	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 45, "The Sunken Tankard")
+	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 45, "The Sunken Hearth")
 	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 40, nil)
 	house(model, CFrame.new(-44, 0, inset), 45, nil)
 	house(model, CFrame.new(44, 0, inset), 45, nil)

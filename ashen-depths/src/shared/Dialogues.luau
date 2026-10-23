@@ -78,8 +78,8 @@ local Dialogues: { [string]: Dialogue } = {
 	},
 	OldPip = {
 		Name = "Old Pip",
-		Title = "The Sunken Tankard",
-		Lines = { "Sit, sit. First drink's on the house... once I have drinks again. The supply wagon's late." },
+		Title = "The Sunken Hearth",
+		Lines = { "Sit, sit. First bowl of stew's on the house... once I have stew again. The supply wagon's late." },
 		More = {
 			"My boy went down last spring. Floor twelve, they say. Never came back up.",
 			"If you ever get that deep, keep an eye out for a dented helmet with a fox painted on it. That's all I ask.",
