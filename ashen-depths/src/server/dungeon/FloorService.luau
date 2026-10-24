@@ -23,6 +23,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
 local TipService = require(script.Parent.Parent.Common.TipService)
+local BadgeAwards = require(script.Parent.Parent.Common.BadgeAwards)
 local Leaderboard = require(script.Parent.Parent.Common.Leaderboard)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
 local Travel = require(script.Parent.Parent.Common.Travel)
@@ -1150,6 +1151,7 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 	lightRunes(room.Built, false)
 	for player in boss.Damagers do
 		if player.Parent then
+			BadgeAwards.Give(player, boss.Name)
 			giveKey(player, "Gold", where)
 			local data = DataService.GetData(player)
 			if data and currentFloor + 1 > (data.Checkpoint or 0) then
@@ -1846,6 +1848,12 @@ startFloor = function(floor: number)
 	for _, player in Players:GetPlayers() do
 		local data = DataService.GetData(player)
 		QuestService.OnReachFloor(player, floor)
+		if Floors.IsHollow(floor) then
+			BadgeAwards.Give(player, "Hollow")
+		end
+		if #Players:GetPlayers() >= Config.MaxPartySize then
+			BadgeAwards.Give(player, "Party")
+		end
 		if floor >= 2 then
 			task.delay(6, TipService.Show, player, "Rope")
 		end

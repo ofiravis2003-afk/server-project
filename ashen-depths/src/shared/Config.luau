@@ -19,6 +19,14 @@ return {
 		VIP = 2053205147, -- +20% gold and XP from kills, a VIP tag
 		PotionBelt = 2053163152, -- carry 5 of each potion instead of 3
 	},
+	-- Roblox badges (0 = not created yet, not given).
+	Badges = {
+		Founder = 0, -- one of the first 250 (FounderService)
+		Gravekeeper = 0, -- the Gravekeeper defeated (floor 5)
+		BoneWarden = 0, -- the Bone Warden defeated (floor 15)
+		Hollow = 0, -- reached The Hollow (floor 16)
+		Party = 0, -- went down with a full party of four
+	},
 	Products = {
 		GoldSmall = { Id = 3721731265, Gold = 500 }, -- Small Gold Pouch
 		GoldMedium = { Id = 3721731387, Gold = 1750 }, -- Gold Sack

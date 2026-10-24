@@ -13,6 +13,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
+local BadgeAwards = require(Common.BadgeAwards)
 
 local FounderService = {}
 
@@ -60,6 +61,7 @@ function FounderService.Start()
 	DataService.OnLoaded(function(player, data)
 		if data.FounderNumber then
 			player:SetAttribute("Founder", data.FounderNumber)
+			BadgeAwards.Give(player, "Founder")
 			giveBlade(player, data)
 			return
 		end
@@ -70,6 +72,7 @@ function FounderService.Start()
 		if number then
 			data.FounderNumber = number
 			player:SetAttribute("Founder", number)
+			BadgeAwards.Give(player, "Founder")
 			giveBlade(player, data)
 			DataService.SaveNow(player)
 			task.delay(3, function()
