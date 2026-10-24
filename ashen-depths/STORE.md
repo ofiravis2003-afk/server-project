@@ -8,20 +8,18 @@ Emberwell
 
 ⭐ FOUNDERS: the first 250 adventurers get the burning Founder's Emberblade, forever!
 
-Take the Guild Brand and descend into the Depths: 15 floors of crumbling halls, locked rooms and restless dead, alone or with up to 3 friends.
+Take the Guild Brand and descend: 15 floors of the Drowned Catacombs, then The Hollow, where the floors never end. Alone or with up to 3 friends.
 
-⚔️ FIGHT with swords, axes, bows, staffs and tomes
-🛡️ GEAR UP: 4 armor sets and loot from Common to Legendary
+⚔️ FIGHT with swords, axes, staffs and tomes
+🛡️ GEAR UP: 4 armor sets with set bonuses, loot up to Mythic
 🔨 FORGE your weapons up to +10 at Brakka's anvil
-💀 FACE the bosses: the Gravekeeper, the Guardians' hall and the Bone Warden
-🗝️ FIND keys, open chests, dodge traps, uncover secret rooms
-📜 LEARN the truth: collect the lost pages of Ilvane's journal
-👥 PARTY UP: invite friends, go down together, come back up together
-🏰 CHECKPOINTS: light the Wardstones and start deeper next time
+💀 FACE the Gravekeeper, the Guardians and the Bone Warden
+🗝️ FIND keys, cursed altars, crumbling caches, secret rooms
+👥 PARTY UP: invite friends, go down and come back together
+🎁 DAILY gifts and tasks, badges to earn
+🏆 How deep can you go? Climb the Deepest Descents board!
 
-Quests from the townsfolk, a wandering merchant in the dark, and something old waiting at the bottom of the Well...
-
-How deep will you go?
+Something old is waiting at the bottom of the Well...
 
 ## Genre
 RPG, subgenre Action RPG
