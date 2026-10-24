@@ -95,6 +95,7 @@ local effectRemote = Remotes.Event("Effect")
 local bossIntroRemote = Remotes.Event("BossIntro")
 local loreRemote = Remotes.Event("LoreShow")
 local soundRemote = Remotes.Event("Sound")
+local landingRemote = Remotes.Event("Landing")
 local REVIVE_WINDOW = 90 -- a Revive bought this long after falling still brings you back there
 local BOSS_INTRO_SECONDS = 11
 
@@ -161,21 +162,17 @@ local function isInside(room: FloorBuilder.BuiltRoom, position: Vector3, margin:
 	return math.abs(offset.X) <= half and math.abs(offset.Z) <= half and offset.Y > -4 and offset.Y < 20
 end
 
--- Moves a player's character somewhere on the floor. They are held in place until the floor around that spot
--- has streamed to their screen (otherwise they can land before it arrives and fall through it).
+-- Moves a player's character somewhere on the floor. Their own screen holds them there (client/dungeon/Landing)
+-- until the floor under that spot has arrived on it, so nobody falls through a floor that hasn't loaded yet;
+-- meanwhile the server sends that part of the floor first.
 local function placePlayer(player: Player, cframe: CFrame)
 	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not character or not root then
+	if not character or not character:FindFirstChild("HumanoidRootPart") then
 		return
 	end
-	root.Anchored = true
+	landingRemote:FireClient(player, cframe)
 	character:PivotTo(cframe)
 	pcall(player.RequestStreamAroundAsync, player, cframe.Position, 5)
-	task.wait(0.3)
-	if root.Parent then
-		root.Anchored = false
-	end
 end
 
 -- A random spot on a room's floor, away from the walls, the doorways and the middle (if asked).
@@ -1762,6 +1759,17 @@ function FloorService.Start()
 	end)
 
 	Remotes.Event("ChooseFloor").OnServerEvent:Connect(onChooseFloor)
+	-- a player's screen says they've dropped out of the dungeon: back to the entrance (only if the server sees
+	-- them that low too)
+	local lastFell: { [Player]: number } = {}
+	Remotes.Event("Fell").OnServerEvent:Connect(function(player: Player)
+		local root = aliveRoot(player)
+		local now = os.clock()
+		if root and root.Position.Y < ORIGIN.Y - 60 and now - (lastFell[player] or 0) > 2 then
+			lastFell[player] = now
+			sendToEntrance(player)
+		end
+	end)
 	startFloor(if Config.TestMode and Config.TestStartFloor then Config.TestStartFloor else 1)
 
 	local elapsed = 0

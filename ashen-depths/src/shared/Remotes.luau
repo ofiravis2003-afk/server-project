@@ -36,6 +36,8 @@ local EVENT_NAMES = {
 	"Traveling", -- server -> client: the player is about to teleport (where to), show the travel card
 	"LoreShow", -- server -> client: show a page of Ilvane's journal (its id, and how many the player has found)
 	"Sound", -- server -> client: play a sound effect from shared/Sounds (its name, and where, or nowhere for flat)
+	"Landing", -- server -> client: the player is being moved here; hold still until the floor under it has loaded
+	"Fell", -- client -> server: this player has dropped out of the dungeon (put them back at the entrance)
 	"PartyUpdated", -- server -> client: the player's party (leader and members), or nil when not in one
 	"PartyInvite", -- server -> client: someone invites this player to their party (who, how long it stands)
 	"PartyAction", -- client -> server: Invite / Accept / Decline (a player) or Leave
