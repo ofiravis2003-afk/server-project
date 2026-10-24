@@ -46,6 +46,8 @@ end
 -- and the Tome heal. (Roblox's own steady regeneration is turned off in ProgressService.)
 local REST_HEAL_PER_SECOND = 0.05
 local EVENT_CHANCE = 0.45 -- of a floor (without a boss or the Guardians) having an event
+local CACHE_SECONDS = 150 -- the Crumbling Cache event: how long its chest lasts after the floor begins
+local CURSE = { Health = 1.4, Damage = 1.3, Rewards = 2 } -- the Ember Altar event: monsters after the curse
 local TRAP_CHANCE = 0.45
 local ARROW_TRAP_CHANCE = 0.3
 local TRAP_DAMAGE = 14
@@ -71,6 +73,7 @@ type CombatRoom = {
 	EventKind: string?,
 	Ambush: boolean?, -- this floor's event: when cleared, a second wave climbs out of the floor
 	RewardChest: string?, -- a chest of this tier appears in the middle once the room is cleared (events)
+	Hoard: boolean?, -- this floor's event: once cleared, a free Gold hoard appears... and opening it wakes the dead
 	Guardians: boolean?, -- the Guardians' hall: waves of monsters, then a Skeleton Captain
 	Wave: number?,
 	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
@@ -114,6 +117,8 @@ end
 -- (Boss floors need none: the lair stands before the stairs.)
 local stairsKey: { Needed: boolean, Found: boolean, Where: string } = { Needed = false, Found = false, Where = "" }
 local floorEvent: string? = nil -- this floor's event, told to players when they arrive
+local floorCursed = false -- the Ember Altar's curse was accepted on this floor
+local forcedEvent: string? = nil -- Studio's DevFloor: the next floor's event
 
 local function pushRun(player: Player)
 	runRemote:FireClient(player, {
@@ -381,6 +386,7 @@ local function riseEnemies(room: CombatRoom, floor: number, count: number)
 end
 
 local placeChestLater: (CombatRoom, string) -> ()
+local placeHoard: (CombatRoom) -> ()
 
 roomEmptied = function(room: CombatRoom)
 	if room.Ambush then
@@ -407,6 +413,10 @@ roomEmptied = function(room: CombatRoom)
 	if room.RewardChest then
 		placeChestLater(room, room.RewardChest)
 		room.RewardChest = nil
+	end
+	if room.Hoard then
+		room.Hoard = false
+		placeHoard(room)
 	end
 	if room.Guardians and (room.Wave or 0) < #GUARDIAN_WAVES then
 		local nextWave = (room.Wave or 0) + 1
@@ -660,26 +670,33 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 	damageNumberRemote:FireClient(player, position + Vector3.new(0, 3, 0), text, "Reward")
 end
 
-local function placeChest(parent: Instance, cframe: CFrame, tier: string)
+-- A chest of a tier. Each player opens it once, with a key of its tier, or freely (`free`: event chests);
+-- `onOpen` runs for every opening, before the loot.
+local function placeChest(parent: Instance, cframe: CFrame, tier: string, free: boolean?, onOpen: ((Player) -> ())?): Model
 	local chest = FloorBuilder.Chest(parent, cframe, tier)
 	local base = chest:FindFirstChild("Base", true) :: BasePart
 	local lid = chest:FindFirstChild("Lid", true) :: BasePart?
 	local openedBy: { [Player]: boolean } = {}
 	local lidOpen = false
-	local p = prompt(base, "Unlock", `{tier} Chest`, 0.6, 8)
+	local p = prompt(base, if free then "Open" else "Unlock", `{tier} Chest`, 0.6, 8)
 	p.Triggered:Connect(function(player)
 		if openedBy[player] then
 			notifyRemote:FireClient(player, "You already opened this chest.")
 			return
 		end
-		local k = keysOf(player) :: any
-		if k[tier] < 1 then
-			notifyRemote:FireClient(player, `You need a {tier} Key.`)
-			return
+		if not free then
+			local k = keysOf(player) :: any
+			if k[tier] < 1 then
+				notifyRemote:FireClient(player, `You need a {tier} Key.`)
+				return
+			end
+			k[tier] -= 1
 		end
-		k[tier] -= 1
 		openedBy[player] = true
 		pushRun(player)
+		if onOpen then
+			onOpen(player)
+		end
 		if not lidOpen then
 			lidOpen = true
 			if lid then
@@ -699,6 +716,7 @@ local function placeChest(parent: Instance, cframe: CFrame, tier: string)
 		soundRemote:FireClient(player, "Chest", base.Position)
 		giveLoot(player, tier, base.Position)
 	end)
+	return chest
 end
 
 -- Floor 12's secret room: what's left of Old Pip's boy, and his fox helmet beside him. Each player can take
@@ -1160,6 +1178,121 @@ placeChestLater = function(room: CombatRoom, tier: string)
 	end)
 end
 
+-- The Trapped Hoard event: a Gold chest, free for the taking, in a room just cleared. The first one to open it
+-- wakes the dead: the gates slam and the room fills again (and everyone who opens it keeps the loot).
+placeHoard = function(room: CombatRoom)
+	task.delay(1.5, function()
+		if not room.Built.Model.Parent then
+			return
+		end
+		local sprung = false
+		placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold", true, function(_player)
+			if sprung then
+				return
+			end
+			sprung = true
+			room.Cleared = false
+			room.Active = true
+			room.Spawning = true
+			room.EmptySince = nil
+			setGates(room, true)
+			notifyRemote:FireAllClients("It was a trap! The dead rise to guard their hoard!")
+			task.delay(1, function()
+				local extra = math.max(#Players:GetPlayers(), 1) - 1
+				riseEnemies(room, currentFloor, 4 + math.floor(currentFloor / 3) + extra)
+				room.Spawning = false
+				if room.Active and next(room.Enemies) == nil then
+					roomEmptied(room)
+				end
+			end)
+		end)
+	end)
+end
+
+-- The Crumbling Cache event: a free chest somewhere on the floor that falls to dust CACHE_SECONDS after the
+-- floor begins (a clock floats over it).
+local function placeCache(room: FloorBuilder.BuiltRoom, floor: number)
+	local tier = if floor >= 8 then "Gold" else "Silver"
+	local chest = placeChest(room.Model, CFrame.new(room.Center + Vector3.new(5, 0, 5)), tier, true)
+	local base = chest:FindFirstChild("Base", true) :: BasePart
+	local clock = Instance.new("BillboardGui")
+	clock.Size = UDim2.fromOffset(160, 40)
+	clock.StudsOffset = Vector3.new(0, 4, 0)
+	clock.AlwaysOnTop = true
+	clock.MaxDistance = 120
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.fromScale(1, 1)
+	text.BackgroundTransparency = 1
+	text.Font = Enum.Font.Fondamento
+	text.TextScaled = true
+	text.TextColor3 = Color3.fromRGB(255, 200, 110)
+	text.TextStrokeTransparency = 0.3
+	text.Parent = clock
+	clock.Parent = base
+	task.spawn(function()
+		local ends = os.clock() + CACHE_SECONDS
+		while chest.Parent and currentFloor == floor do
+			local left = math.ceil(ends - os.clock())
+			if left <= 0 then
+				effectRemote:FireAllClients("Rise", base.Position)
+				chest:Destroy()
+				notifyRemote:FireAllClients("The Crumbling Cache has turned to dust.")
+				return
+			end
+			text.Text = string.format("%d:%02d", left // 60, left % 60)
+			task.wait(1)
+		end
+	end)
+end
+
+-- The Ember Altar event: a brazier of dark fire by the entrance. Anyone may accept its curse: every monster
+-- that rises on this floor afterwards is tougher, and pays double gold and XP.
+local function placeAltar(room: FloorBuilder.BuiltRoom)
+	local at = room.Center + Vector3.new(room.Size / 2 - 6, 0, room.Size / 2 - 6)
+	local altar = Instance.new("Model")
+	altar.Name = "EmberAltar"
+	local function piece(size: Vector3, cf: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
+		local p = Instance.new("Part")
+		p.Anchored = true
+		p.Shape = shape or Enum.PartType.Block
+		p.Size = size
+		p.CFrame = cf
+		p.Color = color
+		p.Material = material
+		p.Parent = altar
+		return p
+	end
+	piece(Vector3.new(3, 1, 3), CFrame.new(at + Vector3.new(0, 0.5, 0)), Color3.fromRGB(50, 44, 42), Enum.Material.Slate)
+	piece(Vector3.new(1.6, 2.4, 1.6), CFrame.new(at + Vector3.new(0, 2.2, 0)), Color3.fromRGB(60, 52, 48), Enum.Material.Slate)
+	local bowl = piece(Vector3.new(0.6, 2.8, 2.8), CFrame.new(at + Vector3.new(0, 3.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(40, 30, 28), Enum.Material.CorrodedMetal, Enum.PartType.Cylinder)
+	local fire = Instance.new("Fire")
+	fire.Color = Color3.fromRGB(150, 20, 20)
+	fire.SecondaryColor = Color3.fromRGB(40, 0, 0)
+	fire.Size = 4
+	fire.Heat = 6
+	fire.Parent = bowl
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(200, 40, 30)
+	light.Range = 14
+	light.Brightness = 1.5
+	light.Parent = bowl
+	altar.Parent = room.Model
+	local p = prompt(bowl, "Accept the curse", "Ember Altar", 1.5, 9)
+	p.Triggered:Connect(function(player)
+		if floorCursed then
+			return
+		end
+		floorCursed = true
+		p.Enabled = false
+		EnemyService.SetFloorModifier(CURSE.Health, CURSE.Damage, CURSE.Rewards)
+		fire.Color = Color3.fromRGB(255, 60, 20)
+		fire.Size = 8
+		light.Brightness = 4
+		effectRemote:FireAllClients("Quake", at, 10)
+		notifyRemote:FireAllClients(`{player.DisplayName} accepted the Ember curse! The dead grow stronger on this floor, but pay double.`)
+	end)
+end
+
 guardiansDefeated = function(room: CombatRoom)
 	for _, player in Players:GetPlayers() do
 		local root = aliveRoot(player)
@@ -1453,6 +1586,8 @@ startFloor = function(floor: number)
 		end
 	end
 	floorEvent = nil
+	floorCursed = false
+	EnemyService.SetFloorModifier(1, 1, 1)
 	stairsKey = {
 		Needed = floor >= 2 and not Floors.Bosses[floor] and not Floors.Guardians[floor],
 		Found = false,
@@ -1554,10 +1689,11 @@ startFloor = function(floor: number)
 	-- From floor 2, about half the floors have an event: an ambush, a trapped room, or the wandering merchant
 	-- (always the merchant before a boss or the Guardians, to stock up). The other floors are just floors.
 	local lairAhead = Floors.Bosses[floor] ~= nil or Floors.Guardians[floor] == true
-	if floor >= 2 and (lairAhead or rng:NextNumber() < EVENT_CHANCE) then
+	if floor >= 2 and (lairAhead or forcedEvent or rng:NextNumber() < EVENT_CHANCE) then
 		local lairFloor = Floors.Bosses[floor] ~= nil or Floors.Guardians[floor] == true
-		local kinds = { "Ambush", "Traps", "Merchant" }
-		local kind = if lairFloor then "Merchant" else kinds[rng:NextInteger(1, #kinds)]
+		local kinds = { "Ambush", "Traps", "Merchant", "Altar", "Cache", "Hoard" }
+		local kind = if lairFloor then "Merchant" else forcedEvent or kinds[rng:NextInteger(1, #kinds)]
+		forcedEvent = nil
 		local later = {}
 		for i, room in combatRooms do
 			if i > 1 and not room.Boss and not room.Guardians then
@@ -1579,6 +1715,31 @@ startFloor = function(floor: number)
 			room.Ambush = true
 			room.EventKind = "Ambush"
 			floorEvent = "Something stirs beneath this floor..."
+		elseif kind == "Altar" then
+			for _, room in rooms do
+				if room.Plan.Type == "Entrance" then
+					placeAltar(room)
+				end
+			end
+			floorEvent = "An Ember Altar burns by the entrance. Accept its curse for double rewards... if you dare."
+		elseif kind == "Cache" then
+			-- the farthest room from the entrance
+			local far, best = nil, -1
+			for _, r in later do
+				local d = (r.Built.Center - entrance).Magnitude
+				if d > best then
+					far, best = r, d
+				end
+			end
+			if far then
+				placeCache(far.Built, floor)
+			end
+			floorEvent = `A Crumbling Cache waits deep in this floor. It turns to dust in {CACHE_SECONDS // 60} minutes!`
+		elseif kind == "Hoard" then
+			local room = later[rng:NextInteger(1, #later)]
+			room.Hoard = true
+			room.EventKind = "Hoard"
+			floorEvent = "Rumors speak of a hoard on this floor, free for the taking..."
 		else
 			local room = later[rng:NextInteger(1, #later)]
 			room.EventKind = "Traps"
@@ -1671,11 +1832,13 @@ function FloorService.Start()
 	dungeonFolder.Name = "Dungeon"
 	dungeonFolder.Parent = workspace
 
-	-- Studio only: ServerStorage.DevFloor:Invoke(n) starts floor n (to test a floor without playing down to it)
+	-- Studio only: ServerStorage.DevFloor:Invoke(n, event?) starts floor n, with that event if one is named
+	-- ("Altar", "Cache", "Hoard", ...), to test a floor without playing down to it
 	if RunService:IsStudio() then
 		local dev = Instance.new("BindableFunction")
 		dev.Name = "DevFloor"
-		dev.OnInvoke = function(floor: number)
+		dev.OnInvoke = function(floor: number, event: string?)
+			forcedEvent = event
 			task.spawn(startFloor, floor)
 			return true
 		end

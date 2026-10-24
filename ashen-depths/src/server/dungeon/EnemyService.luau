@@ -98,6 +98,9 @@ local EnemyService = {}
 local enemies: { [Model]: Enemy } = {}
 local templates: { [string]: Model } = {}
 local folder: Folder
+-- A floor's curse (the Ember Altar event in FloorService): every monster that rises after it is tougher, and
+-- pays more. Back to normal on the next floor.
+local floorModifier = { Health = 1, Damage = 1, Rewards = 1 }
 local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring together
 local VIP_BONUS = 1.2 -- and 20% more for a VIP
 local damageNumberRemote = Remotes.Event("DamageNumber")
@@ -758,7 +761,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 	end
 
 	local position = enemy.Root.Position
-	local rewards = if enemy.Elite then ELITE.Rewards else 1
+	local rewards = (if enemy.Elite then ELITE.Rewards else 1) * floorModifier.Rewards
 	-- a party (more than one adventurer down here) earns PARTY_BONUS more from every kill
 	local together = if #Players:GetPlayers() > 1 then PARTY_BONUS else 1
 	for player, dealt in enemy.Damagers do
@@ -805,6 +808,10 @@ end
 
 -- Spawns an enemy standing at `cframe` and returns it (nil if the name is unknown).
 -- The first spawn of each kind builds its model, so it can take a moment.
+function EnemyService.SetFloorModifier(health: number, damage: number, rewards: number)
+	floorModifier = { Health = health, Damage = damage, Rewards = rewards }
+end
+
 function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?, spawnPart: BasePart?): Enemy?
 	local def = Enemies[name]
 	if not def then
@@ -817,7 +824,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	local humanoid = model:FindFirstChildOfClass("Humanoid") :: Humanoid
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart
 	local head = model:FindFirstChild("Head") :: BasePart
-	local health = def.Health * (opts.HealthMultiplier or 1) * (if elite then ELITE.Health else 1)
+	local health = def.Health * (opts.HealthMultiplier or 1) * (if elite then ELITE.Health else 1) * floorModifier.Health
 	humanoid.MaxHealth = health
 	humanoid.Health = health
 	humanoid.WalkSpeed = def.WalkSpeed
@@ -963,7 +970,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	local enemy: Enemy = {
 		Name = name,
 		Def = def,
-		Damage = def.Damage * (opts.DamageMultiplier or 1) * (if elite then ELITE.Damage else 1),
+		Damage = def.Damage * (opts.DamageMultiplier or 1) * (if elite then ELITE.Damage else 1) * floorModifier.Damage,
 		Elite = elite,
 		EyeColor = eyeColor,
 		Model = model,
