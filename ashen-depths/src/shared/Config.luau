@@ -21,11 +21,11 @@ return {
 	},
 	-- Roblox badges (0 = not created yet, not given).
 	Badges = {
-		Founder = 0, -- one of the first 250 (FounderService)
-		Gravekeeper = 0, -- the Gravekeeper defeated (floor 5)
-		BoneWarden = 0, -- the Bone Warden defeated (floor 15)
-		Hollow = 0, -- reached The Hollow (floor 16)
-		Party = 0, -- went down with a full party of four
+		Founder = 4321961558595406, -- one of the first 250 (FounderService)
+		Gravekeeper = 946718100821034, -- the Gravekeeper defeated (floor 5)
+		BoneWarden = 929651792145795, -- the Bone Warden defeated (floor 15)
+		Hollow = 1481544442634936, -- reached The Hollow (floor 16)
+		Party = 3082723086033753, -- went down with a full party of four
 	},
 	Products = {
 		GoldSmall = { Id = 3721731265, Gold = 500 }, -- Small Gold Pouch
