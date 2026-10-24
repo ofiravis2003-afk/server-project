@@ -188,7 +188,7 @@ function Shop.Start()
 			picture(row, offer)
 			local name = label(row, Fonts.Title, 17, if gear then info.Color else TEXT)
 			name.Position = UDim2.fromOffset(64, 6)
-			name.Size = UDim2.new(1, -170, 0, 22)
+			name.Size = UDim2.new(1, -176, 0, 22)
 			name.TextScaled = true
 			local limit = Instance.new("UITextSizeConstraint")
 			limit.MaxTextSize = 19
@@ -196,17 +196,19 @@ function Shop.Start()
 			name.Text = Items.NameFor(offer.Item, offer.Rarity)
 			local about = label(row, Fonts.Body, 13, Color3.fromRGB(180, 170, 158))
 			about.Position = UDim2.fromOffset(64, 30)
-			about.Size = UDim2.new(1, -170, 0, 22)
+			about.Size = UDim2.new(1, -176, 0, 22)
+			-- (a long line shrinks to fit, so it never runs under the price button)
+			about.TextScaled = true
+			local aboutLimit = Instance.new("UITextSizeConstraint")
+			aboutLimit.MaxTextSize = 15
+			aboutLimit.Parent = about
 			local piece = Armor.Pieces[offer.Item]
 			if piece then
 				local set = Armor.SetByName[piece.Set]
 				-- two short lines: what it is, then its numbers
 				about.Position = UDim2.fromOffset(64, 27)
-				about.Size = UDim2.new(1, -170, 0, 30)
-				about.TextScaled = true
-				local fitText = Instance.new("UITextSizeConstraint")
-				fitText.MaxTextSize = 13
-				fitText.Parent = about
+				about.Size = UDim2.new(1, -176, 0, 30)
+				aboutLimit.MaxTextSize = 13
 				about.Text = `{offer.Rarity} {if set then set.Kind else "Ring"}` .. "\n" .. Armor.Describe(Armor.StatsOf(offer.Item, offer.Rarity, 0))
 			elseif def and def.WeaponType then
 				about.Text = `{offer.Rarity} {def.WeaponType}  ·  Damage {math.floor(Items.WeaponDamage(offer.Item, offer.Rarity, 0) + 0.5)}`
