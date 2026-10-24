@@ -38,6 +38,7 @@ local EVENT_NAMES = {
 	"Sound", -- server -> client: play a sound effect from shared/Sounds (its name, and where, or nowhere for flat)
 	"Landing", -- server -> client: the player is being moved here; hold still until the floor under it has loaded
 	"Fell", -- client -> server: this player has dropped out of the dungeon (put them back at the entrance)
+	"DailyUpdated", -- server -> client: the daily streak and today's tasks (and the gift, the moment it's given)
 	"PartyUpdated", -- server -> client: the player's party (leader and members), or nil when not in one
 	"PartyInvite", -- server -> client: someone invites this player to their party (who, how long it stands)
 	"PartyAction", -- client -> server: Invite / Accept / Decline (a player) or Leave

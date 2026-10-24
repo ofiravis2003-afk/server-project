@@ -20,6 +20,9 @@ return {
 	JoinCount = 0,
 	FounderNumber = nil :: number?, -- one of the first 250 adventurers (FounderService)
 	FounderGiven = nil :: boolean?, -- their Founder's Emberblade is in the bag
+	DailyDay = 0, -- the last day (shared/Daily Today) the daily gift was given
+	DailyStreak = 0, -- days in a row
+	DailyTasks = {}, -- today's three tasks: { Id, Progress, Done }
 	Referrals = {}, -- [userId] = true: friends this player brought in with a game invite (ReferralService)
 	IntroDone = nil :: boolean?, -- the first-visit fly-over and Aldric's Brand (IntroService); nil = decide on load
 	FirstJoinTime = 0,

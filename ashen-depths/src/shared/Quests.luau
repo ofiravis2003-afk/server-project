@@ -42,7 +42,7 @@ Quests.List = {
 	-- Side quests, from the townsfolk.
 	{ Id = "ATornPage", Title = "A Torn Page", Text = "Seraphine believes Ilvane's journal was scattered through the Depths. Find one page and bring her word of it.", Kind = "Lore", Count = 1, Gold = 120, XP = 150, Points = 20, Giver = "Seraphine", Thanks = "Seraphine reads it three times, lips moving. \"Her own hand. Oh, this is real. Find the rest. Please.\"" },
 	{ Id = "IlvanesJournal", Title = "Ilvane's Journal", Text = "Recover all eight pages of Ilvane's journal from the Drowned Catacombs.", Kind = "Lore", Count = 8, Gold = 800, XP = 1000, Points = 120, Giver = "Seraphine", Needs = "ATornPage", Thanks = "Seraphine goes very quiet at the last page. \"Something green, beneath the gate... I need to read more. Much more.\"" },
-	{ Id = "FoxHelmet", Title = "The Fox Helmet", Text = "Old Pip's son went down to the twelfth floor last spring and never came back. Find his helmet, the one with the fox.", Kind = "Collect", Target = "FoxHelmet", Count = 1, Gold = 350, XP = 600, Points = 60, Giver = "OldPip", Thanks = "Pip turns the helmet over in his hands for a long while. \"...Thank you. Your drinks are on the house. For good.\"" },
+	{ Id = "FoxHelmet", Title = "The Fox Helmet", Text = "Old Pip's son went down to the twelfth floor last spring and never came back. Find his helmet, the one with the fox.", Kind = "Collect", Target = "FoxHelmet", Count = 1, Gold = 350, XP = 600, Points = 60, Giver = "OldPip", Thanks = "Pip turns the helmet over in his hands for a long while. \"...Thank you. Your stew is on the house. For good.\"" },
 } :: { Quest }
 
 Quests.ById = {} :: { [string]: Quest }

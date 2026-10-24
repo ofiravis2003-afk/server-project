@@ -22,6 +22,7 @@ local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
+local DailyService = require(script.Parent.Parent.Common.DailyService)
 local Travel = require(script.Parent.Parent.Common.Travel)
 local MonetizationService = require(script.Parent.Parent.Common.MonetizationService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
@@ -619,6 +620,7 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 		return
 	end
 	local rng = Random.new()
+	DailyService.OnChest(player)
 	local gold = math.floor(rng:NextInteger(loot.Gold[1], loot.Gold[2]) * (1 + 0.15 * (currentFloor - 1)))
 	ProgressService.AddGold(player, gold)
 	local text = `+{gold} Gold`
@@ -1646,6 +1648,7 @@ startFloor = function(floor: number)
 	for _, player in Players:GetPlayers() do
 		local data = DataService.GetData(player)
 		QuestService.OnReachFloor(player, floor)
+		DailyService.OnFloor(player)
 		if data and floor > data.DeepestFloor then
 			data.DeepestFloor = floor
 		end
