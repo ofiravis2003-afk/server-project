@@ -79,7 +79,7 @@ function Party.Start(inTown: boolean)
 	-- the members, under the stats box
 	local list = Instance.new("Frame")
 	list.Name = "Members"
-	list.Position = UDim2.fromOffset(12, 92)
+	list.Position = UDim2.fromOffset(12, if inTown then 92 else 162) -- (in the Depths: under the floor and keys panel)
 	list.Size = UDim2.fromOffset(220, 0)
 	list.AutomaticSize = Enum.AutomaticSize.Y
 	list.BackgroundColor3 = PANEL
