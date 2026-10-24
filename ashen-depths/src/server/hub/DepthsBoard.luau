@@ -57,7 +57,7 @@ function DepthsBoard.Start(town: { Model: Model })
 	model.Parent = town.Model
 
 	local gui = Instance.new("SurfaceGui")
-	gui.Face = Enum.NormalId.Back -- (the side facing the way the Wall faces)
+	gui.Face = Enum.NormalId.Front -- (the side facing the way the Wall faces)
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	gui.PixelsPerStud = 40
 	gui.LightInfluence = 0
