@@ -22,6 +22,7 @@ local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
+local Travel = require(script.Parent.Parent.Common.Travel)
 local MonetizationService = require(script.Parent.Parent.Common.MonetizationService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
@@ -1398,22 +1399,9 @@ local function setupReturnRope(room: FloorBuilder.BuiltRoom)
 		if #party == 0 then
 			return
 		end
-		for _, member in party do
-			DataService.SaveNow(member)
-			Remotes.Event("Traveling"):FireClient(member, "Emberhold")
-		end
-		task.wait(0.5)
-		local ok, err = pcall(function()
-			local options = Instance.new("TeleportOptions")
-			options:SetTeleportData(PartyService.TeleportData(party[1]))
-			game:GetService("TeleportService"):TeleportAsync(Config.PlaceIds.Emberhold, party, options)
-		end)
-		if not ok then
-			warn(`[FloorService] Teleport to Emberhold failed: {err}`)
-			for _, member in party do
-				notifyRemote:FireClient(member, "The rope won't hold right now. Try again in a moment.")
-			end
-		end
+		local options = Instance.new("TeleportOptions")
+		options:SetTeleportData(PartyService.TeleportData(party[1]))
+		Travel.Go(party, Config.PlaceIds.Emberhold, "Emberhold", options)
 	end)
 end
 

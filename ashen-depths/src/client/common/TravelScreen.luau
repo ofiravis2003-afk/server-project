@@ -72,7 +72,28 @@ end
 
 function TravelScreen.Start()
 	local player = Players.LocalPlayer
+	-- the card comes down if the trip fails (the server says "Cancel", or Roblox reports it here), and in any
+	-- case after a while: never stuck on a loading screen
+	local function takeDown()
+		for _, old in player:WaitForChild("PlayerGui"):GetChildren() do
+			if old.Name == "TravelScreen" then
+				old:Destroy()
+			end
+		end
+	end
+	TeleportService.TeleportInitFailed:Connect(function(who: Player)
+		if who == player then
+			takeDown()
+		end
+	end)
 	Remotes.Event("Traveling").OnClientEvent:Connect(function(where: any)
+		if where == "Cancel" then
+			takeDown()
+			return
+		end
+		task.delay(45, function()
+			takeDown()
+		end)
 		local gui = TravelScreen.Build(if type(where) == "string" then where else "Emberhold")
 		local back = gui:FindFirstChild("Back") :: Frame
 		back.BackgroundTransparency = 1

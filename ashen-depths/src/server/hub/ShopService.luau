@@ -11,7 +11,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Items = require(ReplicatedStorage.Shared.Items)
@@ -22,6 +21,7 @@ local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
 local PartyService = require(Common.PartyService)
+local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
 local RateLimiter = require(Common.RateLimiter)
@@ -352,23 +352,10 @@ function ShopService.Start()
 			end
 			going = PartyService.Members(player) -- (whoever is still in it)
 		end
-		for _, member in going do
-			DataService.SaveNow(member)
-			Remotes.Event("Traveling"):FireClient(member, "Depths")
-		end
-		task.wait(0.5)
 		local options = Instance.new("TeleportOptions")
 		options.ShouldReserveServer = true
 		options:SetTeleportData(PartyService.TeleportData(player))
-		local ok, err = pcall(function()
-			TeleportService:TeleportAsync(Config.PlaceIds.Depths, going, options)
-		end)
-		if not ok then
-			warn(`[ShopService] Teleport to the Depths failed: {err}`)
-			for _, member in going do
-				notifyRemote:FireClient(member, "The well's chains won't move. Try again in a moment.")
-			end
-		end
+		Travel.Go(going, Config.PlaceIds.Depths, "Depths", options)
 	end)
 
 	-- new arrivals come in at the south end of the square
