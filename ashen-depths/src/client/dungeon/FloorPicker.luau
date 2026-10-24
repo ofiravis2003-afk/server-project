@@ -20,7 +20,7 @@ local GUARD = Color3.fromRGB(150, 110, 40)
 local COLUMNS = 5
 local CELL = Vector2.new(96, 64)
 
-type Offer = { Unlocked: number, Max: number, Marks: { [string]: string } }
+type Offer = { Unlocked: number, Max: number, Marks: { [string]: string }, Hollow: { number }? }
 
 local FloorPicker = {}
 
@@ -99,10 +99,15 @@ function FloorPicker.Start()
 		gui.Enabled = false
 	end)
 
-	local grid = Instance.new("Frame")
+	-- (it scrolls once The Hollow's checkpoints don't fit any more)
+	local grid = Instance.new("ScrollingFrame")
 	grid.Position = UDim2.fromOffset(14, 68)
-	grid.Size = UDim2.new(1, -28, 1, -80)
+	grid.Size = UDim2.new(1, -20, 1, -80)
 	grid.BackgroundTransparency = 1
+	grid.BorderSizePixel = 0
+	grid.ScrollBarThickness = 6
+	grid.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	grid.CanvasSize = UDim2.new()
 	grid.Parent = panel
 	local layout = Instance.new("UIGridLayout")
 	layout.CellSize = UDim2.fromOffset(CELL.X, CELL.Y)
@@ -142,6 +147,29 @@ function FloorPicker.Start()
 					choose:FireServer(floor)
 				end)
 			end
+		end
+		-- The Hollow: the checkpoints earned there (16, 21, 26, ...)
+		for i, floor in offer.Hollow or {} do
+			local cell = Instance.new("TextButton")
+			cell.Name = `Floor{floor}`
+			cell.LayoutOrder = offer.Max + i
+			cell.Text = ""
+			cell.BackgroundColor3 = Color3.fromRGB(40, 30, 50)
+			cell.Parent = grid
+			corner(cell, 8)
+			stroke(cell, Color3.fromRGB(150, 100, 220), 2.5)
+			local number = label(cell, Fonts.Title, 26, TEXT)
+			number.Size = UDim2.new(1, 0, 0, 34)
+			number.Position = UDim2.fromOffset(0, 6)
+			number.Text = tostring(floor)
+			local under = label(cell, Fonts.Body, 13, Color3.fromRGB(190, 150, 240))
+			under.Size = UDim2.new(1, 0, 0, 16)
+			under.Position = UDim2.fromOffset(0, 40)
+			under.Text = "The Hollow"
+			cell.Activated:Connect(function()
+				gui.Enabled = false
+				choose:FireServer(floor)
+			end)
 		end
 		local screen = workspace.CurrentCamera.ViewportSize
 		fit.Scale = math.min(1, (screen.X - 24) / panel.Size.X.Offset, (screen.Y - 90) / panel.Size.Y.Offset)

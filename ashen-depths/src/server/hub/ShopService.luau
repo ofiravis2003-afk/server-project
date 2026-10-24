@@ -27,6 +27,7 @@ local QuestService = require(Common.QuestService)
 local RateLimiter = require(Common.RateLimiter)
 local Quests = require(ReplicatedStorage.Shared.Quests)
 local IntroService = require(script.Parent.IntroService)
+local DepthsBoard = require(script.Parent.DepthsBoard)
 local TownBuilder = require(script.Parent.TownBuilder)
 
 local SHOP_RANGE = 16
@@ -112,6 +113,7 @@ end
 function ShopService.Start()
 	local town = TownBuilder.Build()
 	IntroService.Start(town)
+	DepthsBoard.Start(town)
 	local openRemote = Remotes.Event("ShopOpen")
 	local notifyRemote = Remotes.Event("Notify")
 

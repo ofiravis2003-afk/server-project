@@ -5,11 +5,26 @@ local Config = require(script.Parent.Config)
 
 local Floors = {}
 
-Floors.MaxFloor = 15 -- chapter I only, for the first release (15 floors, decided 2026-10-16)
+Floors.MaxFloor = 15 -- the end of chapter I (15 floors, decided 2026-10-16)
+-- Below it, The Hollow: floors without end (2026-10-25), each harder than the last, a boss every fifth floor
+-- (the old ones, stronger each time), and the best loot. How deep a player gets goes on the leaderboard.
+Floors.HollowFirst = 16
+Floors.Deepest = 500 -- (a floor no one should ever reach; the stairs there are sealed)
 
 Floors.Chapters = {
 	{ First = 1, Last = 15, Name = "The Drowned Catacombs" },
+	{ First = 16, Last = math.huge, Name = "The Hollow" },
 }
+
+function Floors.IsHollow(floor: number): boolean
+	return floor >= Floors.HollowFirst
+end
+
+-- A floor where a run may start: any reached floor of chapter I, or a Hollow checkpoint (16, 21, 26, ...: the
+-- floor after a boss) the player has earned.
+function Floors.IsHollowCheckpoint(floor: number): boolean
+	return Floors.IsHollow(floor) and (floor - Floors.HollowFirst) % 5 == 0
+end
 
 function Floors.ChapterName(floor: number): string
 	for _, chapter in Floors.Chapters do
@@ -67,11 +82,40 @@ function Floors.PickEnemy(floor: number, rng: Random): string
 	return mix[1].Name
 end
 
--- Boss floors: the last room before the stairs is this boss's lair.
-Floors.Bosses = { [5] = "Gravekeeper", [15] = "BoneWarden" } :: { [number]: string }
+-- Boss floors: the last room before the stairs is this boss's lair. In The Hollow, every fifth floor brings an
+-- old boss back (the Bone Warden on 20, 30, ...; the Gravekeeper on 25, 35, ...), stronger each time.
+-- (Looping over the table gives chapter I's two; looking up a Hollow floor works too.)
+local BOSS_HOME = { Gravekeeper = 5, BoneWarden = 15 }
+local THEMES = { Gravekeeper = "Graveyard", BoneWarden = "ThroneRoom" }
+local function hollowBoss(floor: number): string?
+	if type(floor) ~= "number" or not Floors.IsHollow(floor) or floor % 5 ~= 0 then
+		return nil
+	end
+	return if floor % 10 == 0 then "BoneWarden" else "Gravekeeper"
+end
+Floors.Bosses = setmetatable({ [5] = "Gravekeeper", [15] = "BoneWarden" }, {
+	__index = function(_, floor)
+		return hollowBoss(floor)
+	end,
+}) :: any
 
 -- How each boss's lair is dressed (RoomDecor themes).
-Floors.BossThemes = { [5] = "Graveyard", [15] = "ThroneRoom" } :: { [number]: string }
+Floors.BossThemes = setmetatable({ [5] = "Graveyard", [15] = "ThroneRoom" }, {
+	__index = function(_, floor)
+		local boss = hollowBoss(floor)
+		return boss and THEMES[boss]
+	end,
+}) :: any
+
+-- How much stronger a boss is on this floor than on its own (1 in chapter I): it keeps up with the floor.
+function Floors.BossScale(floor: number, boss: string): (number, number)
+	local home = BOSS_HOME[boss] or floor
+	if floor <= home then
+		return 1, 1
+	end
+	return Floors.EnemyHealthMultiplier(floor) / Floors.EnemyHealthMultiplier(home),
+		Floors.EnemyDamageMultiplier(floor) / Floors.EnemyDamageMultiplier(home)
+end
 
 -- Guardians' floors: the last room before the stairs is a locked hall where three waves of the floor's
 -- monsters come, the last led by a giant Skeleton Captain. Its reward is a boss's (no new model needed).

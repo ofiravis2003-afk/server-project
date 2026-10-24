@@ -22,6 +22,7 @@ local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
+local Leaderboard = require(script.Parent.Parent.Common.Leaderboard)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
 local Travel = require(script.Parent.Parent.Common.Travel)
 local MonetizationService = require(script.Parent.Parent.Common.MonetizationService)
@@ -57,6 +58,13 @@ local LOOT = {
 	Bronze = { Gold = { 20, 40 }, Potions = { 0, 1 }, Materials = { 1, 3 }, WeaponChance = 0.1, Rarities = { { "Common", 0.6 }, { "Rare", 0.4 } } },
 	Silver = { Gold = { 50, 90 }, Potions = { 1, 2 }, Materials = { 2, 4 }, WeaponChance = 0.4, Rarities = { { "Rare", 0.8 }, { "Epic", 0.2 } } },
 	Gold = { Gold = { 120, 200 }, Potions = { 2, 3 }, Materials = { 3, 5 }, WeaponChance = 1, Rarities = { { "Epic", 0.85 }, { "Legendary", 0.15 } } },
+}
+
+-- The Hollow's chests: the same, but a tier of rarity higher (the only place Mythic gear comes from).
+local HOLLOW_LOOT = {
+	Bronze = { Gold = LOOT.Bronze.Gold, Potions = LOOT.Bronze.Potions, Materials = LOOT.Bronze.Materials, WeaponChance = 0.2, Rarities = { { "Rare", 0.6 }, { "Epic", 0.4 } } },
+	Silver = { Gold = LOOT.Silver.Gold, Potions = LOOT.Silver.Potions, Materials = LOOT.Silver.Materials, WeaponChance = 0.5, Rarities = { { "Epic", 0.7 }, { "Legendary", 0.3 } } },
+	Gold = { Gold = LOOT.Gold.Gold, Potions = LOOT.Gold.Potions, Materials = LOOT.Gold.Materials, WeaponChance = 1, Rarities = { { "Legendary", 0.8 }, { "Mythic", 0.2 } } },
 }
 
 type Keys = { Bronze: number, Silver: number, Gold: number }
@@ -476,14 +484,15 @@ local function activateRoom(room: CombatRoom, floor: number)
 		-- The boss waits at the door of its tomb on the far side of the lair (or just on the far side), facing
 		-- the way in; it grows tougher for each extra player.
 		local party = math.max(#Players:GetPlayers(), 1)
+		local bossHealth, bossDamage = Floors.BossScale(floor, room.Boss) -- (an old boss back in The Hollow)
 		local doorway = room.Built.Doorways[1] or room.Built.Center
 		local away = room.Built.Center - doorway
 		away = if away.Magnitude > 0.1 then Vector3.new(away.X, 0, away.Z).Unit else Vector3.new(0, 0, -1)
 		local stepOut = room.Built.Model:GetAttribute("BossSpot") :: Vector3?
 		local spot = (room.Built.Model:GetAttribute("BossDoor") :: Vector3?) or room.Built.Center + away * (room.Built.Size / 4)
 		local ok, boss = pcall(EnemyService.Spawn, room.Boss, CFrame.lookAt(spot, Vector3.new(room.Built.Center.X, spot.Y, room.Built.Center.Z)), {
-			HealthMultiplier = 1 + 0.6 * (party - 1),
-			DamageMultiplier = 1,
+			HealthMultiplier = (1 + 0.6 * (party - 1)) * bossHealth,
+			DamageMultiplier = bossDamage,
 			MinionMultiplier = Floors.EnemyHealthMultiplier(floor),
 			OnDied = function(dead)
 				onEnemyDied(room, dead)
@@ -624,7 +633,7 @@ local function rollRarity(rng: Random, table_: { { any } }): string
 end
 
 local function giveLoot(player: Player, tier: string, position: Vector3)
-	local loot = (LOOT :: any)[tier]
+	local loot = (if Floors.IsHollow(currentFloor) then HOLLOW_LOOT else LOOT :: any)[tier]
 	local data = DataService.GetData(player)
 	if not loot or not data then
 		return
@@ -1152,13 +1161,13 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 	task.delay(after, function()
 		notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
 	end)
-	if currentFloor >= Floors.MaxFloor then
+	if currentFloor == Floors.MaxFloor then
 		task.delay(after + 3, function()
 			greenEmber(room.Built)
 			notifyRemote:FireAllClients("Beneath the sealed gate, the red glow dies... and a small green ember stirs.")
 		end)
 		task.delay(after + 8, function()
-			notifyRemote:FireAllClients("Chapter I complete: the Drowned Catacombs are yours. But the Depths go deeper still...")
+			notifyRemote:FireAllClients("Chapter I complete! The gate cracks open: the stairs lead down into The Hollow, where the floors never end.")
 		end)
 	end
 	task.delay(2.5, function()
@@ -1319,7 +1328,19 @@ local function unlockedFloor(player: Player): number
 	if not data then
 		return 1
 	end
-	return math.clamp(math.max(data.Checkpoint or 0, data.DeepestFloor or 0, 1), 1, Floors.MaxFloor)
+	return math.max(data.Checkpoint or 0, math.min(data.DeepestFloor or 0, Floors.MaxFloor), 1)
+end
+
+-- Whether a run may start on `floor`: any floor of chapter I already reached, or a Hollow checkpoint earned.
+local function canStartOn(player: Player, floor: number): boolean
+	local data = DataService.GetData(player)
+	if not data or floor < 1 then
+		return false
+	end
+	if floor <= Floors.MaxFloor then
+		return floor <= unlockedFloor(player)
+	end
+	return Floors.IsHollowCheckpoint(floor) and floor <= (data.Checkpoint or 0)
 end
 
 local checkpointStone: BasePart? = nil
@@ -1354,13 +1375,21 @@ local function setupCheckpointStone(room: FloorBuilder.BuiltRoom)
 		for floor in Floors.Guardians do
 			marks[tostring(floor)] = "Guardians"
 		end
-		floorPickerRemote:FireClient(player, { Unlocked = unlockedFloor(player), Max = Floors.MaxFloor, Marks = marks })
+		-- chapter I's floors, then the Hollow checkpoints this player has earned
+		local hollow = {}
+		local data = DataService.GetData(player)
+		local floor = Floors.HollowFirst
+		while data and floor <= (data.Checkpoint or 0) do
+			table.insert(hollow, floor)
+			floor += 5
+		end
+		floorPickerRemote:FireClient(player, { Unlocked = unlockedFloor(player), Max = Floors.MaxFloor, Marks = marks, Hollow = hollow })
 	end)
 end
 
 -- A player picked a floor at the Wardstone: checked again here (reached it, standing at the stone, on floor 1).
 local function onChooseFloor(player: Player, floor: any)
-	if type(floor) ~= "number" or floor ~= math.floor(floor) or floor < 1 or floor > unlockedFloor(player) then
+	if type(floor) ~= "number" or floor ~= math.floor(floor) or not canStartOn(player, floor) then
 		return
 	end
 	local root = aliveRoot(player)
@@ -1542,7 +1571,7 @@ local function setupStairs(room: FloorBuilder.BuiltRoom)
 	if not part then
 		return
 	end
-	local last = currentFloor >= Floors.MaxFloor
+	local last = currentFloor >= Floors.Deepest
 	local p = prompt(part, "Descend", if last then "Sealed" else `Floor {currentFloor + 1}`, 1, 10)
 	p.Triggered:Connect(function(player)
 		if last then
@@ -1812,6 +1841,7 @@ startFloor = function(floor: number)
 		DailyService.OnFloor(player)
 		if data and floor > data.DeepestFloor then
 			data.DeepestFloor = floor
+			Leaderboard.Record(player, floor)
 		end
 		pushRun(player)
 	end
