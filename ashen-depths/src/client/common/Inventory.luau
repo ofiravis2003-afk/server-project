@@ -203,7 +203,7 @@ function Inventory.Start()
 	kind.Size = UDim2.new(1, -24, 0, 18)
 	local stats = label(details, Fonts.Body, 16, TEXT)
 	stats.Position = UDim2.fromOffset(12, 178)
-	stats.Size = UDim2.new(1, -24, 0, 60)
+	stats.Size = UDim2.new(1, -24, 0, 150)
 	stats.RichText = true
 	stats.TextYAlignment = Enum.TextYAlignment.Top
 	stats.TextWrapped = true
@@ -329,6 +329,25 @@ function Inventory.Start()
 			end
 			if mine.SpellPower > 0 then
 				table.insert(lines, `Spell power +{compare(mine.SpellPower * 100, theirs and theirs.SpellPower * 100)}%`)
+			end
+			-- the set bonus, lit for the steps already reached
+			if set then
+				local wornList = {}
+				for _, id in snapshot.Equipped do
+					local it = snapshot.Items[id]
+					if it then
+						table.insert(wornList, it)
+					end
+				end
+				local have = Armor.SetCounts(wornList)[set.Name] or 0
+				table.insert(lines, `<font size="14" color="#F0BE5A">{set.Title} set ({have}/4 worn)</font>`)
+				for _, need in { 2, 4 } do
+					local bonus = set.Bonus[need]
+					if bonus then
+						local color = if have >= need then "#6EDC78" else "#968C82"
+						table.insert(lines, `<font size="13" color="{color}">{need} pieces: {Armor.DescribeBonus(bonus)}</font>`)
+					end
+				end
 			end
 			stats.Text = table.concat(lines, "\n")
 			local worn = wornId == selected
