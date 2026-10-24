@@ -23,6 +23,7 @@ return {
 	DailyDay = 0, -- the last day (shared/Daily Today) the daily gift was given
 	DailyStreak = 0, -- days in a row
 	DailyTasks = {}, -- today's three tasks: { Id, Progress, Done }
+	Tips = {}, -- [tipId] = true: the new-adventurer tips this player has seen (TipService)
 	Referrals = {}, -- [userId] = true: friends this player brought in with a game invite (ReferralService)
 	IntroDone = nil :: boolean?, -- the first-visit fly-over and Aldric's Brand (IntroService); nil = decide on load
 	FirstJoinTime = 0,

@@ -21,6 +21,7 @@ local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
 local PartyService = require(Common.PartyService)
+local TipService = require(Common.TipService)
 local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
@@ -113,6 +114,11 @@ end
 function ShopService.Start()
 	local town = TownBuilder.Build()
 	IntroService.Start(town)
+	DataService.OnLoaded(function(player, data)
+		if (data.DeepestFloor or 0) > 0 then
+			task.delay(8, TipService.Show, player, "Town")
+		end
+	end)
 	DepthsBoard.Start(town)
 	local openRemote = Remotes.Event("ShopOpen")
 	local notifyRemote = Remotes.Event("Notify")

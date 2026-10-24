@@ -22,6 +22,7 @@ local ItemModels = require(ReplicatedStorage.Shared.ItemModels)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
+local TipService = require(script.Parent.Parent.Common.TipService)
 local Leaderboard = require(script.Parent.Parent.Common.Leaderboard)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
 local Travel = require(script.Parent.Parent.Common.Travel)
@@ -153,6 +154,7 @@ local function findStairsKey(player: Player, position: Vector3?)
 end
 
 local function giveKey(player: Player, tier: string, position: Vector3?)
+	TipService.Show(player, "Keys")
 	local k = keysOf(player) :: any
 	k[tier] += 1
 	pushRun(player)
@@ -243,6 +245,7 @@ local function clearRoom(room: CombatRoom)
 		local root = aliveRoot(player)
 		if root and isInside(room.Built, root.Position, 0) then
 			notifyRemote:FireClient(player, "Room cleared. The gates rise.")
+			TipService.Show(player, "Cleared")
 		end
 	end
 end
@@ -474,6 +477,10 @@ local function activateRoom(room: CombatRoom, floor: number)
 			notifyRemote:FireClient(player, "Your party is fighting! The Brand pulls you to their side.")
 			task.spawn(placePlayer, player, CFrame.lookAt(spot + Vector3.new(0, 3, 0), Vector3.new(room.Built.Center.X, spot.Y + 3, room.Built.Center.Z)))
 		end
+	end
+
+	for _, player in Players:GetPlayers() do
+		TipService.Show(player, "Locked")
 	end
 
 	local rng = Random.new()
@@ -1839,6 +1846,9 @@ startFloor = function(floor: number)
 	for _, player in Players:GetPlayers() do
 		local data = DataService.GetData(player)
 		QuestService.OnReachFloor(player, floor)
+		if floor >= 2 then
+			task.delay(6, TipService.Show, player, "Rope")
+		end
 		DailyService.OnFloor(player)
 		if data and floor > data.DeepestFloor and not devJump then
 			data.DeepestFloor = floor
@@ -1912,6 +1922,7 @@ function FloorService.Start()
 			if humanoid then
 				humanoid.Died:Connect(function()
 					fell[player] = true
+					task.delay(7, TipService.Show, player, "Death")
 					local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 					if root then
 						fellAt[player] = { Position = root.Position, Floor = currentFloor, Time = os.clock() }
@@ -1953,6 +1964,7 @@ function FloorService.Start()
 		fellAt[player] = nil
 	end)
 	DataService.OnLoaded(function(player, _data)
+		task.delay(6, TipService.Show, player, "Attack")
 		pushRun(player)
 		floorStartedRemote:FireClient(player, currentFloor, Floors.ChapterName(currentFloor))
 	end)
@@ -1987,6 +1999,9 @@ function FloorService.Start()
 				local humanoid = root and (player.Character :: Model):FindFirstChildOfClass("Humanoid")
 				if not root or not humanoid or humanoid.Health >= humanoid.MaxHealth then
 					continue
+				end
+				if humanoid.Health < humanoid.MaxHealth * 0.4 then
+					TipService.Show(player, "Potion")
 				end
 				local fighting = false
 				for _, room in combatRooms do
