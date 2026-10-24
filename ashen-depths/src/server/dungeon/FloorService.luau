@@ -127,6 +127,7 @@ local stairsKey: { Needed: boolean, Found: boolean, Where: string } = { Needed =
 local floorEvent: string? = nil -- this floor's event, told to players when they arrive
 local floorCursed = false -- the Ember Altar's curse was accepted on this floor
 local forcedEvent: string? = nil -- Studio's DevFloor: the next floor's event
+local devJump = false -- Studio's DevFloor: this floor was jumped to, so it doesn't count as reached
 
 local function pushRun(player: Player)
 	runRemote:FireClient(player, {
@@ -1839,13 +1840,14 @@ startFloor = function(floor: number)
 		local data = DataService.GetData(player)
 		QuestService.OnReachFloor(player, floor)
 		DailyService.OnFloor(player)
-		if data and floor > data.DeepestFloor then
+		if data and floor > data.DeepestFloor and not devJump then
 			data.DeepestFloor = floor
 			Leaderboard.Record(player, floor)
 		end
 		pushRun(player)
 	end
 	floorStartedRemote:FireAllClients(floor, Floors.ChapterName(floor))
+	devJump = false
 	if floorEvent then
 		local told = floorEvent
 		task.delay(4, function()
@@ -1869,6 +1871,7 @@ function FloorService.Start()
 		dev.Name = "DevFloor"
 		dev.OnInvoke = function(floor: number, event: string?)
 			forcedEvent = event
+			devJump = true
 			task.spawn(startFloor, floor)
 			return true
 		end
