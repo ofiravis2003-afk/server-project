@@ -34,8 +34,8 @@ function DepthsBoard.Start(town: { Model: Model })
 	end
 	local box, size = wall:GetBoundingBox()
 	local ground = box.Position.Y - size.Y / 2
-	-- beside the Wall of the Fallen, the same way round
-	local at = wall:GetPivot() * CFrame.new(14, 0, 0)
+	-- beside the Wall of the Fallen, the same way round (both face the Well)
+	local at = wall:GetPivot() * CFrame.new(16, 0, 0)
 	local base = CFrame.new(at.Position.X, ground, at.Position.Z) * at.Rotation
 
 	local model = Instance.new("Model")

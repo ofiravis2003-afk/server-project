@@ -208,7 +208,7 @@ local function lampPost(parent: Instance, position: Vector3)
 end
 
 -- A fire bowl on a stone stand, its fire and warm light.
--- The Wall of the Fallen beside the Guild Hall: a slab of dark stone carved with the names of adventurers
+-- The Wall of the Fallen on the lawn west of the plaza: a slab of dark stone carved with the names of adventurers
 -- who never came back up. Far too many for a town this size. The oldest row, worn almost smooth, says A. Vane.
 local FIRST = { "Ser", "Bram", "Edda", "Tomas", "Iska", "Rolf", "Mira", "Gault", "Wren", "Osric", "Lena", "Corin", "Hale", "Ysolde", "Dunn", "Petra", "Alis", "Fenn", "Garrick", "Nell", "Odo", "Rhea", "Sten", "Tilda", "Ulric", "Vera", "Jory", "Kael", "Mags", "Brin" }
 local LAST = { "Ashby", "Morrow", "Crane", "Holt", "Vey", "Thatch", "Pike", "Marsh", "Rook", "Fell", "Stone", "Harrow", "Quill", "Barrow", "Lark", "Dunmore", "Wick", "Gale", "Cobb", "Penn" }
@@ -600,7 +600,8 @@ function TownBuilder.Build(): Town
 		return CFrame.lookAt(at, Vector3.new(0, 0, 0))
 	end
 	prop("QuestBoard", model, CFrame.lookAt(Vector3.new(-44, 0, -50), Vector3.new(-44, 0, 0)))
-	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-53.5, 0, -50.5), Vector3.new(-53.5, 0, 0)))
+	-- on the open lawn west of the plaza, facing the Well, beside the Deepest Descents board (DepthsBoard)
+	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-38, 0, -6.5), Vector3.new(0, 0, -6.5)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(34, 0, -51), Vector3.new(34, 0, 0)))
 	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(54, 0, -51), Vector3.new(54, 0, 0)))
 	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
