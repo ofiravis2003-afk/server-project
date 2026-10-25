@@ -257,7 +257,8 @@ local function buildRoom(
 	center: Vector3,
 	openings: { { Dir: Vector2, SecretHere: boolean } },
 	theme: string,
-	rng: Random
+	rng: Random,
+	overgrown: boolean?
 ): BuiltRoom
 	local model = Instance.new("Model")
 	model.Name = `{plan.Type}_{plan.Key}`
@@ -375,7 +376,7 @@ local function buildRoom(
 		end
 	end
 
-	RoomDecor.Decorate({
+	local ctx = {
 		Model = model,
 		Center = center,
 		Size = S,
@@ -383,7 +384,11 @@ local function buildRoom(
 		PlainWalls = plainWalls,
 		Doorways = built.Doorways,
 		Rng = rng,
-	}, theme)
+	}
+	RoomDecor.Decorate(ctx, theme)
+	if overgrown then
+		RoomDecor.Overgrow(ctx, plan.Type)
+	end
 
 	model.Parent = floorModel
 	return built
@@ -457,7 +462,7 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 	local rooms: { [string]: BuiltRoom } = {}
 	for key, plan in layout.Rooms do
 		local theme = themeOf[key] or (if plan.Type == "Boss" then Floors.BossThemes[layout.Floor] else nil) or FIXED_THEMES[plan.Type] or "Plain"
-		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], theme, rng)
+		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], theme, rng, Floors.IsRotwood(layout.Floor))
 	end
 
 	local corridors = {}

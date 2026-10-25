@@ -836,4 +836,83 @@ function RoomDecor.Decorate(ctx: Context, theme: string)
 	build(ctx)
 end
 
+-- Chapter II (the Rotwood Caverns): the green ember has grown over the room, whatever it was. Mossy walls and
+-- floor, giant glowing mushrooms in corners, clusters of small ones along the walls with a teal glow, and
+-- spores drifting in the air. (`roomType` keeps the stairs and the entrance's middle clear.)
+local TEAL_GLOW = Color3.fromRGB(80, 230, 190)
+
+function RoomDecor.Overgrow(ctx: Context, roomType: string)
+	tint(ctx, Color3.fromRGB(58, 62, 50), Color3.fromRGB(46, 56, 38), Enum.Material.Ground)
+	local rng = ctx.Rng
+	-- giant mushrooms in the corners (not in the stairs room: its pit is in the way)
+	if roomType ~= "Stairs" then
+		local giants = if ctx.Size >= 40 then 2 else 1
+		for _ = 1, giants do
+			local spot = cornerSpot(ctx)
+			local giant = Props.Place("GiantMushroom", ctx.Model, CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.7, 1.05))
+			if giant then
+				for _, p in giant:GetDescendants() do
+					if p:IsA("BasePart") then
+						p.CanCollide = false
+						p.CanQuery = false
+					end
+				end
+				local cap = giant:FindFirstChildWhichIsA("BasePart", true)
+				if cap then
+					local glow = Instance.new("PointLight")
+					glow.Color = TEAL_GLOW
+					glow.Range = 22
+					glow.Brightness = 1.4
+					glow.Parent = cap
+				end
+			end
+		end
+	end
+	-- clusters of small mushrooms along the plain walls and in corners
+	local clusters = math.floor(ctx.Size / 8)
+	for i = 1, clusters do
+		local spot
+		if #ctx.PlainWalls > 0 and i % 2 == 0 then
+			local wall = ctx.PlainWalls[rng:NextInteger(1, #ctx.PlainWalls)]
+			spot = onWall(ctx, wall, rng:NextNumber(-ctx.Size / 2 + 4, ctx.Size / 2 - 4), rng:NextNumber(1.5, 3)).Position
+		else
+			spot = cornerSpot(ctx)
+		end
+		local cluster = Props.Place("MushroomCluster", ctx.Model, CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.6, 1.4))
+		if cluster then
+			for _, p in cluster:GetDescendants() do
+				if p:IsA("BasePart") then
+					p.CanCollide = false
+					p.CanQuery = false
+				end
+			end
+			if i % 3 == 0 then
+				local body = cluster:FindFirstChildWhichIsA("BasePart", true)
+				if body then
+					local glow = Instance.new("PointLight")
+					glow.Color = TEAL_GLOW
+					glow.Range = 10
+					glow.Brightness = 0.9
+					glow.Parent = body
+				end
+			end
+		end
+	end
+	-- spores drifting through the air
+	local air = deco(ctx.Model, "SporeAir", Vector3.new(ctx.Size - 4, 1, ctx.Size - 4), CFrame.new(ctx.Center + Vector3.new(0, ctx.Height * 0.4, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+	air.Transparency = 1
+	local spores = Instance.new("ParticleEmitter")
+	spores.Color = ColorSequence.new(Color3.fromRGB(150, 255, 190), Color3.fromRGB(80, 210, 160))
+	spores.LightEmission = 1
+	spores.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.3, 0.12), NumberSequenceKeypoint.new(1, 0) })
+	spores.Lifetime = NumberRange.new(6, 10)
+	spores.Speed = NumberRange.new(0.2, 0.6)
+	spores.SpreadAngle = Vector2.new(180, 180)
+	spores.Acceleration = Vector3.new(0, -0.1, 0)
+	spores.Rate = ctx.Size / 4
+	spores.Shape = Enum.ParticleEmitterShape.Box
+	spores.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	spores.Parent = air
+end
+
 return RoomDecor

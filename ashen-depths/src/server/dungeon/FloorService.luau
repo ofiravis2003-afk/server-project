@@ -7,6 +7,7 @@
 -- Loot is per player too: everyone with the right key can open every chest once.
 
 local CollectionService = game:GetService("CollectionService")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -111,6 +112,7 @@ local bossIntroRemote = Remotes.Event("BossIntro")
 local loreRemote = Remotes.Event("LoreShow")
 local soundRemote = Remotes.Event("Sound")
 local landingRemote = Remotes.Event("Landing")
+local setAir: (boolean) -> ()
 local REVIVE_WINDOW = 90 -- a Revive bought this long after falling still brings you back there
 local BOSS_INTRO_SECONDS = 11
 
@@ -890,7 +892,7 @@ end
 local function buildWardstone(parent: Instance, position: Vector3): Model
 	-- the Tripo obelisk (DungeonProps.Wardstone) when there is one: dimmed while dark, glowing with embers
 	-- over its crystal once relit
-	local carved = Props.Place("Wardstone", parent, CFrame.new(position) * CFrame.Angles(0, math.pi, 0))
+	local carved = Props.Place(if Floors.IsRotwood(currentFloor) and Props.Has("RotWardstone") then "RotWardstone" else "Wardstone", parent, CFrame.new(position) * CFrame.Angles(0, math.pi, 0))
 	if carved then
 		carved.Name = "Wardstone"
 		local body = carved:FindFirstChildWhichIsA("BasePart", true) :: BasePart
@@ -1606,6 +1608,32 @@ end
 ------------------------------------------------------------------------------------------------
 -- Floors
 
+-- The caverns' air: a teal haze and a cold green tint while on a Rotwood floor, the catacombs' own otherwise.
+local catacombsAir: { [string]: any }? = nil
+function setAir(caverns: boolean)
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+	local grade = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+	if not catacombsAir then
+		catacombsAir = {
+			AtmosphereColor = atmosphere and atmosphere.Color,
+			AtmosphereDecay = atmosphere and atmosphere.Decay,
+			AtmosphereDensity = atmosphere and atmosphere.Density,
+			Tint = grade and grade.TintColor,
+			Ambient = Lighting.Ambient,
+		}
+	end
+	local saved = catacombsAir :: { [string]: any }
+	if atmosphere then
+		atmosphere.Color = if caverns then Color3.fromRGB(70, 120, 105) else saved.AtmosphereColor
+		atmosphere.Decay = if caverns then Color3.fromRGB(30, 60, 50) else saved.AtmosphereDecay
+		atmosphere.Density = if caverns then math.max(saved.AtmosphereDensity or 0, 0.4) else saved.AtmosphereDensity
+	end
+	if grade then
+		grade.TintColor = if caverns then Color3.fromRGB(215, 245, 230) else saved.Tint
+	end
+	Lighting.Ambient = if caverns then Color3.fromRGB(40, 60, 55) else saved.Ambient
+end
+
 local function sendToEntrance(player: Player)
 	local offset = Vector3.new(math.random(-4, 4), 4, math.random(-4, 4))
 	task.spawn(placePlayer, player, CFrame.new(entrance + offset))
@@ -1629,6 +1657,7 @@ startFloor = function(floor: number)
 	end
 	floorEvent = nil
 	floorCursed = false
+	setAir(Floors.IsRotwood(floor))
 	EnemyService.SetFloorModifier(1, 1, 1)
 	stairsKey = {
 		Needed = floor >= 2 and not Floors.Bosses[floor] and not Floors.Guardians[floor],

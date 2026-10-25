@@ -8,17 +8,27 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local Props = {}
 
+-- A prop by name: DungeonProps first, then ChapterProps (chapter II's Tripo models).
+local function find(name: string): Instance?
+	for _, folderName in { "DungeonProps", "ChapterProps" } do
+		local folder = ServerStorage:FindFirstChild(folderName)
+		local prop = folder and folder:FindFirstChild(name)
+		if prop then
+			return prop
+		end
+	end
+	return nil
+end
+
 function Props.Has(name: string): boolean
-	local folder = ServerStorage:FindFirstChild("DungeonProps")
-	local prop = folder and folder:FindFirstChild(name)
+	local prop = find(name)
 	return prop ~= nil and prop:IsA("Model")
 end
 
 -- Clones prop `name` into `parent`, standing with the bottom-center of its box on `cframe`
 -- (and turned like `cframe`), optionally scaled. Returns nil if the prop doesn't exist.
 function Props.Place(name: string, parent: Instance, cframe: CFrame, scale: number?): Model?
-	local folder = ServerStorage:FindFirstChild("DungeonProps")
-	local source = folder and folder:FindFirstChild(name)
+	local source = find(name)
 	if not source or not source:IsA("Model") then
 		return nil
 	end
