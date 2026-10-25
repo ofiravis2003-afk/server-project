@@ -488,8 +488,8 @@ function infect(template: Model)
 				-- the stalk's foot held on the bone (a little off it, by Offset), so it moves with the body
 				m:PivotTo((bone :: Bone).WorldCFrame * CFrame.new(spot.Offset * height * 0.15))
 				local a = Instance.new("Attachment")
-				a.WorldCFrame = (bone :: Bone).WorldCFrame
 				a.Parent = base
+				a.WorldCFrame = (bone :: Bone).WorldCFrame
 				local hold = Instance.new("RigidConstraint")
 				hold.Attachment0 = a
 				hold.Attachment1 = bone
