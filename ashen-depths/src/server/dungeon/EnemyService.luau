@@ -426,24 +426,25 @@ local function mushroom(size: number): Model
 		copy:ScaleTo(copy:GetScale() * size / math.max(extents.Y, 0.1))
 		return copy
 	end
+	-- (until then: a small pale stalk under a flat dark-teal cap with a few glowing spots; `size` = its height)
 	local m = Instance.new("Model")
-	local stem = Instance.new("Part")
-	stem.Name = "Stem"
-	stem.Shape = Enum.PartType.Cylinder
-	stem.Size = Vector3.new(size * 0.6, size * 0.22, size * 0.22)
-	stem.CFrame = CFrame.new(0, size * 0.3, 0) * CFrame.Angles(0, 0, math.rad(90))
-	stem.Color = Color3.fromRGB(214, 206, 180)
-	stem.Material = Enum.Material.SmoothPlastic
-	stem.Parent = m
-	local cap = Instance.new("Part")
-	cap.Name = "Cap"
-	cap.Shape = Enum.PartType.Ball
-	cap.Size = Vector3.new(size * 0.8, size * 0.8, size * 0.8)
-	cap.CFrame = CFrame.new(0, size * 0.62, 0)
-	cap.Color = Color3.fromRGB(40, 150, 130)
-	cap.Material = Enum.Material.Neon
-	cap.Transparency = 0.15
-	cap.Parent = m
+	local function piece(name: string, shape: Enum.PartType, partSize: Vector3, cf: CFrame, color: Color3, material: Enum.Material): Part
+		local part = Instance.new("Part")
+		part.Name = name
+		part.Shape = shape
+		part.Size = partSize
+		part.CFrame = cf
+		part.Color = color
+		part.Material = material
+		part.Parent = m
+		return part
+	end
+	local stem = piece("Stem", Enum.PartType.Cylinder, Vector3.new(size * 0.7, size * 0.18, size * 0.18), CFrame.new(0, size * 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(205, 198, 175), Enum.Material.SmoothPlastic)
+	piece("Cap", Enum.PartType.Ball, Vector3.new(size * 0.75, size * 0.32, size * 0.75), CFrame.new(0, size * 0.75, 0), Color3.fromRGB(28, 84, 74), Enum.Material.SmoothPlastic)
+	for i = 1, 3 do
+		local angle = i * 2.1
+		piece("Spot", Enum.PartType.Ball, Vector3.new(size * 0.12, size * 0.12, size * 0.12), CFrame.new(math.cos(angle) * size * 0.22, size * 0.86, math.sin(angle) * size * 0.22), Color3.fromRGB(120, 255, 190), Enum.Material.Neon)
+	end
 	m.PrimaryPart = stem
 	return m
 end
@@ -465,7 +466,7 @@ function infect(template: Model)
 		local bone = template:FindFirstChild(spot.Bone, true)
 		if bone and bone:IsA("Bone") then
 			placed = true
-			local m = mushroom(height * spot.Size * 0.5)
+			local m = mushroom(height * spot.Size * 0.35)
 			for _, p in m:GetDescendants() do
 				if p:IsA("BasePart") then
 					p.Anchored = false
@@ -484,16 +485,15 @@ function infect(template: Model)
 						weld.Parent = p
 					end
 				end
+				-- the stalk's foot held on the bone (a little off it, by Offset), so it moves with the body
+				m:PivotTo((bone :: Bone).WorldCFrame * CFrame.new(spot.Offset * height * 0.15))
 				local a = Instance.new("Attachment")
+				a.WorldCFrame = (bone :: Bone).WorldCFrame
 				a.Parent = base
 				local hold = Instance.new("RigidConstraint")
 				hold.Attachment0 = a
 				hold.Attachment1 = bone
 				hold.Parent = base
-				m:PivotTo(bone.WorldCFrame * CFrame.new(spot.Offset * height * 0.2))
-				local boneAt = bone :: Bone
-				a.WorldCFrame = boneAt.WorldCFrame
-				a.CFrame = a.CFrame * CFrame.new(spot.Offset * height * 0.2)
 			end
 			m.Name = "Fungus"
 			m.Parent = template
@@ -502,7 +502,7 @@ function infect(template: Model)
 	if not placed then
 		-- (no rig: on top of the body, welded to the root)
 		for i = 1, 3 do
-			local m = mushroom(height * 0.25)
+			local m = mushroom(height * 0.14)
 			local angle = i * 2.1
 			m:PivotTo(root.CFrame * CFrame.new(math.cos(angle) * extents.X * 0.25, extents.Y * 0.35, math.sin(angle) * extents.Z * 0.25))
 			for _, p in m:GetDescendants() do
