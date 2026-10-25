@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.2.0",
+	Version = "0.2.1",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {

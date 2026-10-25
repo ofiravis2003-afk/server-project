@@ -22,6 +22,7 @@ local DataService = require(Common.DataService)
 local InventoryService = require(Common.InventoryService)
 local PartyService = require(Common.PartyService)
 local TipService = require(Common.TipService)
+local Halloween = require(Common.Halloween)
 local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
@@ -118,6 +119,7 @@ end
 
 function ShopService.Start()
 	local town = TownBuilder.Build()
+	Halloween.DecorateTown(TownBuilder.Spread)
 	IntroService.Start(town)
 	DataService.OnLoaded(function(player, data)
 		if (data.DeepestFloor or 0) > 0 then

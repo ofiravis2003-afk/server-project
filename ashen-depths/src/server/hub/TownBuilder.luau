@@ -514,6 +514,8 @@ local function forge(parent: Instance, frame: CFrame): BasePart
 	return spot
 end
 
+TownBuilder.Spread = SPREAD
+
 function TownBuilder.Build(): Town
 	setLighting()
 	local old = workspace:FindFirstChild("Town")

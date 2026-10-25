@@ -28,6 +28,7 @@ local BlightService = require(script.Parent.Parent.Common.BlightService)
 local BadgeAwards = require(script.Parent.Parent.Common.BadgeAwards)
 local Leaderboard = require(script.Parent.Parent.Common.Leaderboard)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
+local Halloween = require(script.Parent.Parent.Common.Halloween)
 local Travel = require(script.Parent.Parent.Common.Travel)
 local MonetizationService = require(script.Parent.Parent.Common.MonetizationService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
@@ -1826,6 +1827,21 @@ startFloor = function(floor: number)
 		end
 	end
 
+	-- Halloween: a lost Jack-o'-Lantern in one of the rooms past the first
+	local halloweenLine: string? = nil
+	if Halloween.On() then
+		local hiding = {}
+		for i, room in combatRooms do
+			if i > 1 and not room.Boss and not room.Guardians then
+				table.insert(hiding, room)
+			end
+		end
+		local room = if #hiding > 0 then hiding[rng:NextInteger(1, #hiding)] else combatRooms[1]
+		if room and Halloween.HideLantern(room.Built.Model, freeSpot(room.Built, rng, 6), floor) then
+			halloweenLine = "Happy Halloween! A lost Jack-o'-Lantern hides somewhere on this floor..."
+		end
+	end
+
 	if stairsKey.Needed and stairsKey.Where == "Elite" then
 		local candidates = {}
 		for i, room in combatRooms do
@@ -1901,6 +1917,14 @@ startFloor = function(floor: number)
 	if floorEvent then
 		local told = floorEvent
 		task.delay(4, function()
+			if currentFloor == floor then
+				notifyRemote:FireAllClients(told)
+			end
+		end)
+	end
+	if halloweenLine then
+		local told = halloweenLine
+		task.delay(if floorEvent then 9 else 4, function()
 			if currentFloor == floor then
 				notifyRemote:FireAllClients(told)
 			end
