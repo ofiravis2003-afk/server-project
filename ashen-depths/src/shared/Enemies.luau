@@ -444,6 +444,36 @@ Enemies.RotCrawler = {
 	Blight = 1,
 }
 
+-- The Mycelid: a walking mushroom (Tripo model rigged in Mixamo, 6.4 studs). Slow, tough, hits hard.
+-- HitAt: when its hands move fastest (measured on the rig).
+Enemies.Mycelid = {
+	DisplayName = "Mycelid",
+	Health = 230,
+	Damage = 18,
+	WalkSpeed = 8,
+	AggroRange = 45,
+	AttackRange = 6.5,
+	AttackCooldown = 2.6,
+	Windup = 1,
+	XP = 24,
+	Gold = { 6, 10 },
+	Drops = { { Item = "SporeCap", Chance = 0.8, Count = { 1, 2 } } },
+	RespawnTime = 5,
+	Animations = {
+		Idle = "rbxassetid://136232633690859",
+		Walk = "rbxassetid://127440334357560",
+		Hit = "rbxassetid://90575180896043",
+		Death = "rbxassetid://136520788241534",
+	},
+	AnimationSpeeds = { Hit = 1.6 },
+	AttackClips = {
+		{ Id = "rbxassetid://133391076160303", HitAt = 1.27 },
+		{ Id = "rbxassetid://123658034826736", HitAt = 1.3 },
+	},
+	Sink = 0.45, -- its clips bend the knees with the hips held still
+	Blight = 2,
+}
+
 Enemies.FungalHusk = infected("Skeleton", { DisplayName = "Fungal Husk", XP = 14, Gold = { 4, 7 } })
 Enemies.HuskArcher = infected("SkeletonArcher", { DisplayName = "Husk Archer", XP = 16, Gold = { 5, 8 } })
 Enemies.SporeRat = infected("Rat", { DisplayName = "Spore Rat", XP = 7, Gold = { 1, 3 } })

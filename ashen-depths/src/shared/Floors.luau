@@ -70,6 +70,7 @@ function Floors.EnemyMix(floor: number): { { Name: string, Weight: number } }
 			{ Name = "SporeRat", Weight = 2 },
 			{ Name = "Bloater", Weight = 2 },
 			{ Name = "SporeWisp", Weight = 2 },
+			{ Name = "Mycelid", Weight = if floor >= 17 then 2 else 0 },
 			{ Name = "CapSpitter", Weight = if floor >= 18 then 2 else 0 },
 			{ Name = "RotCrawler", Weight = if floor >= 20 then 2 else 0 },
 			{ Name = "Skeleton", Weight = 1 },
