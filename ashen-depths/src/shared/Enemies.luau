@@ -96,7 +96,7 @@ export type EnemyDef = {
 	ModelYaw: number?,
 	Sink: number?,
 	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number?, FallAngle: number? }?,
-	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }?,
+	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number, Shot: string? }?, -- Shot: what flies ("Arrow")
 	HeldProps: { HeldProp }?,
 	EliteHeldProps: { HeldProp }?,
 	DeathStyle: string?,
@@ -109,6 +109,11 @@ export type EnemyDef = {
 	Infected: boolean?,
 	Blight: number?, -- Blight stacks its blows add (BlightService)
 	BurstSpores: { Radius: number, Blight: number, DamageScale: number }?, -- bursts into a spore cloud as it dies
+	Hover: number?, -- floats this many studs above the floor (the Spore Wisp)
+	Rooted: boolean?, -- never moves: grows where it rose (the Cap Spitter)
+	-- Procedural "Burrow" (the Rot Crawler): stays under the floor (no blow reaches it there), marks a red circle
+	-- under a player for Windup seconds, bursts up through it, then stays up for Surface seconds before diving.
+	Burrow: { Radius: number, Surface: number }?,
 }
 
 -- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Sword and Shield pack.
@@ -383,6 +388,61 @@ local function infected(base: string, changes: { [string]: any }): EnemyDef
 	end
 	return def
 end
+
+-- Chapter II's own monsters (Tripo models in EnemyModels once they're made; plain stand-ins until then).
+Enemies.SporeWisp = {
+	DisplayName = "Spore Wisp",
+	Health = 45,
+	Damage = 9,
+	WalkSpeed = 12,
+	AggroRange = 55,
+	AttackRange = 30,
+	AttackCooldown = 2.2,
+	Windup = 0.8,
+	XP = 13,
+	Gold = { 3, 6 },
+	Drops = { { Item = "SporeCap", Chance = 0.4 } },
+	RespawnTime = 5,
+	Ranged = { KeepAway = 10, ProjectileSpeed = 40, HitRadius = 3.5, Shot = "SporeOrb" },
+	Hover = 4,
+	Blight = 1,
+	DeathStyle = "Splat",
+}
+Enemies.CapSpitter = {
+	DisplayName = "Cap Spitter",
+	Health = 140,
+	Damage = 12,
+	WalkSpeed = 0,
+	AggroRange = 50,
+	AttackRange = 42,
+	AttackCooldown = 2.6,
+	Windup = 1,
+	XP = 16,
+	Gold = { 4, 8 },
+	Drops = { { Item = "SporeCap", Chance = 0.7, Count = { 1, 2 } } },
+	RespawnTime = 5,
+	Ranged = { KeepAway = 0, ProjectileSpeed = 32, HitRadius = 4, Shot = "SporeOrb" },
+	Rooted = true,
+	Blight = 2,
+	DeathStyle = "Splat",
+}
+Enemies.RotCrawler = {
+	DisplayName = "Rot Crawler",
+	Health = 110,
+	Damage = 16,
+	WalkSpeed = 0,
+	AggroRange = 60,
+	AttackRange = 60,
+	AttackCooldown = 3.2,
+	Windup = 1.2,
+	XP = 18,
+	Gold = { 5, 9 },
+	Drops = { { Item = "SporeCap", Chance = 0.6 } },
+	RespawnTime = 5,
+	Procedural = "Burrow",
+	Burrow = { Radius = 5, Surface = 3 },
+	Blight = 1,
+}
 
 Enemies.FungalHusk = infected("Skeleton", { DisplayName = "Fungal Husk", XP = 14, Gold = { 4, 7 } })
 Enemies.HuskArcher = infected("SkeletonArcher", { DisplayName = "Husk Archer", XP = 16, Gold = { 5, 8 } })

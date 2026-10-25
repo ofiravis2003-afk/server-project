@@ -77,6 +77,8 @@ export type Enemy = {
 	Dead: boolean,
 	Boss: BossState?,
 	Options: SpawnOptions,
+	Burrowed: boolean?, -- (Rot Crawler) under the floor: no blow reaches it
+	GroundY: number?, -- (Rot Crawler) where the floor is
 }
 
 export type BossState = {
@@ -103,6 +105,7 @@ local folder: Folder
 -- pays more. Back to normal on the next floor.
 local floorModifier = { Health = 1, Damage = 1, Rewards = 1 }
 local infect: (Model) -> ()
+local sink: (any) -> ()
 local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring together
 local VIP_BONUS = 1.2 -- and 20% more for a VIP
 local damageNumberRemote = Remotes.Event("DamageNumber")
@@ -237,6 +240,62 @@ local function slimeBlob(): Model
 	end
 	return model
 end
+
+-- Stand-in bodies for chapter II's own monsters, until their Tripo models are in EnemyModels.
+local function standIn(parts: { { Shape: Enum.PartType, Size: Vector3, At: CFrame, Color: Color3, Material: Enum.Material, Glow: boolean? } }): Model
+	local model = Instance.new("Model")
+	for i, spec in parts do
+		local p = Instance.new("Part")
+		p.Name = `Part{i}`
+		p.Shape = spec.Shape
+		p.Size = spec.Size
+		p.CFrame = spec.At
+		p.Color = spec.Color
+		p.Material = spec.Material
+		p.Parent = model
+		if spec.Glow then
+			local light = Instance.new("PointLight")
+			light.Color = spec.Color
+			light.Range = 8
+			light.Brightness = 1.2
+			light.Parent = p
+		end
+	end
+	return model
+end
+
+local TEAL = Color3.fromRGB(60, 200, 170)
+local STALK = Color3.fromRGB(196, 186, 160)
+local ROT = Color3.fromRGB(70, 58, 44)
+
+local STAND_INS: { [string]: () -> Model } = {
+	SporeWisp = function()
+		return standIn({
+			{ Shape = Enum.PartType.Ball, Size = Vector3.new(2.6, 1.6, 2.6), At = CFrame.new(0, 2, 0), Color = TEAL, Material = Enum.Material.Glass, Glow = true },
+			{ Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.8, 0.2, 0.2), At = CFrame.new(0.5, 0.7, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = TEAL, Material = Enum.Material.Neon },
+			{ Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.6, 0.2, 0.2), At = CFrame.new(-0.5, 0.8, 0.3) * CFrame.Angles(0, 0, math.rad(90)), Color = TEAL, Material = Enum.Material.Neon },
+			{ Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.7, 0.2, 0.2), At = CFrame.new(0, 0.75, -0.5) * CFrame.Angles(0, 0, math.rad(90)), Color = TEAL, Material = Enum.Material.Neon },
+		})
+	end,
+	CapSpitter = function()
+		return standIn({
+			{ Shape = Enum.PartType.Cylinder, Size = Vector3.new(3.2, 1.6, 1.6), At = CFrame.new(0, 1.6, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = STALK, Material = Enum.Material.SmoothPlastic },
+			{ Shape = Enum.PartType.Ball, Size = Vector3.new(4, 1.8, 4), At = CFrame.new(0, 3.6, 0), Color = Color3.fromRGB(110, 40, 50), Material = Enum.Material.SmoothPlastic },
+			{ Shape = Enum.PartType.Ball, Size = Vector3.new(1.1, 1.1, 0.6), At = CFrame.new(0, 2.2, -0.7), Color = Color3.fromRGB(30, 12, 12), Material = Enum.Material.SmoothPlastic },
+			{ Shape = Enum.PartType.Ball, Size = Vector3.new(0.7, 0.7, 0.7), At = CFrame.new(0.9, 2.1, 0.2), Color = Color3.fromRGB(120, 255, 140), Material = Enum.Material.Neon, Glow = true },
+			{ Shape = Enum.PartType.Ball, Size = Vector3.new(0.6, 0.6, 0.6), At = CFrame.new(-0.9, 1.7, 0.1), Color = Color3.fromRGB(120, 255, 140), Material = Enum.Material.Neon },
+		})
+	end,
+	RotCrawler = function()
+		local segments = {}
+		for i = 0, 4 do
+			local r = 2.2 - i * 0.25
+			table.insert(segments, { Shape = Enum.PartType.Ball, Size = Vector3.new(r, r, r), At = CFrame.new(0, 1.2 + i * 1.3, 0), Color = ROT, Material = Enum.Material.Slate })
+		end
+		table.insert(segments, { Shape = Enum.PartType.Ball, Size = Vector3.new(0.9, 0.9, 0.9), At = CFrame.new(0, 6.6, -0.5), Color = Color3.fromRGB(120, 255, 140), Material = Enum.Material.Neon, Glow = true })
+		return standIn(segments)
+	end,
+}
 
 local BUILDERS: { [string]: () -> Model } = {
 	Skeleton = buildSkeleton,
@@ -550,6 +609,8 @@ local function getTemplate(name: string): Model
 			template = buildFromModel(source, def)
 		elseif BUILDERS[def.Model or name] then
 			template = BUILDERS[def.Model or name]()
+		elseif STAND_INS[def.Model or name] then
+			template = buildFromModel(STAND_INS[def.Model or name](), def)
 		else
 			template = buildFromModel(slimeBlob(), def)
 		end
@@ -1145,6 +1206,17 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		Boss = bossState,
 		Options = opts,
 	}
+	if def.Hover then
+		humanoid.HipHeight += def.Hover
+	end
+	if def.Rooted or def.Burrow then
+		humanoid.WalkSpeed = 0
+		humanoid.JumpPower = 0
+	end
+	if def.Burrow then
+		enemy.GroundY = cframe.Position.Y
+		task.defer(sink, enemy)
+	end
 	enemies[model] = enemy
 	CollectionService:AddTag(model, ENEMY_TAG)
 	if def.Squishy then
@@ -1283,7 +1355,7 @@ end
 -- Archers: show a red aiming line, then loose an arrow at where the target stands at that moment.
 -- Whoever is still within HitRadius of that spot when the arrow arrives is hit.
 local function shoot(enemy: Enemy, targetRoot: BasePart)
-	local ranged = enemy.Def.Ranged :: { KeepAway: number, ProjectileSpeed: number, HitRadius: number }
+	local ranged = enemy.Def.Ranged :: { KeepAway: number, ProjectileSpeed: number, HitRadius: number, Shot: string? }
 	enemy.Attacking = true
 	enemy.LastAttack = os.clock()
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
@@ -1303,7 +1375,7 @@ local function shoot(enemy: Enemy, targetRoot: BasePart)
 		from = enemy.Root.Position + Vector3.new(0, 1.2, 0) + enemy.Root.CFrame.LookVector * 1.5
 		local aim = targetRoot.Position
 		local travel = (aim - from).Magnitude / ranged.ProjectileSpeed
-		effectRemote:FireAllClients("Arrow", from, aim, travel)
+		effectRemote:FireAllClients(ranged.Shot or "Arrow", from, aim, travel)
 		local damage = enemy.Damage
 		task.delay(travel, function()
 			for _, player in Players:GetPlayers() do
@@ -1344,6 +1416,67 @@ end
 local function hurt(humanoid: Humanoid, root: BasePart, amount: number)
 	local damage = ArmorService.Hurt(humanoid, amount)
 	damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
+end
+
+-- The Rot Crawler: under the floor, then up through it beneath a player.
+
+local BURROW_DEPTH = 9
+
+-- Moves the whole body to `y` (the root's height) over `seconds`.
+local function riseTo(enemy: Enemy, y: number, seconds: number)
+	local start = enemy.Root.Position.Y
+	local t = 0
+	while t < seconds and not enemy.Dead do
+		t += task.wait()
+		local pos = enemy.Root.Position
+		local at = start + (y - start) * math.min(t / seconds, 1)
+		enemy.Model:PivotTo(enemy.Root.CFrame.Rotation + Vector3.new(pos.X, at, pos.Z))
+	end
+end
+
+function sink(enemy: Enemy)
+	enemy.Root.Anchored = true
+	enemy.Burrowed = true
+	local bar = enemy.Model:FindFirstChild("HealthBar", true)
+	if bar and bar:IsA("BillboardGui") then
+		bar.Enabled = false
+	end
+	effectRemote:FireAllClients("Rise", Vector3.new(enemy.Root.Position.X, enemy.GroundY or enemy.Root.Position.Y, enemy.Root.Position.Z))
+	riseTo(enemy, (enemy.GroundY or enemy.Root.Position.Y) - BURROW_DEPTH, 0.5)
+end
+
+local function burrowStrike(enemy: Enemy, targetRoot: BasePart)
+	local burrow = enemy.Def.Burrow :: { Radius: number, Surface: number }
+	enemy.Attacking = true
+	enemy.LastAttack = os.clock()
+	local ground = enemy.GroundY or 0
+	local spot = Vector3.new(targetRoot.Position.X, ground, targetRoot.Position.Z)
+	-- under the floor it slides beneath the player; the floor shows a red circle (and dust) where it will come up
+	enemy.Model:PivotTo(enemy.Root.CFrame.Rotation + Vector3.new(spot.X, ground - BURROW_DEPTH, spot.Z))
+	effectRemote:FireAllClients("Telegraph", spot - Vector3.new(0, 2.5, 0), burrow.Radius, enemy.Def.Windup)
+	effectRemote:FireAllClients("Rise", spot)
+	task.wait(enemy.Def.Windup)
+	if enemy.Dead then
+		return
+	end
+	effectRemote:FireAllClients("Quake", spot, burrow.Radius)
+	riseTo(enemy, ground, 0.18)
+	enemy.Burrowed = false
+	local bar = enemy.Model:FindFirstChild("HealthBar", true)
+	if bar and bar:IsA("BillboardGui") then
+		bar.Enabled = true
+	end
+	for _, entry in playersNear(spot, burrow.Radius) do
+		hurt(entry.Humanoid, entry.Root, enemy.Damage)
+		spore(entry.Humanoid, enemy.Def.Blight)
+	end
+	-- up for a while: the time to hit it
+	task.wait(burrow.Surface)
+	if not enemy.Dead then
+		sink(enemy)
+		enemy.LastAttack = os.clock()
+	end
+	enemy.Attacking = false
 end
 
 -- Leaps at a player: a red circle marks where it will land; everyone still inside when it lands is hit.
@@ -1589,7 +1722,11 @@ local function think()
 		local offset = targetRoot.Position - enemy.Root.Position
 		local distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
 		local ranged = enemy.Def.Ranged
-		if enemy.Boss then
+		if enemy.Def.Burrow then
+			if now - enemy.LastAttack >= enemy.Def.AttackCooldown then
+				task.spawn(burrowStrike, enemy, targetRoot)
+			end
+		elseif enemy.Boss then
 			bossThink(enemy, targetRoot, targetHumanoid, distance, now)
 		elseif ranged then
 			if distance < ranged.KeepAway then
@@ -1619,7 +1756,7 @@ end
 
 -- Deals damage from a player. `kind` is "Hit", "Crit" or "Poison" (picks the number's look).
 function EnemyService.Damage(enemy: Enemy, amount: number, player: Player, kind: string)
-	if enemy.Dead then
+	if enemy.Dead or enemy.Burrowed then
 		return
 	end
 	local rounded = math.max(1, math.floor(amount + 0.5))

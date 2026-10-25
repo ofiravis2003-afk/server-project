@@ -52,6 +52,27 @@ local handlers: { [string]: (...any) -> () } = {
 		tip.Parent = arrow
 		fly(arrow, from, to, duration)
 	end,
+	SporeOrb = function(from: Vector3, to: Vector3, duration: number)
+		local orb = basePart(Vector3.new(1, 1, 1), Color3.fromRGB(110, 240, 140), Enum.Material.Neon)
+		orb.Shape = Enum.PartType.Ball
+		orb.Transparency = 0.2
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(110, 240, 140)
+		light.Range = 10
+		light.Brightness = 2
+		light.Parent = orb
+		local trail = Instance.new("ParticleEmitter")
+		trail.Color = ColorSequence.new(Color3.fromRGB(150, 255, 170), Color3.fromRGB(60, 180, 100))
+		trail.LightEmission = 1
+		trail.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+		trail.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+		trail.Lifetime = NumberRange.new(0.3, 0.6)
+		trail.Speed = NumberRange.new(0.5, 1.5)
+		trail.SpreadAngle = Vector2.new(180, 180)
+		trail.Rate = 40
+		trail.Parent = orb
+		fly(orb, from, to, duration)
+	end,
 	Fireball = function(from: Vector3, to: Vector3, duration: number)
 		local ball = basePart(Vector3.new(1.3, 1.3, 1.3), FIRE, Enum.Material.Neon)
 		ball.Shape = Enum.PartType.Ball
