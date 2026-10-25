@@ -610,7 +610,7 @@ local function watchRooms()
 				for enemy in room.Enemies do
 					if enemy.Dead or not enemy.Model.Parent then
 						room.Enemies[enemy] = nil
-					elseif not isInside(room.Built, enemy.Root.Position, 0.5) then
+					elseif not enemy.Burrowed and not isInside(room.Built, enemy.Root.Position, 0.5) then -- (a Rot Crawler under the floor is where it should be)
 						warn(`[FloorService] An enemy left room {room.Built.Plan.Key}; bringing it back`)
 						enemy.Root.CFrame = CFrame.new(freeSpot(room.Built, Random.new(), 4) + Vector3.new(0, enemy.Humanoid.HipHeight + 2, 0))
 					end
