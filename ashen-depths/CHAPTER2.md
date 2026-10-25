@@ -15,6 +15,7 @@
 - **אויבים מודבקים** (`Enemies.luau` ו-`infect` ב-EnemyService): Fungal Husk, ‏Husk Archer, ‏Spore Rat, ‏Bloater (מתפוצץ לענן נבגים). פטריות זמניות מחלקים, שיוחלפו אוטומטית ב-`ServerStorage.ChapterProps.MushroomCluster` כשיגיע המודל מ-Tripo.
 - **Blight:** `BlightService` (עד 5 שכבות, ‏-10% ריפוי לכל שכבה, ובשכבה 5 נזק לאורך זמן, ודועך מחוץ לקרב), `client/dungeon/BlightHud`. **Antidote** אצל Seraphine (רק כשהמתג דלוק), **Spore Cap** כחומר.
 - **בדיקה ב-Studio:** המתג הודלק זמנית ב-Studio (לא בקוד), בקומות 17–19. האויבים והפטריות מופיעים, ו-Blight עובד. **בסוף הבדיקה המתג הוחזר ל-false ב-Studio.**
+- **3 אויבים חדשים (בלי ריג, תנועה בקוד), עם גוף זמני עד שיגיעו המודלים מ-Tripo (`EnemyModels.SporeWisp`, `CapSpitter`, `RotCrawler`):** Spore Wisp (מרחף, יורה כדורי נבגים), ‏Cap Spitter (נטוע במקום, יורק Blight כפול, מקומה 18), ‏Rot Crawler (מתחת לרצפה, עיגול אדום ואז פורץ למעלה, אפשר לפגוע בו רק כשהוא למעלה, מקומה 20). נבדקו בקומה 22.
 - **ממתין:** מודלים מ-Tripo (1–2 קודם: פטריות), עיצוב חדרים ירוק, אבני חותם מכוסות פטריות, בוסים, Mira, סיפור.
 
 ## (היסטוריה) החלטות שהיו פתוחות
