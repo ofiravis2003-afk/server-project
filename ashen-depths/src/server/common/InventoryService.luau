@@ -14,6 +14,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local WeaponBuilder = require(ReplicatedStorage.Shared.WeaponBuilder)
 local DataService = require(script.Parent.DataService)
 local ArmorService = require(script.Parent.ArmorService)
+local BlightService = require(script.Parent.BlightService)
 local ProgressService = require(script.Parent.ProgressService)
 local RateLimiter = require(script.Parent.RateLimiter)
 
@@ -350,8 +351,11 @@ drinkPotion = function(player: Player, itemName: string)
 					break
 				end
 			end
+			if def.Cure then
+				BlightService.Clear(player)
+			end
 			if def.HealFraction then
-				local heal = math.floor(humanoid.MaxHealth * def.HealFraction)
+				local heal = math.floor(humanoid.MaxHealth * def.HealFraction * BlightService.HealMultiplier(player))
 				humanoid.Health = math.min(humanoid.Health + heal, humanoid.MaxHealth)
 				local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if root then

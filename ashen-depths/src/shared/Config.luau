@@ -13,6 +13,10 @@ return {
 
 	MaxPartySize = 4,
 
+	-- Chapter II (the Rotwood Caverns, floors 16-30), being built: off, so the live game stays as it is
+	-- (The Hollow from floor 16). On, chapter II takes floors 16-30 and The Hollow starts at 31.
+	ChapterII = false,
+
 	-- Robux purchases (created in the Creator Hub, 2026-10-24). Passes are bought once; products again and again.
 	Passes = {
 		BiggerBag = 2053631231, -- the bag holds twice as much

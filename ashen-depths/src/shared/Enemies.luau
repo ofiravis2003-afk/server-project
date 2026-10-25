@@ -105,6 +105,10 @@ export type EnemyDef = {
 	Procedural: string?,
 	Pack: { number }?,
 	Boss: BossDef?,
+	-- Chapter II (the Rotwood Caverns): grown over with the green ember's mushrooms, trailing spores.
+	Infected: boolean?,
+	Blight: number?, -- Blight stacks its blows add (BlightService)
+	BurstSpores: { Radius: number, Blight: number, DamageScale: number }?, -- bursts into a spore cloud as it dies
 }
 
 -- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Sword and Shield pack.
@@ -364,5 +368,31 @@ local Enemies: { [string]: EnemyDef } = {
 		Squishy = true,
 	},
 }
+
+-- Chapter II's monsters: the chapter I ones the green ember has taken. Same bodies and moves, a little
+-- tougher, mushrooms growing on them, and their blows leave Blight.
+local function infected(base: string, changes: { [string]: any }): EnemyDef
+	local def = table.clone(Enemies[base]) :: any
+	def.Model = def.Model or base
+	def.Infected = true
+	def.Blight = 1
+	def.Health = math.floor(def.Health * 1.15)
+	def.Drops = { { Item = "SporeCap", Chance = 0.5 } }
+	for key, value in changes do
+		def[key] = value
+	end
+	return def
+end
+
+Enemies.FungalHusk = infected("Skeleton", { DisplayName = "Fungal Husk", XP = 14, Gold = { 4, 7 } })
+Enemies.HuskArcher = infected("SkeletonArcher", { DisplayName = "Husk Archer", XP = 16, Gold = { 5, 8 } })
+Enemies.SporeRat = infected("Rat", { DisplayName = "Spore Rat", XP = 7, Gold = { 1, 3 } })
+Enemies.Bloater = infected("Slime", {
+	DisplayName = "Bloater",
+	XP = 12,
+	Gold = { 3, 6 },
+	SplitInto = false, -- (it doesn't split: it bursts)
+	BurstSpores = { Radius = 9, Blight = 2, DamageScale = 0.6 },
+})
 
 return Enemies

@@ -5,16 +5,27 @@ local Config = require(script.Parent.Config)
 
 local Floors = {}
 
-Floors.MaxFloor = 15 -- the end of chapter I (15 floors, decided 2026-10-16)
+-- Chapter II (the Rotwood Caverns, floors 16-30) is being built behind Config.ChapterII; while it's off,
+-- The Hollow starts right after chapter I.
+local CHAPTER_II = Config.ChapterII == true
+
+Floors.MaxFloor = if CHAPTER_II then 30 else 15 -- the last floor of the last chapter
 -- Below it, The Hollow: floors without end (2026-10-25), each harder than the last, a boss every fifth floor
 -- (the old ones, stronger each time), and the best loot. How deep a player gets goes on the leaderboard.
-Floors.HollowFirst = 16
+Floors.HollowFirst = Floors.MaxFloor + 1
 Floors.Deepest = 500 -- (a floor no one should ever reach; the stairs there are sealed)
 
 Floors.Chapters = {
 	{ First = 1, Last = 15, Name = "The Drowned Catacombs" },
-	{ First = 16, Last = math.huge, Name = "The Hollow" },
 }
+if CHAPTER_II then
+	table.insert(Floors.Chapters, { First = 16, Last = 30, Name = "The Rotwood Caverns" })
+end
+table.insert(Floors.Chapters, { First = Floors.HollowFirst, Last = math.huge, Name = "The Hollow" })
+
+function Floors.IsRotwood(floor: number): boolean
+	return CHAPTER_II and floor >= 16 and floor <= 30
+end
 
 function Floors.IsHollow(floor: number): boolean
 	return floor >= Floors.HollowFirst
@@ -50,6 +61,16 @@ end
 function Floors.EnemyMix(floor: number): { { Name: string, Weight: number } }
 	if Config.TestEnemyMix then
 		return Config.TestEnemyMix
+	end
+	if Floors.IsRotwood(floor) then
+		-- the ember has taken them: mostly the infected, a few of the old dead still among them
+		return {
+			{ Name = "FungalHusk", Weight = 5 },
+			{ Name = "HuskArcher", Weight = 3 },
+			{ Name = "SporeRat", Weight = 2 },
+			{ Name = "Bloater", Weight = 2 },
+			{ Name = "Skeleton", Weight = 1 },
+		}
 	end
 	if floor >= 6 then
 		return {

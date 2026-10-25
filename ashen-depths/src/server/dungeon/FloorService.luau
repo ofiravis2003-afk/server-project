@@ -23,6 +23,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local PartyService = require(script.Parent.Parent.Common.PartyService)
 local TipService = require(script.Parent.Parent.Common.TipService)
+local BlightService = require(script.Parent.Parent.Common.BlightService)
 local BadgeAwards = require(script.Parent.Parent.Common.BadgeAwards)
 local Leaderboard = require(script.Parent.Parent.Common.Leaderboard)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
@@ -1171,13 +1172,15 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 	task.delay(after, function()
 		notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
 	end)
-	if currentFloor == Floors.MaxFloor then
+	if currentFloor == 15 then
 		task.delay(after + 3, function()
 			greenEmber(room.Built)
 			notifyRemote:FireAllClients("Beneath the sealed gate, the red glow dies... and a small green ember stirs.")
 		end)
 		task.delay(after + 8, function()
-			notifyRemote:FireAllClients("Chapter I complete! The gate cracks open: the stairs lead down into The Hollow, where the floors never end.")
+			notifyRemote:FireAllClients(if Floors.IsRotwood(16)
+				then "Chapter I complete! The gate cracks open... and below it, the caverns glow green."
+				else "Chapter I complete! The gate cracks open: the stairs lead down into The Hollow, where the floors never end.")
 		end)
 	end
 	task.delay(2.5, function()
@@ -2019,7 +2022,7 @@ function FloorService.Start()
 					end
 				end
 				if not fighting then
-					humanoid.Health = math.min(humanoid.Health + humanoid.MaxHealth * REST_HEAL_PER_SECOND, humanoid.MaxHealth)
+					humanoid.Health = math.min(humanoid.Health + humanoid.MaxHealth * REST_HEAL_PER_SECOND * BlightService.HealMultiplier(player), humanoid.MaxHealth)
 				end
 			end
 		end

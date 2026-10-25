@@ -17,6 +17,7 @@ export type ItemDef = {
 	Color: Color3?, -- potions: the liquid's colour in pictures
 	Description: string?,
 	Keepsake: boolean?, -- a quest item: can't be sold or dropped
+	Cure: boolean?, -- potions: clears Blight (chapter II's spores)
 	Set: string?, -- armor: Heavy, Medium, Light, Robes or Ring (shared/Armor has its numbers)
 	WeaponType: string?,
 	Damage: number?,
@@ -78,6 +79,7 @@ Items.Defs = {
 	Fletching = { DisplayName = "Black Fletching", Slot = "Material", Stack = 99, Price = 3, Description = "Arrow feathers from skeleton archers." },
 	RatTail = { DisplayName = "Rat Tail", Slot = "Material", Stack = 99, Price = 1, Description = "Dropped by giant rats." },
 	SlimeGel = { DisplayName = "Slime Gel", Slot = "Material", Stack = 99, Price = 2, Description = "What's left of a slime." },
+	SporeCap = { DisplayName = "Spore Cap", Slot = "Material", Stack = 99, Price = 4, Description = "A glowing cap off one of the infected. Handle with gloves." },
 	GraveShroud = { DisplayName = "Grave Shroud", Slot = "Material", Stack = 99, Price = 60, Description = "Torn from the Gravekeeper's coat. Rare." },
 
 	-- Keepsakes: quest items, carried until they're handed over.
@@ -89,6 +91,7 @@ Items.Defs = {
 	GreaterHealthPotion = { DisplayName = "Greater Health Potion", Slot = "Potion", Stack = 3, Limit = 3, Price = 25, HealFraction = 0.75, Color = Color3.fromRGB(230, 40, 120), Description = "Gives back 75% of your health." },
 	IronskinTonic = { DisplayName = "Ironskin Tonic", Slot = "Potion", Stack = 3, Limit = 3, Price = 20, Buff = { Stat = "Defense", Amount = 40, Duration = 60 }, Color = Color3.fromRGB(150, 160, 175), Description = "Defense +40 for a minute." },
 	SwiftnessDraught = { DisplayName = "Swiftness Draught", Slot = "Potion", Stack = 3, Limit = 3, Price = 20, Buff = { Stat = "Speed", Amount = 0.25, Duration = 45 }, Color = Color3.fromRGB(70, 200, 220), Description = "25% faster for 45 seconds." },
+	Antidote = { DisplayName = "Antidote", Slot = "Potion", Stack = 3, Limit = 3, Price = 15, Cure = true, Color = Color3.fromRGB(110, 220, 90), Description = "Burns the spores out of your blood: clears all Blight." },
 	EmberElixir = { DisplayName = "Ember Elixir", Slot = "Potion", Stack = 3, Limit = 3, Price = 25, Buff = { Stat = "SpellPower", Amount = 0.3, Duration = 60 }, Color = Color3.fromRGB(255, 130, 40), Description = "Staff and tome spells 30% stronger for a minute." },
 } :: { [string]: ItemDef }
 

@@ -88,6 +88,11 @@ local STOCK: { [string]: { Title: string, Line: string, Offers: { Offer } } } = 
 	},
 }
 
+-- Chapter II: Seraphine brews the cure for the caverns' spores
+if Config.ChapterII then
+	table.insert(STOCK.Seraphine.Offers, { Item = "Antidote", Rarity = "Common", Price = 45 })
+end
+
 local ShopService = {}
 
 local openShop: { [Player]: { Name: string, At: BasePart } } = {}

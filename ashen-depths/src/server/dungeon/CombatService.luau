@@ -12,6 +12,7 @@ local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Weapons = require(ReplicatedStorage.Shared.Weapons)
 local DataService = require(script.Parent.Parent.Common.DataService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
+local BlightService = require(script.Parent.Parent.Common.BlightService)
 local EnemyService = require(script.Parent.EnemyService)
 
 local COOLDOWN_TOLERANCE = 0.85 -- accept attacks slightly early, for network jitter
@@ -198,6 +199,10 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 			local amount = Items.WeaponHeal(item.Item, item.Rarity, item.Upgrade) * Leveling.DamageMultiplier(data.Level) * (1 + ((player:GetAttribute("SpellPower") :: number?) or 0))
 			if patient == humanoid then
 				amount *= weapon.SelfHeal or 1
+			end
+			local patientPlayer = Players:GetPlayerFromCharacter(patient.Parent)
+			if patientPlayer then
+				amount *= BlightService.HealMultiplier(patientPlayer)
 			end
 			local healed = math.max(1, math.floor(math.min(amount, patient.MaxHealth - patient.Health) + 0.5))
 			patient.Health = math.min(patient.MaxHealth, patient.Health + healed)

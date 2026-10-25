@@ -18,6 +18,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArmorService = require(script.Parent.Parent.Common.ArmorService)
+local BlightService = require(script.Parent.Parent.Common.BlightService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local QuestService = require(script.Parent.Parent.Common.QuestService)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
@@ -101,6 +102,7 @@ local folder: Folder
 -- A floor's curse (the Ember Altar event in FloorService): every monster that rises after it is tougher, and
 -- pays more. Back to normal on the next floor.
 local floorModifier = { Health = 1, Damage = 1, Rewards = 1 }
+local infect: (Model) -> ()
 local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring together
 local VIP_BONUS = 1.2 -- and 20% more for a VIP
 local damageNumberRemote = Remotes.Event("DamageNumber")
@@ -412,6 +414,132 @@ local function holdProp(model: Model, held: Enemies.HeldProp)
 	prop.Parent = model
 end
 
+-- Chapter II's infected: glowing mushrooms grown onto the body (on its head and back bones when it has a rig,
+-- so they move with it), a green glow and a slow drift of spores. The mushrooms are ChapterProps.MushroomCluster
+-- (Tripo) once it's there, small caps made of parts until then.
+local function mushroom(size: number): Model
+	local props = ServerStorage:FindFirstChild("ChapterProps")
+	local cluster = props and props:FindFirstChild("MushroomCluster")
+	if cluster and cluster:IsA("Model") then
+		local copy = cluster:Clone()
+		local _, extents = copy:GetBoundingBox()
+		copy:ScaleTo(copy:GetScale() * size / math.max(extents.Y, 0.1))
+		return copy
+	end
+	local m = Instance.new("Model")
+	local stem = Instance.new("Part")
+	stem.Name = "Stem"
+	stem.Shape = Enum.PartType.Cylinder
+	stem.Size = Vector3.new(size * 0.6, size * 0.22, size * 0.22)
+	stem.CFrame = CFrame.new(0, size * 0.3, 0) * CFrame.Angles(0, 0, math.rad(90))
+	stem.Color = Color3.fromRGB(214, 206, 180)
+	stem.Material = Enum.Material.SmoothPlastic
+	stem.Parent = m
+	local cap = Instance.new("Part")
+	cap.Name = "Cap"
+	cap.Shape = Enum.PartType.Ball
+	cap.Size = Vector3.new(size * 0.8, size * 0.8, size * 0.8)
+	cap.CFrame = CFrame.new(0, size * 0.62, 0)
+	cap.Color = Color3.fromRGB(40, 150, 130)
+	cap.Material = Enum.Material.Neon
+	cap.Transparency = 0.15
+	cap.Parent = m
+	m.PrimaryPart = stem
+	return m
+end
+
+function infect(template: Model)
+	local root = template:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return
+	end
+	local _, extents = template:GetBoundingBox()
+	local height = extents.Y
+	local spots = {
+		{ Bone = "mixamorig:Head", Offset = Vector3.new(0.25, 0.35, 0), Size = 0.32 },
+		{ Bone = "mixamorig:Spine2", Offset = Vector3.new(-0.2, 0.2, 0.3), Size = 0.4 },
+		{ Bone = "mixamorig:LeftShoulder", Offset = Vector3.new(0, 0.15, 0), Size = 0.25 },
+	}
+	local placed = false
+	for _, spot in spots do
+		local bone = template:FindFirstChild(spot.Bone, true)
+		if bone and bone:IsA("Bone") then
+			placed = true
+			local m = mushroom(height * spot.Size * 0.5)
+			for _, p in m:GetDescendants() do
+				if p:IsA("BasePart") then
+					p.Anchored = false
+					p.CanCollide = false
+					p.CanQuery = false
+					p.Massless = true
+				end
+			end
+			local base = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart", true)
+			if base then
+				for _, p in m:GetDescendants() do
+					if p:IsA("BasePart") and p ~= base then
+						local weld = Instance.new("WeldConstraint")
+						weld.Part0 = base
+						weld.Part1 = p
+						weld.Parent = p
+					end
+				end
+				local a = Instance.new("Attachment")
+				a.Parent = base
+				local hold = Instance.new("RigidConstraint")
+				hold.Attachment0 = a
+				hold.Attachment1 = bone
+				hold.Parent = base
+				m:PivotTo(bone.WorldCFrame * CFrame.new(spot.Offset * height * 0.2))
+				local boneAt = bone :: Bone
+				a.WorldCFrame = boneAt.WorldCFrame
+				a.CFrame = a.CFrame * CFrame.new(spot.Offset * height * 0.2)
+			end
+			m.Name = "Fungus"
+			m.Parent = template
+		end
+	end
+	if not placed then
+		-- (no rig: on top of the body, welded to the root)
+		for i = 1, 3 do
+			local m = mushroom(height * 0.25)
+			local angle = i * 2.1
+			m:PivotTo(root.CFrame * CFrame.new(math.cos(angle) * extents.X * 0.25, extents.Y * 0.35, math.sin(angle) * extents.Z * 0.25))
+			for _, p in m:GetDescendants() do
+				if p:IsA("BasePart") then
+					p.Anchored = false
+					p.CanCollide = false
+					p.CanQuery = false
+					p.Massless = true
+					local weld = Instance.new("WeldConstraint")
+					weld.Part0 = root
+					weld.Part1 = p
+					weld.Parent = p
+				end
+			end
+			m.Name = "Fungus"
+			m.Parent = template
+		end
+	end
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(90, 230, 150)
+	glow.Range = 8
+	glow.Brightness = 0.9
+	glow.Parent = root
+	local spores = Instance.new("ParticleEmitter")
+	spores.Name = "Spores"
+	spores.Color = ColorSequence.new(Color3.fromRGB(140, 255, 170), Color3.fromRGB(60, 200, 120))
+	spores.LightEmission = 1
+	spores.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.12), NumberSequenceKeypoint.new(1, 0) })
+	spores.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+	spores.Lifetime = NumberRange.new(1.5, 2.5)
+	spores.Speed = NumberRange.new(0.3, 0.8)
+	spores.SpreadAngle = Vector2.new(180, 180)
+	spores.Acceleration = Vector3.new(0, 0.6, 0)
+	spores.Rate = 6
+	spores.Parent = root
+end
+
 local function getTemplate(name: string): Model
 	local template = templates[name]
 	if not template then
@@ -420,8 +548,8 @@ local function getTemplate(name: string): Model
 		local source = modelsFolder and modelsFolder:FindFirstChild(def.Model or name)
 		if source and source:IsA("Model") then
 			template = buildFromModel(source, def)
-		elseif BUILDERS[name] then
-			template = BUILDERS[name]()
+		elseif BUILDERS[def.Model or name] then
+			template = BUILDERS[def.Model or name]()
 		else
 			template = buildFromModel(slimeBlob(), def)
 		end
@@ -432,10 +560,21 @@ local function getTemplate(name: string): Model
 		if def.Scale and def.Scale ~= 1 then
 			template:ScaleTo(template:GetScale() * def.Scale)
 		end
+		if def.Infected then
+			infect(template)
+		end
 		template.Name = name
 		templates[name] = template
 	end
 	return template
+end
+
+-- An infected blow: its Blight onto the player it hit.
+local function spore(humanoid: Humanoid, amount: number?)
+	local player = amount and Players:GetPlayerFromCharacter(humanoid.Parent)
+	if player then
+		BlightService.Add(player, amount :: number)
+	end
 end
 
 local function setEyes(enemy: Enemy, flaring: boolean)
@@ -573,6 +712,22 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 				end
 			end)
 		elseif enemy.Def.DeathStyle == "Splat" then
+			local burst = enemy.Def.BurstSpores
+			if burst then
+				-- a cloud of spores where it burst: Blight and a sting for everyone close
+				local at = enemy.Root.Position
+				effectRemote:FireAllClients("Quake", at, burst.Radius)
+				for _, player in Players:GetPlayers() do
+					local character = player.Character
+					local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+					local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+					if root and humanoid and humanoid.Health > 0 and (root.Position - at).Magnitude <= burst.Radius then
+						local dealt = ArmorService.Hurt(humanoid, enemy.Damage * burst.DamageScale)
+						damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), dealt, "Hurt")
+						BlightService.Add(player, burst.Blight)
+					end
+				end
+			end
 			-- Bursts into goo: a splash of green drops, and the body is gone.
 			local splash = Instance.new("Part")
 			splash.Anchored = true
@@ -1119,6 +1274,7 @@ local function attack(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humano
 		if targetHumanoid.Health > 0 and flat.Magnitude <= enemy.Def.AttackRange + 1.5 and inFront then
 			local damage = ArmorService.Hurt(targetHumanoid, enemy.Damage)
 			damageNumberRemote:FireAllClients(targetRoot.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
+			spore(targetHumanoid, enemy.Def.Blight)
 		end
 	end
 	enemy.Attacking = false
@@ -1157,6 +1313,7 @@ local function shoot(enemy: Enemy, targetRoot: BasePart)
 				if root and humanoid and humanoid.Health > 0 and (root.Position - aim).Magnitude <= ranged.HitRadius then
 					local dealt = ArmorService.Hurt(humanoid, damage)
 					damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), dealt, "Hurt")
+					spore(humanoid, enemy.Def.Blight)
 				end
 			end
 		end)
