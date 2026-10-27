@@ -847,7 +847,12 @@ function TownBuilder.Build(): Town
 	end
 	for _, side in { -1, 1 } do
 		for z = 80, 200, 40 do
-			scaled("OakTree", CFrame.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.8, 1.1), 1.6)
+			local at = Vector3.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8))
+			local turn = rng:NextNumber(0, math.pi * 2)
+			local scale = rng:NextNumber(0.8, 1.1)
+			if clearOfBuildings(at, 14) then
+				scaled("OakTree", CFrame.new(at) * CFrame.Angles(0, turn, 0), scale, 1.6)
+			end
 		end
 	end
 	for _, frame in { guildFrame, armoryFrame, tomeFrame, tavernFrame } do
