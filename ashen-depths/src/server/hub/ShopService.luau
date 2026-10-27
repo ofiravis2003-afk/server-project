@@ -32,6 +32,7 @@ local IntroService = require(script.Parent.IntroService)
 local DepthsBoard = require(script.Parent.DepthsBoard)
 local TownBuilder = require(script.Parent.TownBuilder)
 local TownLife = require(script.Parent.TownLife)
+local TrainingService = require(script.Parent.TrainingService)
 
 local SHOP_RANGE = 16
 local GATHER_SECONDS = 6 -- a party's countdown before the chains drop
@@ -120,8 +121,9 @@ end
 
 function ShopService.Start()
 	local town = TownBuilder.Build()
-	Halloween.DecorateTown(TownBuilder.Spread)
+	Halloween.DecorateTown(town.Model)
 	TownLife.Start(town.Model)
+	TrainingService.Start(town.Training)
 	IntroService.Start(town)
 	DataService.OnLoaded(function(player, data)
 		if (data.DeepestFloor or 0) > 0 then

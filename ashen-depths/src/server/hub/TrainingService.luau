@@ -1,5 +1,5 @@
 --!strict
--- The Training Grounds on the lawn north of the square: three straw dummies to try a weapon on before going down.
+-- The Training Yard west of the square (TownBuilder fences it): three straw dummies to try a weapon on before going down.
 -- Every blow shows its number, the dummy rocks back, and a board over it shows the striker's damage per second
 -- over their last few seconds of hitting it. Dummies never break and give nothing: they're for testing.
 -- The dummy is a Studio-generated model, ServerStorage.TownProps.TrainingDummy (pivot at its base); without it a
@@ -13,8 +13,6 @@ local TweenService = game:GetService("TweenService")
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
-local CENTER = Vector3.new(-22, 0, -57) -- on the open lawn between the forge and the houses
-local FACING = Vector3.new(0, 0, 1) -- the dummies face the square
 local SPACING = 7
 local WINDOW = 5 -- seconds of hits the damage-per-second counts
 local IDLE = 6 -- seconds without a hit before a dummy's board resets
@@ -173,7 +171,11 @@ function TrainingService.Damage(dummy: Dummy, amount: number, player: Player, ki
 	task.spawn(rock, dummy, if root then root.Position else dummy.Root.Position - FACING)
 end
 
-function TrainingService.Start()
+local FACING = Vector3.new(0, 0, 1) -- (set from the yard in Start: the dummies face the way in)
+
+function TrainingService.Start(yard: CFrame)
+	local CENTER = yard.Position + yard.LookVector * 2
+	FACING = Vector3.new(yard.LookVector.X, 0, yard.LookVector.Z).Unit
 	local folder = Instance.new("Folder")
 	folder.Name = "TrainingGrounds"
 	folder.Parent = workspace
@@ -210,9 +212,7 @@ function TrainingService.Start()
 		}
 		table.insert(dummies, dummy)
 	end
-	-- the rack of practice weapons behind them, and the name over the ground
-	local rackSpot = CENTER - FACING * 6 + side * (SPACING * 1.6)
-	stand("WeaponRack", folder, CFrame.lookAt(ground(rackSpot.X, rackSpot.Z), ground(rackSpot.X, rackSpot.Z) + FACING))
+	-- the yard's name over it
 	local mark = Instance.new("Part")
 	mark.Name = "TrainingSign"
 	mark.Anchored = true
@@ -228,7 +228,7 @@ function TrainingService.Start()
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.fromScale(1, 1)
 	title.BackgroundTransparency = 1
-	title.Text = "Training Grounds"
+	title.Text = "Training Yard"
 	title.TextColor3 = Color3.fromRGB(255, 210, 140)
 	title.TextStrokeTransparency = 0.4
 	title.FontFace = Fonts.Title

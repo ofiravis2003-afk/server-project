@@ -82,10 +82,9 @@ local function ground(x: number, z: number, ignore: { Instance }): CFrame?
 	return hit and CFrame.new(hit.Position)
 end
 
--- Emberhold: pumpkins at the foot of the square's lamp posts (looking in at the square) and round the Well
--- (looking out at the people walking by). `spread` is the town's
--- TownBuilder.SPREAD (every place from the Well grows by it).
-function Halloween.DecorateTown(spread: number)
+-- Emberhold: pumpkins at the foot of the plaza's lamp posts (looking in at the Well) and round the Well
+-- (looking out at the people walking by).
+function Halloween.DecorateTown(town: Model)
 	if not Halloween.On() then
 		return
 	end
@@ -93,18 +92,27 @@ function Halloween.DecorateTown(spread: number)
 	folder.Name = "Halloween"
 	folder.Parent = workspace
 	local rng = Random.new(31)
+	local well = town:FindFirstChild("GreatWell", true)
+	local center = if well and well:IsA("Model") then well:GetPivot().Position else Vector3.zero
+	local flat = Vector3.new(center.X, 0, center.Z)
 	local spots = {}
-	for _, lamp in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0) } do
-		local at = lamp * spread
-		local toWell = -Vector3.new(at.X, 0, at.Z).Unit
-		local side = toWell:Cross(Vector3.yAxis)
-		table.insert(spots, { at + toWell * 2.5 + side * 1.6, toWell, 1 })
-		table.insert(spots, { at + toWell * 2.2 - side * 1.8, toWell, 0.7 })
+	for _, lamp in town:GetChildren() do
+		if lamp:IsA("Model") and lamp.Name == "LampPost" then
+			local at = lamp:GetPivot().Position
+			local toWell = flat - Vector3.new(at.X, 0, at.Z)
+			-- only the lamps round the plaza, not the ones out along the roads
+			if toWell.Magnitude < 50 then
+				toWell = toWell.Unit
+				local side = toWell:Cross(Vector3.yAxis)
+				table.insert(spots, { at + toWell * 2.5 + side * 1.6, toWell, 1 })
+				table.insert(spots, { at + toWell * 2.2 - side * 1.8, toWell, 0.7 })
+			end
+		end
 	end
 	for i = 0, 7 do
 		local angle = i / 8 * math.pi * 2 + math.pi / 8
-		local at = Vector3.new(math.cos(angle), 0, math.sin(angle)) * 13 * spread
-		table.insert(spots, { at, Vector3.new(at.X, 0, at.Z).Unit, if i % 2 == 0 then 1.2 else 0.85 })
+		local at = flat + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 16
+		table.insert(spots, { at, Vector3.new(math.cos(angle), 0, math.sin(angle)), if i % 2 == 0 then 1.2 else 0.85 })
 	end
 	local players = {}
 	for _, p in Players:GetPlayers() do

@@ -1,7 +1,8 @@
 --!strict
--- Builds Emberhold when the server starts: a village on a grass meadow, late in the afternoon, with the Great Well (the
--- way down, The Descent) in the middle and the gate guard beside it, Brakka's Forge on the north side, the
--- other shops' houses around it (closed for now), lamp posts, and the lighting and fog of a mining town at dusk.
+-- Builds Emberhold when the server starts: a walled village on a grass meadow, late in the afternoon, with the Great
+-- Well (the way down, The Descent) in the middle and the gate guard beside it, and a quarter on each side of the
+-- plaza: the Guild Hall to the north, the Market Square with every shop to the east, the Training Yard to the
+-- west, homes to the south along the road in from the gate.
 -- Tripo models come from ServerStorage.TownProps (GreatWell, Anvil, Forge, WeaponRack, Brakka, GateGuard,
 -- GuardSpear); anything missing is built from plain parts.
 -- Returns the spots other services hang their prompts on.
@@ -19,6 +20,7 @@ export type Town = {
 	Spawn: CFrame,
 	Well: BasePart, -- the well's rim (for the Descend prompt)
 	Brakka: BasePart, -- where Brakka stands (for the Trade prompt)
+	Training: CFrame, -- the Training Yard's middle on the ground, looking out to the plaza (TrainingService)
 }
 
 local STONE = Color3.fromRGB(78, 74, 70)
@@ -30,6 +32,8 @@ local WARM = Color3.fromRGB(255, 176, 96)
 
 local SQUARE = 150 -- the square's width (as laid out; everything is then spread out by SPREAD)
 local SPREAD = 1.25 -- how far apart the village is drawn: every piece's place from the Well times this
+local MARKET_AT = Vector3.new(66, 0, 0) -- the Market Square's middle (as laid out)
+local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 
 -- The townsfolk's standing animations (published from ServerStorage.TownClips).
 local IDLE: { [string]: number } = {
@@ -208,7 +212,7 @@ local function lampPost(parent: Instance, position: Vector3)
 end
 
 -- A fire bowl on a stone stand, its fire and warm light.
--- The Wall of the Fallen on the lawn west of the plaza: a slab of dark stone carved with the names of adventurers
+-- The Wall of the Fallen on the lawn before the Guild Hall: a slab of dark stone carved with the names of adventurers
 -- who never came back up. Far too many for a town this size. The oldest row, worn almost smooth, says A. Vane.
 local FIRST = { "Ser", "Bram", "Edda", "Tomas", "Iska", "Rolf", "Mira", "Gault", "Wren", "Osric", "Lena", "Corin", "Hale", "Ysolde", "Dunn", "Petra", "Alis", "Fenn", "Garrick", "Nell", "Odo", "Rhea", "Sten", "Tilda", "Ulric", "Vera", "Jory", "Kael", "Mags", "Brin" }
 local LAST = { "Ashby", "Morrow", "Crane", "Holt", "Vey", "Thatch", "Pike", "Marsh", "Rook", "Fell", "Stone", "Harrow", "Quill", "Barrow", "Lark", "Dunmore", "Wick", "Gale", "Cobb", "Penn" }
@@ -383,6 +387,7 @@ local function landscape(): number
 	terrain:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(110, 86, 62))
 	terrain:SetMaterialColor(Enum.Material.Cobblestone, Color3.fromRGB(122, 114, 104))
 	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(110, 106, 98))
+	terrain:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(176, 150, 112)) -- the Training Yard's packed sand
 	pcall(function()
 		(terrain :: any).Decoration = true -- grass blades out in the fields
 	end)
@@ -391,17 +396,20 @@ local function landscape(): number
 	-- inside the village a mown lawn (LeafyGrass grows no tall blades), so paths and feet show
 	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 130 * SPREAD, Enum.Material.LeafyGrass)
 	terrain:FillBlock(CFrame.new(0, -6, 190), Vector3.new(44, 8, 140), Enum.Material.LeafyGrass)
-	-- the plaza round the Well
+	-- the plaza round the Well, and a road from it to each quarter (laid out like the village, then spread)
 	terrain:FillCylinder(CFrame.new(0, -6, 0), 8, 30 * SPREAD, Enum.Material.Cobblestone)
-	-- earth paths to every door, a cobbled road to the forge and out of town to the south
-	local plaza = 26 * SPREAD
-	path(terrain, Vector3.new(0, 0, -plaza), Vector3.new(0, 0, -52 * SPREAD), 12, Enum.Material.Cobblestone)
-	path(terrain, Vector3.new(0, 0, plaza), Vector3.new(0, 0, 420), 14, Enum.Material.Cobblestone)
-	for _, laid in { Vector3.new(-44, 0, -50), Vector3.new(44, 0, -50), Vector3.new(-50, 0, -20), Vector3.new(-50, 0, 20), Vector3.new(50, 0, -20), Vector3.new(50, 0, 20), Vector3.new(-44, 0, 50), Vector3.new(44, 0, 50) } do
-		local door = laid * SPREAD
-		local dir = Vector3.new(door.X, 0, door.Z).Unit
-		path(terrain, dir * (plaza - 2), door, 9, Enum.Material.Ground)
-		terrain:FillBlock(CFrame.new(door.X, -6, door.Z), Vector3.new(14, 8, 10), Enum.Material.Ground)
+	local function road(from: Vector3, to: Vector3, width: number, material: Enum.Material)
+		path(terrain, from * SPREAD, to * SPREAD, width, material)
+	end
+	road(Vector3.new(0, 0, -26), Vector3.new(0, 0, -72), 12, Enum.Material.Cobblestone) -- north, to the Guild
+	road(Vector3.new(26, 0, 0), Vector3.new(44, 0, 0), 12, Enum.Material.Cobblestone) -- east, to the Market Square
+	terrain:FillCylinder(CFrame.new(MARKET_AT * SPREAD + Vector3.new(0, -6, 0)), 8, 30 * SPREAD, Enum.Material.Cobblestone)
+	road(Vector3.new(-26, 0, 0), Vector3.new(-50, 0, 0), 10, Enum.Material.Ground) -- west, to the Training Yard
+	terrain:FillBlock(CFrame.new(YARD_AT * SPREAD + Vector3.new(0, -6, 0)), Vector3.new(36, 8, 36) * SPREAD, Enum.Material.Sand)
+	path(terrain, Vector3.new(0, 0, 26 * SPREAD), Vector3.new(0, 0, 420), 14, Enum.Material.Cobblestone) -- south, out of the gate
+	-- earth paths from the south road to the homes' doors
+	for _, door in { Vector3.new(-30, 0, 62), Vector3.new(30, 0, 62), Vector3.new(-60, 0, 42), Vector3.new(55, 0, 68) } do
+		road(Vector3.new(0, 0, door.Z - 8), door, 8, Enum.Material.Ground)
 	end
 	-- hills all round, the road leaving through a gap between them
 	local rng = Random.new(7)
@@ -441,7 +449,7 @@ local function landscape(): number
 	return 1.8
 end
 
--- Brakka's Forge: an open-fronted smithy on the north side of the square, with the forge glowing at the back,
+-- Brakka's Forge: an open-fronted smithy on the north side of the Market Square, with the forge glowing at the back,
 -- the anvil out front, a rack of weapons, and Brakka behind the anvil. Returns where she stands.
 local function forge(parent: Instance, frame: CFrame): BasePart
 	local m = Instance.new("Model")
@@ -581,43 +589,106 @@ function TownBuilder.Build(): Town
 		spear.Parent = model
 	end
 
-	-- Brakka's Forge on the north side
-	-- (a building's front is its frame's -Z; each frame stands on the square's edge, turned to face the middle)
-	local edge = SQUARE / 2 - 1
-	local brakka = forge(model, CFrame.new(0, 0, -edge + 17) * CFrame.Angles(0, math.pi, 0))
-
-	-- the other shops and houses around the square (opening in later updates)
-	local inset = edge - 16
-	house(model, CFrame.new(-44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 50, "Guild Hall")
-	house(model, CFrame.new(44, 0, -inset) * CFrame.Angles(0, math.pi, 0), 50, "Ironhide Armory")
-	house(model, CFrame.new(-inset, 0, -20) * CFrame.Angles(0, math.rad(-90), 0), 45, "The Gilded Tome")
-	house(model, CFrame.new(-inset, 0, 20) * CFrame.Angles(0, math.rad(-90), 0), 40, nil)
-	house(model, CFrame.new(inset, 0, -20) * CFrame.Angles(0, math.rad(90), 0), 45, "The Sunken Hearth")
-	house(model, CFrame.new(inset, 0, 20) * CFrame.Angles(0, math.rad(90), 0), 40, nil)
-	house(model, CFrame.new(-44, 0, inset), 45, nil)
-	house(model, CFrame.new(44, 0, inset), 45, nil)
-
-	-- the shops' wares out front, and market stalls in the square (each facing the middle)
-	local function facing(at: Vector3): CFrame
-		return CFrame.lookAt(at, Vector3.new(0, 0, 0))
+	-- The town in quarters round the Well, each reached by its own road from the plaza (laid out here, then
+	-- spread out by SPREAD): the Guild to the north, the Market Square to the east (every shop round it), the
+	-- Training Yard to the west, and homes to the south either side of the road in from the gate.
+	local function facingFrom(at: Vector3, toward: Vector3): CFrame
+		-- a building's frame: its front (-Z) looks toward `toward`
+		return CFrame.lookAt(at, Vector3.new(toward.X, at.Y, toward.Z))
 	end
-	prop("QuestBoard", model, CFrame.lookAt(Vector3.new(-44, 0, -50), Vector3.new(-44, 0, 0)))
-	-- on the open lawn west of the plaza, facing the Well, beside the Deepest Descents board (DepthsBoard)
-	wallOfTheFallen(model, CFrame.lookAt(Vector3.new(-38, 0, -6.5), Vector3.new(0, 0, -6.5)))
-	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(34, 0, -51), Vector3.new(34, 0, 0)))
-	prop("ArmorStand", model, CFrame.lookAt(Vector3.new(54, 0, -51), Vector3.new(54, 0, 0)))
-	prop("PotionShelf", model, CFrame.lookAt(Vector3.new(-51, 0, -26), Vector3.new(0, 0, -26)))
-	prop("MarketStall", model, facing(Vector3.new(-20, 0, 40)))
-	prop("MarketStall", model, facing(Vector3.new(20, 0, 40)))
+	local function infront(frame: CFrame, out: number, side: number?): CFrame
+		-- a spot `out` studs in front of a frame's front line, looking the way the frame looks
+		local spot = (frame * CFrame.new(side or 0, 0, -out)).Position
+		return CFrame.lookAt(spot, spot + frame.LookVector)
+	end
 
-	-- the other townsfolk at their doors, facing the square (their shops open in later updates)
-	townsperson("Aldric", model, CFrame.lookAt(Vector3.new(-36, 0, -51), Vector3.new(-36, 0, 0)))
-	townsperson("Thorne", model, CFrame.lookAt(Vector3.new(44, 0, -51), Vector3.new(44, 0, 0)))
-	townsperson("Seraphine", model, CFrame.lookAt(Vector3.new(-52, 0, -16), Vector3.new(0, 0, -16)))
-	townsperson("OldPip", model, CFrame.lookAt(Vector3.new(52, 0, -20), Vector3.new(0, 0, -20)))
+	-- North: the Guild quarter. The Guild Hall faces the plaza up its road; Aldric at its door, the quest board
+	-- beside him, and the Wall of the Fallen (with the Deepest Descents board) on the lawn to the west.
+	local guildFrame = facingFrom(Vector3.new(0, 0, -72), Vector3.new(0, 0, 0))
+	house(model, guildFrame, 50, "Guild Hall")
+	townsperson("Aldric", model, infront(guildFrame, 5, 4))
+	prop("QuestBoard", model, infront(guildFrame, 6, -10))
+	wallOfTheFallen(model, facingFrom(Vector3.new(-30, 0, -44), Vector3.new(-30, 0, 0)))
 
-	-- the green round the village: oaks behind the houses and along the road out, fences along the road,
-	-- flower boxes under the shop windows
+	-- East: the Market Square, a cobbled square of its own with every shop round it and stalls in the middle.
+	local MARKET = MARKET_AT
+	local brakka = forge(model, facingFrom(MARKET + Vector3.new(0, 0, -30), MARKET))
+	local armoryFrame = facingFrom(MARKET + Vector3.new(0, 0, 30), MARKET)
+	house(model, armoryFrame, 50, "Ironhide Armory")
+	townsperson("Thorne", model, infront(armoryFrame, 5))
+	prop("ArmorStand", model, infront(armoryFrame, 3, -9))
+	prop("ArmorStand", model, infront(armoryFrame, 3, 9))
+	local tomeFrame = facingFrom(MARKET + Vector3.new(26, 0, -8), MARKET + Vector3.new(0, 0, -8))
+	house(model, tomeFrame, 45, "The Gilded Tome")
+	townsperson("Seraphine", model, infront(tomeFrame, 5))
+	prop("PotionShelf", model, infront(tomeFrame, 2.5, 8))
+	local tavernFrame = facingFrom(MARKET + Vector3.new(26, 0, 18), MARKET + Vector3.new(0, 0, 18))
+	house(model, tavernFrame, 45, "The Sunken Hearth")
+	townsperson("OldPip", model, infront(tavernFrame, 5))
+	prop("MarketStall", model, facingFrom(MARKET + Vector3.new(-8, 0, -9), MARKET + Vector3.new(-30, 0, -9)))
+	prop("MarketStall", model, facingFrom(MARKET + Vector3.new(-8, 0, 10), MARKET + Vector3.new(-30, 0, 10)))
+
+	-- West: the Training Yard, a fenced square of packed sand with the dummies (TrainingService), an archery
+	-- target, weapon racks along the back and benches for whoever is watching.
+	local YARD = YARD_AT
+	local YARD_SIZE = 36
+	local yardMark = part(model, "TrainingYard", Vector3.new(1, 1, 1), CFrame.lookAt(YARD, YARD + Vector3.new(1, 0, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+	yardMark.Transparency = 1
+	yardMark.CanCollide = false
+	yardMark.CanQuery = false
+	local half = YARD_SIZE / 2
+	local function fence(from: Vector3, to: Vector3)
+		local length = (to - from).Magnitude
+		local folder = ServerStorage:FindFirstChild("TownProps")
+		local section = folder and folder:FindFirstChild("FenceSection")
+		-- (sections of about 3.4 studs: the fence model is short, and scaling it to a longer gap would make it tall)
+		local count = math.max(1, math.floor(length / 3.4 + 0.5))
+		for i = 0, count - 1 do
+			local a = from + (to - from) * (i / count)
+			local b = from + (to - from) * ((i + 1) / count)
+			local mid = (a + b) / 2
+			if section and section:IsA("Model") then
+				local piece = prop("FenceSection", model, CFrame.lookAt(mid, mid + (b - a).Unit) * CFrame.Angles(0, math.rad(90), 0))
+				if piece then
+					local _, size = piece:GetBoundingBox()
+					piece:ScaleTo(piece:GetScale() * ((b - a).Magnitude + 0.4) / size.X)
+					local box, scaled = piece:GetBoundingBox()
+					piece:PivotTo(piece:GetPivot() + (mid - (box.Position - Vector3.new(0, scaled.Y / 2, 0))))
+				end
+			else
+				local frame = CFrame.lookAt(mid, mid + (b - a).Unit)
+				part(model, "FencePost", Vector3.new(0.6, 3.6, 0.6), CFrame.new(a + Vector3.new(0, 1.8, 0)), TIMBER, Enum.Material.Wood)
+				for _, y in { 1.2, 2.6 } do
+					part(model, "FenceRail", Vector3.new(0.35, 0.35, (b - a).Magnitude), frame * CFrame.new(0, y, 0), TIMBER, Enum.Material.Wood)
+				end
+			end
+		end
+	end
+	-- (the side facing the plaza is left open in the middle: the way in)
+	local c = YARD
+	fence(c + Vector3.new(-half, 0, -half), c + Vector3.new(half, 0, -half))
+	fence(c + Vector3.new(-half, 0, half), c + Vector3.new(half, 0, half))
+	fence(c + Vector3.new(-half, 0, -half), c + Vector3.new(-half, 0, half))
+	fence(c + Vector3.new(half, 0, -half), c + Vector3.new(half, 0, -5))
+	fence(c + Vector3.new(half, 0, 5), c + Vector3.new(half, 0, half))
+	prop("WeaponRack", model, facingFrom(c + Vector3.new(-half + 2.5, 0, -8), c + Vector3.new(0, 0, -8)))
+	prop("WeaponRack", model, facingFrom(c + Vector3.new(-half + 2.5, 0, 8), c + Vector3.new(0, 0, 8)))
+	prop("ArcheryTarget", model, facingFrom(c + Vector3.new(-6, 0, -half + 3), c + Vector3.new(-6, 0, 0)))
+	prop("ArcheryTarget", model, facingFrom(c + Vector3.new(6, 0, -half + 3), c + Vector3.new(6, 0, 0)))
+	for _, x in { -8, 8 } do
+		prop("Bench", model, facingFrom(c + Vector3.new(x, 0, half - 2.5), c + Vector3.new(x, 0, 0)))
+	end
+	prop("Barrels", model, CFrame.new(c + Vector3.new(-half + 3, 0, half - 3)))
+
+	-- South: homes either side of the road in from the gate, each facing the plaza
+	for _, at in { Vector3.new(-30, 0, 66), Vector3.new(30, 0, 66), Vector3.new(-64, 0, 46), Vector3.new(58, 0, 72) } do
+		house(model, facingFrom(at, Vector3.new(0, 0, 0)), 42, nil)
+	end
+	prop("MarketStall", model, facingFrom(Vector3.new(-18, 0, 44), Vector3.new(0, 0, 44)))
+	prop("MarketStall", model, facingFrom(Vector3.new(18, 0, 44), Vector3.new(0, 0, 44)))
+
+	-- the green round the village: oaks inside the wall (not over the Market Square or the road south), flower
+	-- boxes by the doors
 	local function scaled(name: string, cframe: CFrame, scale: number, sink: number?)
 		local p = prop(name, model, cframe)
 		if p then
@@ -628,9 +699,12 @@ function TownBuilder.Build(): Town
 	end
 	local rng = Random.new(31)
 	for i = 0, 17 do
-		local angle = math.rad(i * 20 + rng:NextNumber(-6, 6))
-		if math.abs(math.deg(angle) - 90) > 14 then -- not on the road south
-			local reach = rng:NextNumber(92, 112)
+		local deg = i * 20 + rng:NextNumber(-6, 6)
+		local angle = math.rad(deg)
+		local clearOfRoad = math.abs(deg - 90) > 14
+		local clearOfMarket = deg > 40 and deg < 320
+		if clearOfRoad and clearOfMarket then
+			local reach = rng:NextNumber(96, 112)
 			scaled("OakTree", CFrame.new(math.cos(angle) * reach, 0, math.sin(angle) * reach) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.85, 1.25), 1.6)
 		end
 	end
@@ -639,12 +713,10 @@ function TownBuilder.Build(): Town
 			scaled("OakTree", CFrame.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8)) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.8, 1.1), 1.6)
 		end
 	end
-	for _, at in { CFrame.lookAt(Vector3.new(-40, 0, -50.5), Vector3.new(-40, 0, 0)), CFrame.lookAt(Vector3.new(60, 0, -50.5), Vector3.new(60, 0, 0)),
-		CFrame.lookAt(Vector3.new(-51, 0, -12), Vector3.new(0, 0, -12)), CFrame.lookAt(Vector3.new(51, 0, -26), Vector3.new(0, 0, -26)),
-		CFrame.lookAt(Vector3.new(51, 0, -14), Vector3.new(0, 0, -14)), CFrame.lookAt(Vector3.new(-51, 0, 26), Vector3.new(0, 0, 26)),
-		CFrame.lookAt(Vector3.new(51, 0, 26), Vector3.new(0, 0, 26)), CFrame.lookAt(Vector3.new(-38, 0, 50.5), Vector3.new(-38, 0, 0)),
-		CFrame.lookAt(Vector3.new(38, 0, 50.5), Vector3.new(38, 0, 0)) } do
-		scaled("FlowerBox", at, 1.3)
+	for _, frame in { guildFrame, armoryFrame, tomeFrame, tavernFrame } do
+		for _, side in { -1, 1 } do
+			scaled("FlowerBox", infront(frame, 1.5, side * 13), 1.2)
+		end
 	end
 
 	-- the town wall: stone sections in a ring, a tower every few sections, and the gatehouse where the road
@@ -664,10 +736,9 @@ function TownBuilder.Build(): Town
 	end
 	scaled("Gatehouse", CFrame.new(0, 0, WALL_RADIUS), 1.9, 0.3) -- (its towers run along its X like the wall, banners facing the town)
 
-	-- life round the doors: barrels and crates by the shops, hay carts
-	-- four little seating corners on the lawn between the plaza and the houses: two benches facing each
-	-- other, flowers at one end, a barrel at the other
-	for _, corner in { Vector3.new(-30, 0, -32), Vector3.new(40, 0, -40), Vector3.new(-40, 0, 40), Vector3.new(40, 0, 40) } do -- (the first kept clear of the Guild door)
+	-- life round the doors: two seating corners on the lawns either side of the south road, barrels and a hay
+	-- cart by the homes
+	for _, corner in { Vector3.new(-34, 0, 34), Vector3.new(34, 0, 34) } do
 		local out = Vector3.new(corner.X, 0, corner.Z).Unit
 		local along = Vector3.new(-out.Z, 0, out.X)
 		for _, side in { -1, 1 } do
@@ -677,14 +748,17 @@ function TownBuilder.Build(): Town
 		scaled("FlowerBox", CFrame.lookAt(corner + out * 4.5, corner), 1.2)
 		scaled("Barrels", CFrame.new(corner - out * 4.5) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 1.3)
 	end
-	for _, at in { Vector3.new(-30, 0, -56), Vector3.new(56, 0, -30), Vector3.new(-56, 0, 32), Vector3.new(14, 0, -52) } do
+	for _, at in { MARKET + Vector3.new(-14, 0, -22), MARKET + Vector3.new(14, 0, 26), Vector3.new(-46, 0, 60), Vector3.new(14, 0, -54) } do
 		scaled("Barrels", CFrame.new(at) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 1.6)
 	end
-	scaled("HayCart", CFrame.new(-26, 0, 60) * CFrame.Angles(0, math.rad(20), 0), 1.4)
-	scaled("HayCart", CFrame.new(62, 0, 4) * CFrame.Angles(0, math.rad(-70), 0), 1.4)
+	scaled("HayCart", CFrame.new(-50, 0, 78) * CFrame.Angles(0, math.rad(20), 0), 1.4)
+	scaled("HayCart", CFrame.new(MARKET.X - 16, 0, -20) * CFrame.Angles(0, math.rad(-70), 0), 1.4)
 
-	-- lamp posts round the square
-	for _, at in { Vector3.new(-30, 0, -30), Vector3.new(30, 0, -30), Vector3.new(-30, 0, 30), Vector3.new(30, 0, 30), Vector3.new(0, 0, 40), Vector3.new(-50, 0, 0), Vector3.new(50, 0, 0), Vector3.new(30, 0, -48) } do
+	-- lamp posts round the plaza and along each road
+	for _, at in { Vector3.new(-24, 0, -24), Vector3.new(24, 0, -24), Vector3.new(-24, 0, 24), Vector3.new(24, 0, 24),
+		Vector3.new(-9, 0, -46), Vector3.new(9, 0, -46), Vector3.new(40, 0, -9), Vector3.new(40, 0, 9),
+		Vector3.new(-42, 0, -9), Vector3.new(-42, 0, 9), Vector3.new(-10, 0, 46), Vector3.new(10, 0, 46),
+		MARKET + Vector3.new(-12, 0, -20), MARKET + Vector3.new(-12, 0, 20) } do
 		lampPost(model, at)
 	end
 
@@ -732,7 +806,8 @@ function TownBuilder.Build(): Town
 			decal:Destroy()
 		end
 	end
-	return { Model = model, Spawn = spawn, Well = rim, Brakka = brakka }
+	local yard = model:FindFirstChild("TrainingYard") :: BasePart
+	return { Model = model, Spawn = spawn, Well = rim, Brakka = brakka, Training = yard.CFrame }
 end
 
 return TownBuilder
