@@ -35,10 +35,10 @@ local SPREAD = 1.25 -- how far apart the village is drawn: every piece's place f
 local MARKET_AT = Vector3.new(66, 0, 0) -- the Market Square's middle (as laid out)
 -- The news board by the plaza: the latest updates, newest first (one line each).
 local NEWS = {
-	"- Emberhold rebuilt: the Guild to the north, every shop round the Market Square to the east",
-	"- The Training Yard (west): try your weapons on the dummies and see your damage per second",
-	"- Halloween: a lost Jack-o'-Lantern hides on every floor of the Depths, until Nov 2",
-	"- Smoke from the hearths, falling leaves and birds over the town",
+	"- Emberhold rebuilt: every shop round the Market Square",
+	"- The Training Yard: test your weapons on the dummies",
+	"- Halloween: find the lost Jack-o'-Lanterns (until Nov 2)",
+	"- Smoke, falling leaves and birds over the town",
 }
 local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 
@@ -537,8 +537,9 @@ local function landscape(): number
 		local angle = math.rad(i * 10 + rng:NextNumber(-3, 3))
 		local southGap = math.abs(math.deg(angle) - 90) < 9 -- +Z is south, where the road goes
 		if not southGap then
-			local reach = rng:NextNumber(185, 245)
 			local radius = rng:NextNumber(45, 80)
+			-- (every hill's foot stays out past the town wall, so none climbs over it into the town)
+			local reach = math.max(rng:NextNumber(185, 245), radius + 200)
 			local centre = Vector3.new(math.cos(angle) * reach, rng:NextNumber(-radius * 0.75, -radius * 0.35), math.sin(angle) * reach)
 			terrain:FillBall(centre, radius, Enum.Material.Grass)
 			if rng:NextNumber() < 0.45 then
@@ -546,11 +547,11 @@ local function landscape(): number
 			end
 		end
 	end
-	-- low rolling ground nearer in, between the houses and the hills
+	-- low rolling ground between the town wall and the hills
 	for i = 0, 15 do
 		local angle = math.rad(i * 22.5 + 11)
 		if math.abs(math.deg(angle) - 90) > 14 then
-			local centre = Vector3.new(math.cos(angle) * 120 * SPREAD, -26, math.sin(angle) * 120 * SPREAD)
+			local centre = Vector3.new(math.cos(angle) * 210, -26, math.sin(angle) * 210)
 			terrain:FillBall(centre, 30, Enum.Material.LeafyGrass)
 		end
 	end
@@ -819,14 +820,28 @@ function TownBuilder.Build(): Town
 			p:PivotTo(p:GetPivot() + (cframe.Position - (box.Position - Vector3.new(0, size.Y / 2, 0))) - Vector3.new(0, sink or 0, 0))
 		end
 	end
+	-- (an oak only where its crown clears every building already standing)
+	local function clearOfBuildings(at: Vector3, crown: number): boolean
+		for _, piece in model:GetChildren() do
+			if piece:IsA("Model") and piece.Name ~= "OakTree" then
+				local box, size = piece:GetBoundingBox()
+				local reach = math.max(size.X, size.Z) / 2
+				if reach > 4 and Vector3.new(box.X - at.X, 0, box.Z - at.Z).Magnitude < crown + reach then
+					return false
+				end
+			end
+		end
+		return true
+	end
 	local rng = Random.new(31)
 	for i = 0, 17 do
 		local deg = i * 20 + rng:NextNumber(-6, 6)
 		local angle = math.rad(deg)
 		local clearOfRoad = math.abs(deg - 90) > 14
 		local clearOfMarket = deg > 40 and deg < 320
-		if clearOfRoad and clearOfMarket then
-			local reach = rng:NextNumber(96, 112)
+		local reach = rng:NextNumber(96, 112)
+		local at = Vector3.new(math.cos(angle) * reach, 0, math.sin(angle) * reach)
+		if clearOfRoad and clearOfMarket and clearOfBuildings(at, 16) then
 			scaled("OakTree", CFrame.new(math.cos(angle) * reach, 0, math.sin(angle) * reach) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.85, 1.25), 1.6)
 		end
 	end
@@ -883,15 +898,49 @@ function TownBuilder.Build(): Town
 		{ Name = "Training Yard", Toward = YARD },
 		{ Name = "Town Gate", Toward = Vector3.new(0, 0, 126) },
 	})
-	local news = "What's new in Emberwell\n\n" .. table.concat(NEWS, "\n")
-	local newsAt = CFrame.lookAt(Vector3.new(-12, 0, 32), Vector3.new(-12, 0, 60))
+	local newsAt = CFrame.lookAt(Vector3.new(-13, 0, 32), Vector3.new(-13, 0, 60))
 	local newsModel = Instance.new("Model")
 	newsModel.Name = "NewsBoard"
-	board(newsModel, "Board", Vector3.new(8, 5.4, 0.3), newsAt * CFrame.new(0, 4.2, 0), news, 42, Enum.TextXAlignment.Left)
-	for _, side in { -1, 1 } do
-		part(newsModel, "Leg", Vector3.new(0.5, 7.2, 0.5), newsAt * CFrame.new(side * 3.7, 3.6, 0.3), Color3.fromRGB(70, 48, 32), Enum.Material.Wood)
+	local panel = part(newsModel, "Board", Vector3.new(11, 7, 0.3), newsAt * CFrame.new(0, 5, 0), TIMBER, Enum.Material.WoodPlanks)
+	local newsGui = Instance.new("SurfaceGui")
+	newsGui.Face = Enum.NormalId.Front
+	newsGui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	newsGui.PixelsPerStud = 70
+	newsGui.LightInfluence = 1
+	local heading = Instance.new("TextLabel")
+	heading.Size = UDim2.fromScale(0.9, 0.2)
+	heading.Position = UDim2.fromScale(0.05, 0.04)
+	heading.BackgroundTransparency = 1
+	heading.Font = Enum.Font.Fondamento
+	heading.TextScaled = true
+	heading.TextColor3 = Color3.fromRGB(255, 214, 140)
+	heading.Text = "What's new in Emberwell"
+	heading.Parent = newsGui
+	local list = Instance.new("Frame")
+	list.Size = UDim2.fromScale(0.9, 0.7)
+	list.Position = UDim2.fromScale(0.05, 0.27)
+	list.BackgroundTransparency = 1
+	list.Parent = newsGui
+	local listLayout = Instance.new("UIListLayout")
+	listLayout.Padding = UDim.new(0.03, 0)
+	listLayout.Parent = list
+	for _, line in NEWS do
+		local item = Instance.new("TextLabel")
+		item.Size = UDim2.fromScale(1, 1 / #NEWS - 0.03)
+		item.BackgroundTransparency = 1
+		item.Font = Enum.Font.Fondamento
+		item.TextScaled = true
+		item.TextWrapped = true
+		item.TextXAlignment = Enum.TextXAlignment.Left
+		item.TextColor3 = Color3.fromRGB(236, 214, 170)
+		item.Text = line
+		item.Parent = list
 	end
-	part(newsModel, "Roof", Vector3.new(9, 0.4, 1.4), newsAt * CFrame.new(0, 7.3, 0.2), Color3.fromRGB(64, 44, 38), Enum.Material.Slate)
+	newsGui.Parent = panel
+	for _, side in { -1, 1 } do
+		part(newsModel, "Leg", Vector3.new(0.6, 9, 0.6), newsAt * CFrame.new(side * 5.1, 4.5, 0.3), Color3.fromRGB(70, 48, 32), Enum.Material.Wood)
+	end
+	part(newsModel, "Roof", Vector3.new(12.2, 0.4, 1.6), newsAt * CFrame.new(0, 8.8, 0.2), Color3.fromRGB(64, 44, 38), Enum.Material.Slate)
 	newsModel.Parent = model
 
 	-- lamp posts round the plaza and along each road
