@@ -538,9 +538,9 @@ local function landscape(): number
 		local southGap = math.abs(math.deg(angle) - 90) < 9 -- +Z is south, where the road goes
 		if not southGap then
 			local radius = rng:NextNumber(45, 80)
-			-- (every hill's foot stays out past the town wall, so none climbs over it into the town)
-			local reach = math.max(rng:NextNumber(185, 245), radius + 200)
-			local centre = Vector3.new(math.cos(angle) * reach, rng:NextNumber(-radius * 0.75, -radius * 0.35), math.sin(angle) * reach)
+			-- (every hill's foot stays well out past the town wall and low, so none looms over it into the town)
+			local reach = math.max(rng:NextNumber(250, 310), radius + 250)
+			local centre = Vector3.new(math.cos(angle) * reach, rng:NextNumber(-radius * 0.85, -radius * 0.6), math.sin(angle) * reach)
 			terrain:FillBall(centre, radius, Enum.Material.Grass)
 			if rng:NextNumber() < 0.45 then
 				terrain:FillBall(centre + Vector3.new(rng:NextNumber(-12, 12), radius * 0.55, rng:NextNumber(-12, 12)), radius * 0.4, Enum.Material.Rock)
@@ -846,7 +846,7 @@ function TownBuilder.Build(): Town
 		end
 	end
 	for _, side in { -1, 1 } do
-		for z = 80, 200, 40 do
+		for z = 150, 230, 40 do -- (out along the road past the gate)
 			local at = Vector3.new(side * rng:NextNumber(22, 30), 0, z + rng:NextNumber(-8, 8))
 			local turn = rng:NextNumber(0, math.pi * 2)
 			local scale = rng:NextNumber(0.8, 1.1)
