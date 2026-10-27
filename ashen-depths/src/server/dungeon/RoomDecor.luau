@@ -898,6 +898,54 @@ function RoomDecor.Overgrow(ctx: Context, roomType: string)
 			end
 		end
 	end
+	-- wild grass and ferns over the floor, thickest along the walls (a clear middle to fight in)
+	local tufts = math.floor(ctx.Size / 3)
+	for _ = 1, tufts do
+		local half = ctx.Size / 2 - 3
+		local x, z = rng:NextNumber(-half, half), rng:NextNumber(-half, half)
+		if rng:NextNumber() < 0.6 then
+			-- pushed out toward a wall
+			if math.abs(x) > math.abs(z) then
+				x = math.sign(x) * rng:NextNumber(half * 0.6, half)
+			else
+				z = math.sign(z) * rng:NextNumber(half * 0.6, half)
+			end
+		end
+		local spot = ctx.Center + Vector3.new(x, 0, z)
+		local nearDoor = false
+		for _, doorway in ctx.Doorways or {} do
+			if (spot - doorway).Magnitude < 7 then
+				nearDoor = true
+			end
+		end
+		if not nearDoor then
+			local tuft = Props.Place("CaveGrass", ctx.Model, CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), rng:NextNumber(0.7, 1.5))
+			if tuft then
+				for _, p in tuft:GetDescendants() do
+					if p:IsA("BasePart") then
+						p.CanCollide = false
+						p.CanQuery = false
+						p.CastShadow = false
+					end
+				end
+			end
+		end
+	end
+	-- roots hanging from the top of the plain walls
+	for _, wall in ctx.PlainWalls do
+		for _ = 1, rng:NextInteger(1, 2) do
+			local at = onWall(ctx, wall, rng:NextNumber(-ctx.Size / 2 + 5, ctx.Size / 2 - 5), 1)
+			local roots = Props.Place("HangingRoots", ctx.Model, at + Vector3.new(0, ctx.Height, 0), rng:NextNumber(0.8, 1.3))
+			if roots then
+				for _, p in roots:GetDescendants() do
+					if p:IsA("BasePart") then
+						p.CanCollide = false
+						p.CanQuery = false
+					end
+				end
+			end
+		end
+	end
 	-- spores drifting through the air
 	local air = deco(ctx.Model, "SporeAir", Vector3.new(ctx.Size - 4, 1, ctx.Size - 4), CFrame.new(ctx.Center + Vector3.new(0, ctx.Height * 0.4, 0)), Color3.new(), Enum.Material.SmoothPlastic)
 	air.Transparency = 1

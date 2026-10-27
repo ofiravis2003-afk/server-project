@@ -16,7 +16,14 @@ local RULES: { [Enum.Material]: Rule } = {
 	-- Only dark iron: bright metals (gold coins, silver keys, chest trims) keep their color.
 	[Enum.Material.Metal] = { Variant = "DarkIron", Brighten = 2.5, MaxBrightness = 0.3 },
 	[Enum.Material.Wood] = { Variant = "OldWood", Brighten = 1.8 },
+	-- chapter II's caverns (see Materials.Cavern)
+	[Enum.Material.Rock] = { Variant = "CavernRock", Brighten = 1.8 },
+	[Enum.Material.Ground] = { Variant = "CavernFloor", Brighten = 1.9 },
 }
+
+-- The parts of a room or corridor the caverns turn to raw rock (walls, arches, ceiling) and mossy earth (floor).
+local CAVERN_ROCK = { Wall = true, Lintel = true, Pillar = true, PillarBase = true, Arch = true, Ceiling = true, Shaft = true, Rim = true }
+local CAVERN_EARTH = { Floor = true, Step = true }
 
 local Materials = {}
 
@@ -37,6 +44,22 @@ end
 
 local function brighten(color: Color3, factor: number): Color3
 	return Color3.new(math.min(color.R * factor, 1), math.min(color.G * factor, 1), math.min(color.B * factor, 1))
+end
+
+-- Chapter II (the Rotwood Caverns): the catacombs' cut stone becomes natural cave rock and mossy earth.
+-- Run before Apply, which then dresses them in the cavern materials.
+function Materials.Cavern(root: Instance)
+	for _, part in root:GetDescendants() do
+		if part:IsA("BasePart") and part.MaterialVariant == "" then
+			if CAVERN_ROCK[part.Name] then
+				part.Material = Enum.Material.Rock
+				part.Color = Color3.fromRGB(62, 60, 54)
+			elseif CAVERN_EARTH[part.Name] then
+				part.Material = Enum.Material.Ground
+				part.Color = Color3.fromRGB(52, 60, 40)
+			end
+		end
+	end
 end
 
 function Materials.Apply(root: Instance)

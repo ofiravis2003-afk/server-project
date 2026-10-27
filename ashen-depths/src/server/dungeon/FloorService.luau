@@ -1872,6 +1872,9 @@ startFloor = function(floor: number)
 		end
 	end
 
+	if Floors.IsRotwood(floor) then
+		Materials.Cavern(model)
+	end
 	Materials.Apply(model)
 	model.Name = `Floor{floor}`
 	model.Parent = dungeonFolder
