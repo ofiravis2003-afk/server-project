@@ -861,8 +861,8 @@ function RoomDecor.Overgrow(ctx: Context, roomType: string)
 				if cap then
 					local glow = Instance.new("PointLight")
 					glow.Color = TEAL_GLOW
-					glow.Range = 22
-					glow.Brightness = 1.4
+					glow.Range = 32
+					glow.Brightness = 2.2
 					glow.Parent = cap
 				end
 			end
@@ -886,13 +886,13 @@ function RoomDecor.Overgrow(ctx: Context, roomType: string)
 					p.CanQuery = false
 				end
 			end
-			if i % 3 == 0 then
+			if i % 2 == 0 then
 				local body = cluster:FindFirstChildWhichIsA("BasePart", true)
 				if body then
 					local glow = Instance.new("PointLight")
 					glow.Color = TEAL_GLOW
-					glow.Range = 10
-					glow.Brightness = 0.9
+					glow.Range = 16
+					glow.Brightness = 1.3
 					glow.Parent = body
 				end
 			end

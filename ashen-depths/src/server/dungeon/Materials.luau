@@ -24,6 +24,12 @@ local RULES: { [Enum.Material]: Rule } = {
 -- The parts of a room or corridor the caverns turn to raw rock (walls, arches, ceiling) and mossy earth (floor).
 local CAVERN_ROCK = { Wall = true, Lintel = true, Pillar = true, PillarBase = true, Arch = true, Ceiling = true, Shaft = true, Rim = true }
 local CAVERN_EARTH = { Floor = true, Step = true }
+-- The rooms' carved stone pieces (the secret room's niches and shelves, rubble, slabs) turn to rock but keep their
+-- shading; the fake wall in front of a secret room is rock a shade off from the walls round it, as in chapter I.
+local CAVERN_ROCK_KEEP_COLOR = {
+	Niche = true, Shelf = true, Rubble = true, BrokenPillar = true, FallenSlab = true, SteppingStone = true,
+	CellWall = true, GraveEdge = true,
+}
 
 local Materials = {}
 
@@ -54,6 +60,11 @@ function Materials.Cavern(root: Instance)
 			if CAVERN_ROCK[part.Name] then
 				part.Material = Enum.Material.Rock
 				part.Color = Color3.fromRGB(78, 74, 66)
+			elseif part.Name == "SecretWall" then
+				part.Material = Enum.Material.Rock
+				part.Color = Color3.fromRGB(72, 74, 62)
+			elseif CAVERN_ROCK_KEEP_COLOR[part.Name] then
+				part.Material = Enum.Material.Rock
 			elseif CAVERN_EARTH[part.Name] then
 				part.Material = Enum.Material.Ground
 				part.Color = Color3.fromRGB(70, 72, 58)

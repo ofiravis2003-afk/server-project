@@ -1632,7 +1632,7 @@ function setAir(caverns: boolean)
 	if grade then
 		grade.TintColor = if caverns then Color3.fromRGB(215, 245, 230) else saved.Tint
 	end
-	Lighting.Ambient = if caverns then Color3.fromRGB(40, 60, 55) else saved.Ambient
+	Lighting.Ambient = if caverns then Color3.fromRGB(72, 104, 92) else saved.Ambient
 end
 
 local function sendToEntrance(player: Player)
