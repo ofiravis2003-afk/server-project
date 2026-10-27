@@ -376,7 +376,8 @@ end
 local function path(terrain: Terrain, from: Vector3, to: Vector3, width: number, material: Enum.Material)
 	local length = (to - from).Magnitude
 	local mid = (from + to) / 2
-	terrain:FillBlock(CFrame.lookAt(Vector3.new(mid.X, -6, mid.Z), Vector3.new(to.X, -6, to.Z)), Vector3.new(width, 8, length + width * 0.6), material)
+	-- (a block's surface shows 2 studs higher than a cylinder's of the same height: at -4 it's level with the lawn)
+	terrain:FillBlock(CFrame.lookAt(Vector3.new(mid.X, -4, mid.Z), Vector3.new(to.X, -4, to.Z)), Vector3.new(width, 8, length + width * 0.6), material)
 end
 
 local function landscape(): number
@@ -405,7 +406,7 @@ local function landscape(): number
 	road(Vector3.new(26, 0, 0), Vector3.new(44, 0, 0), 12, Enum.Material.Cobblestone) -- east, to the Market Square
 	terrain:FillCylinder(CFrame.new(MARKET_AT * SPREAD + Vector3.new(0, -6, 0)), 8, 30 * SPREAD, Enum.Material.Cobblestone)
 	road(Vector3.new(-26, 0, 0), Vector3.new(-50, 0, 0), 10, Enum.Material.Ground) -- west, to the Training Yard
-	terrain:FillBlock(CFrame.new(YARD_AT * SPREAD + Vector3.new(0, -6, 0)), Vector3.new(36, 8, 36) * SPREAD, Enum.Material.Sand)
+	terrain:FillBlock(CFrame.new(YARD_AT * SPREAD + Vector3.new(0, -4, 0)), Vector3.new(36 * SPREAD, 8, 36 * SPREAD), Enum.Material.Sand)
 	path(terrain, Vector3.new(0, 0, 26 * SPREAD), Vector3.new(0, 0, 420), 14, Enum.Material.Cobblestone) -- south, out of the gate
 	-- earth paths from the south road to the homes' doors
 	for _, door in { Vector3.new(-30, 0, 62), Vector3.new(30, 0, 62), Vector3.new(-60, 0, 42), Vector3.new(55, 0, 68) } do
