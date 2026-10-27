@@ -1778,9 +1778,13 @@ local function think()
 		local distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
 		local ranged = enemy.Def.Ranged
 		local sprouts = enemy.Def.Sprouts
-		if sprouts and distance <= sprouts.Range and now - (enemy.LastSprout or now - sprouts.Cooldown + 3) >= sprouts.Cooldown then
-			enemy.LastSprout = now
-			task.spawn(sprout, enemy, targetRoot)
+		if sprouts and distance <= sprouts.Range then
+			-- the first sprouting comes 3 seconds after it first sees a player
+			enemy.LastSprout = enemy.LastSprout or now - sprouts.Cooldown + 3
+			if now - (enemy.LastSprout :: number) >= sprouts.Cooldown then
+				enemy.LastSprout = now
+				task.spawn(sprout, enemy, targetRoot)
+			end
 		end
 		if enemy.Def.Burrow then
 			if now - enemy.LastAttack >= enemy.Def.AttackCooldown then
