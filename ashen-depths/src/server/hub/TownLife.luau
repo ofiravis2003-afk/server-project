@@ -7,7 +7,7 @@
 local ServerStorage = game:GetService("ServerStorage")
 
 local LEAF = "rbxassetid://91366758896375" -- a plain leaf, tinted by the emitter's colors
-local HEARTHS = { ["Guild Hall"] = true, ["The Sunken Hearth"] = true, House = true }
+local HEARTHS = { GuildHall = true, Tavern = true, HouseA = true, HouseB = true, MagicShop = true }
 
 local TownLife = {}
 

@@ -82,10 +82,9 @@ end
 local function makeBoard(parent: BasePart, height: number): TextLabel
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "DpsBoard"
-	gui.Size = UDim2.fromOffset(210, 52)
+	gui.Size = UDim2.fromScale(4.2, 1.1) -- (in studs: it shrinks with distance like the dummy)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, height, 0)
 	gui.MaxDistance = 45
-	gui.AlwaysOnTop = true
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 0.35
@@ -224,8 +223,8 @@ function TrainingService.Start()
 	mark.Position = ground(CENTER.X, CENTER.Z) + Vector3.new(0, 10, 0)
 	mark.Parent = folder
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(260, 44)
-	gui.MaxDistance = 80
+	gui.Size = UDim2.fromScale(12, 2)
+	gui.MaxDistance = 90
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.fromScale(1, 1)
 	title.BackgroundTransparency = 1
