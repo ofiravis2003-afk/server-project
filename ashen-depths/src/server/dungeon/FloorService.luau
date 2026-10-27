@@ -890,10 +890,10 @@ local function setWardstoneLit(stone: Model, lit: boolean)
 	stone:SetAttribute("Lit", lit)
 end
 
-local function buildWardstone(parent: Instance, position: Vector3): Model
+local function buildWardstone(parent: Instance, position: Vector3, rotted: boolean?): Model
 	-- the Tripo obelisk (DungeonProps.Wardstone) when there is one: dimmed while dark, glowing with embers
-	-- over its crystal once relit
-	local carved = Props.Place(if Floors.IsRotwood(currentFloor) and Props.Has("RotWardstone") then "RotWardstone" else "Wardstone", parent, CFrame.new(position) * CFrame.Angles(0, math.pi, 0))
+	-- over its crystal once relit. In the caverns it's grown over (ChapterProps.RotWardstone) until burned clean.
+	local carved = Props.Place(if rotted and Props.Has("RotWardstone") then "RotWardstone" else "Wardstone", parent, CFrame.new(position) * CFrame.Angles(0, math.pi, 0))
 	if carved then
 		carved.Name = "Wardstone"
 		local body = carved:FindFirstChildWhichIsA("BasePart", true) :: BasePart
@@ -987,8 +987,70 @@ end
 
 local wardstone: Model? = nil
 
+-- The caverns' Wardstones are grown over with the green ember's rot: a player holds the prompt to burn it away
+-- (only with no monster near), the rot goes up in orange fire, and the clean stone underneath is relit.
+local BURN_SECONDS = 3
+local function rotBurst(position: Vector3)
+	local burst = Instance.new("Part")
+	burst.Name = "RotFire"
+	burst.Anchored = true
+	burst.CanCollide = false
+	burst.CanQuery = false
+	burst.Transparency = 1
+	burst.Size = Vector3.new(4, 9, 4)
+	burst.CFrame = CFrame.new(position + Vector3.new(0, 4.5, 0))
+	local fire = Instance.new("ParticleEmitter")
+	fire.Texture = "rbxasset://textures/particles/fire_main.dds"
+	fire.Color = ColorSequence.new(Color3.fromRGB(255, 190, 90), Color3.fromRGB(255, 90, 30))
+	fire.LightEmission = 0.9
+	fire.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 2.5), NumberSequenceKeypoint.new(1, 0.5) })
+	fire.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
+	fire.Lifetime = NumberRange.new(0.6, 1.1)
+	fire.Speed = NumberRange.new(3, 6)
+	fire.SpreadAngle = Vector2.new(25, 25)
+	fire.Rate = 70
+	fire.Shape = Enum.ParticleEmitterShape.Box
+	fire.Parent = burst
+	local ash = Instance.new("ParticleEmitter")
+	ash.Color = ColorSequence.new(Color3.fromRGB(120, 230, 170), Color3.fromRGB(40, 40, 40))
+	ash.LightEmission = 0.5
+	ash.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0) })
+	ash.Lifetime = NumberRange.new(1.5, 2.5)
+	ash.Speed = NumberRange.new(2, 5)
+	ash.SpreadAngle = Vector2.new(180, 180)
+	ash.Acceleration = Vector3.new(0, 2, 0)
+	ash.Rate = 40
+	ash.Shape = Enum.ParticleEmitterShape.Box
+	ash.Parent = burst
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(255, 140, 50)
+	glow.Range = 26
+	glow.Brightness = 3
+	glow.Parent = burst
+	burst.Parent = workspace
+	task.delay(1.6, function()
+		fire.Enabled = false
+		ash.Enabled = false
+		TweenService:Create(glow, TweenInfo.new(1.5), { Brightness = 0 }):Play()
+	end)
+	task.delay(4, function()
+		burst:Destroy()
+	end)
+end
+
+local function monsterNear(position: Vector3, range: number): boolean
+	for _, enemy in EnemyService.GetAlive() do
+		if enemy.Root and (enemy.Root.Position - position).Magnitude < range then
+			return true
+		end
+	end
+	return false
+end
+
 local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
-	local stone = buildWardstone(room.Model, room.Center + Vector3.new(0, 0, 9))
+	local at = room.Center + Vector3.new(0, 0, 9)
+	local rotted = Floors.IsRotwood(floor)
+	local stone = buildWardstone(room.Model, at, rotted)
 	wardstone = stone
 	-- lit already when everyone here has lit it before
 	local function everyoneLit(): boolean
@@ -1001,14 +1063,41 @@ local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
 		end
 		return #players > 0
 	end
+	-- the rotted stone is swapped for the clean one underneath (burned already, or just now)
+	local function cleanse()
+		if not rotted then
+			return
+		end
+		rotted = false
+		stone:Destroy()
+		stone = buildWardstone(room.Model, at, false)
+		wardstone = stone
+	end
 	if everyoneLit() then
+		cleanse()
 		setWardstoneLit(stone, true)
 		return
 	end
-	local relight = prompt(stone.PrimaryPart :: BasePart, "Relight", "Wardstone", 1.2, 10)
+	local relight = if rotted
+		then prompt(stone.PrimaryPart :: BasePart, "Burn the rot away", "Wardstone", BURN_SECONDS, 10)
+		else prompt(stone.PrimaryPart :: BasePart, "Relight", "Wardstone", 1.2, 10)
 	relight.Triggered:Connect(function(player)
 		if stone:GetAttribute("Lit") then
 			return
+		end
+		if rotted then
+			if monsterNear(at, 40) then
+				notifyRemote:FireClient(player, "The rot fights back. Clear the room before you burn it away.")
+				return
+			end
+			relight.Enabled = false
+			rotBurst(at)
+			soundRemote:FireAllClients("Spell", at)
+			task.wait(1.2)
+			if currentFloor ~= floor then
+				return
+			end
+			cleanse()
 		end
 		relight.Enabled = false
 		setWardstoneLit(stone, true)
@@ -1027,7 +1116,10 @@ local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
 		end
 		if everyoneLit() then -- the server started empty; the players who came had lit it before
 			relight.Enabled = false
+			cleanse()
 			setWardstoneLit(stone, true)
+		elseif rotted then
+			notifyRemote:FireAllClients("Rot has grown over this floor's Wardstone. Burn it away with your Guild Brand.")
 		else
 			notifyRemote:FireAllClients("This floor's Wardstone has gone dark. Relight it with your Guild Brand.")
 		end

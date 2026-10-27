@@ -78,6 +78,7 @@ export type Enemy = {
 	Boss: BossState?,
 	Options: SpawnOptions,
 	Burrowed: boolean?, -- (Rot Crawler) under the floor: no blow reaches it
+	LastSprout: number?, -- (Mycelid) when it last sprouted mushrooms
 	GroundY: number?, -- (Rot Crawler) where the floor is
 }
 
@@ -1418,6 +1419,60 @@ local function hurt(humanoid: Humanoid, root: BasePart, amount: number)
 	damageNumberRemote:FireAllClients(root.Position + Vector3.new(0, 2.5, 0), damage, "Hurt")
 end
 
+-- The Mycelid's sprouts: little mushrooms pushing up round a player, red circles under them, then a burst of
+-- spores. Walking out of the circles in time dodges them.
+local function sprout(enemy: Enemy, targetRoot: BasePart)
+	local s = enemy.Def.Sprouts :: { Count: number, Range: number, Radius: number, Delay: number, DamageScale: number, Blight: number, Cooldown: number }
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { folder, targetRoot.Parent :: Instance }
+	local rng = Random.new()
+	local spots = {}
+	for i = 1, s.Count do
+		local offset = if i == 1 then Vector3.zero else Vector3.new(rng:NextNumber(-6, 6), 0, rng:NextNumber(-6, 6))
+		local hit = workspace:Raycast(targetRoot.Position + offset + Vector3.new(0, 3, 0), Vector3.new(0, -12, 0), params)
+		if hit then
+			table.insert(spots, hit.Position)
+		end
+	end
+	local grown = {}
+	for _, spot in spots do
+		effectRemote:FireAllClients("Telegraph", spot, s.Radius, s.Delay)
+		effectRemote:FireAllClients("Rise", spot)
+		local mushrooms = Props.Place("MushroomCluster", workspace, CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0), 0.3)
+		if mushrooms then
+			for _, p in mushrooms:GetDescendants() do
+				if p:IsA("BasePart") then
+					p.CanCollide = false
+					p.CanQuery = false
+				end
+			end
+			-- pushing up out of the floor
+			local final = mushrooms:GetPivot()
+			mushrooms:PivotTo(final - Vector3.new(0, 1.5, 0))
+			task.spawn(function()
+				local t = 0
+				while t < 0.6 and mushrooms.Parent do
+					t += task.wait()
+					mushrooms:PivotTo(final - Vector3.new(0, 1.5 * (1 - math.min(t / 0.6, 1)), 0))
+				end
+			end)
+			table.insert(grown, mushrooms)
+		end
+	end
+	task.wait(s.Delay)
+	for _, spot in spots do
+		effectRemote:FireAllClients("Quake", spot, s.Radius)
+		for _, entry in playersNear(spot, s.Radius) do
+			hurt(entry.Humanoid, entry.Root, enemy.Damage * s.DamageScale)
+			spore(entry.Humanoid, s.Blight)
+		end
+	end
+	for _, mushrooms in grown do
+		mushrooms:Destroy()
+	end
+end
+
 -- The Rot Crawler: under the floor, then up through it beneath a player.
 
 local BURROW_DEPTH = 9
@@ -1722,6 +1777,11 @@ local function think()
 		local offset = targetRoot.Position - enemy.Root.Position
 		local distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
 		local ranged = enemy.Def.Ranged
+		local sprouts = enemy.Def.Sprouts
+		if sprouts and distance <= sprouts.Range and now - (enemy.LastSprout or now - sprouts.Cooldown + 3) >= sprouts.Cooldown then
+			enemy.LastSprout = now
+			task.spawn(sprout, enemy, targetRoot)
+		end
 		if enemy.Def.Burrow then
 			if now - enemy.LastAttack >= enemy.Def.AttackCooldown then
 				task.spawn(burrowStrike, enemy, targetRoot)

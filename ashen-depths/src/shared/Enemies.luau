@@ -114,6 +114,9 @@ export type EnemyDef = {
 	-- Procedural "Burrow" (the Rot Crawler): stays under the floor (no blow reaches it there), marks a red circle
 	-- under a player for Windup seconds, bursts up through it, then stays up for Surface seconds before diving.
 	Burrow: { Radius: number, Surface: number }?,
+	-- (the Mycelid) every Cooldown seconds, with a player within Range, it sprouts Count little mushrooms round
+	-- them (red circles on the floor) that burst into spores after Delay seconds: a sting and Blight inside Radius.
+	Sprouts: { Count: number, Range: number, Radius: number, Delay: number, DamageScale: number, Blight: number, Cooldown: number }?,
 }
 
 -- The skeleton re-rigged in Mixamo (SkeletonMixamo), with clips from Mixamo's Sword and Shield pack.
@@ -472,6 +475,7 @@ Enemies.Mycelid = {
 	},
 	Sink = 0.45, -- its clips bend the knees with the hips held still
 	Blight = 2,
+	Sprouts = { Count = 3, Range = 22, Radius = 3.5, Delay = 1.6, DamageScale = 0.5, Blight = 1, Cooldown = 9 },
 }
 
 Enemies.FungalHusk = infected("Skeleton", { DisplayName = "Fungal Husk", XP = 14, Gold = { 4, 7 } })
