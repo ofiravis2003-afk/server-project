@@ -18,7 +18,7 @@ local RULES: { [Enum.Material]: Rule } = {
 	[Enum.Material.Wood] = { Variant = "OldWood", Brighten = 1.8 },
 	-- chapter II's caverns (see Materials.Cavern)
 	[Enum.Material.Rock] = { Variant = "CavernRock", Brighten = 1.8 },
-	[Enum.Material.Ground] = { Variant = "CavernFloor", Brighten = 1.9 },
+	[Enum.Material.Ground] = { Variant = "CavernFloor", Brighten = 1.25 },
 }
 
 -- The parts of a room or corridor the caverns turn to raw rock (walls, arches, ceiling) and mossy earth (floor).
@@ -53,10 +53,10 @@ function Materials.Cavern(root: Instance)
 		if part:IsA("BasePart") and part.MaterialVariant == "" then
 			if CAVERN_ROCK[part.Name] then
 				part.Material = Enum.Material.Rock
-				part.Color = Color3.fromRGB(62, 60, 54)
+				part.Color = Color3.fromRGB(78, 74, 66)
 			elseif CAVERN_EARTH[part.Name] then
 				part.Material = Enum.Material.Ground
-				part.Color = Color3.fromRGB(52, 60, 40)
+				part.Color = Color3.fromRGB(70, 72, 58)
 			end
 		end
 	end

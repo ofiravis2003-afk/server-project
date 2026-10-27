@@ -931,11 +931,13 @@ function RoomDecor.Overgrow(ctx: Context, roomType: string)
 			end
 		end
 	end
-	-- roots hanging from the top of the plain walls
+	-- roots hanging from the ceiling along the plain walls
+	local ceiling = ctx.Model:FindFirstChild("Ceiling") :: BasePart?
+	local top = if ceiling then ceiling.Position.Y - ceiling.Size.Y / 2 else ctx.Center.Y + ctx.Height
 	for _, wall in ctx.PlainWalls do
 		for _ = 1, rng:NextInteger(1, 2) do
-			local at = onWall(ctx, wall, rng:NextNumber(-ctx.Size / 2 + 5, ctx.Size / 2 - 5), 1)
-			local roots = Props.Place("HangingRoots", ctx.Model, at + Vector3.new(0, ctx.Height, 0), rng:NextNumber(0.8, 1.3))
+			local at = onWall(ctx, wall, rng:NextNumber(-ctx.Size / 2 + 5, ctx.Size / 2 - 5), 3.5)
+			local roots = Props.Place("HangingRoots", ctx.Model, at - Vector3.new(0, at.Y - top, 0), rng:NextNumber(0.8, 1.3))
 			if roots then
 				for _, p in roots:GetDescendants() do
 					if p:IsA("BasePart") then
