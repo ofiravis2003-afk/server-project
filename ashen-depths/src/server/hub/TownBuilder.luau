@@ -883,10 +883,7 @@ function TownBuilder.Build(): Town
 		{ Name = "Training Yard", Toward = YARD },
 		{ Name = "Town Gate", Toward = Vector3.new(0, 0, 126) },
 	})
-	local news = "What's new in Emberwell
-
-" .. table.concat(NEWS, "
-")
+	local news = "What's new in Emberwell\n\n" .. table.concat(NEWS, "\n")
 	local newsAt = CFrame.lookAt(Vector3.new(-12, 0, 32), Vector3.new(-12, 0, 60))
 	local newsModel = Instance.new("Model")
 	newsModel.Name = "NewsBoard"
