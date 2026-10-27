@@ -481,6 +481,15 @@ Enemies.Mycelid = {
 Enemies.FungalHusk = infected("Skeleton", { DisplayName = "Fungal Husk", XP = 14, Gold = { 4, 7 } })
 Enemies.HuskArcher = infected("SkeletonArcher", { DisplayName = "Husk Archer", XP = 16, Gold = { 5, 8 } })
 Enemies.SporeRat = infected("Rat", { DisplayName = "Spore Rat", XP = 7, Gold = { 1, 3 } })
+-- Captain Mira Fell (floor 25): the Ninth Patrol's leader, taken by the rot. She leads the last wave of the
+-- infected hall. (For now on the infected skeleton's body; her own model will replace it.)
+Enemies.MiraFell = infected("Skeleton", {
+	DisplayName = "Captain Mira Fell",
+	XP = 120,
+	Gold = { 40, 60 },
+	Blight = 2,
+	Drops = { { Item = "SporeCap", Chance = 1, Count = { 2, 4 } } },
+})
 Enemies.Bloater = infected("Slime", {
 	DisplayName = "Bloater",
 	XP = 12,

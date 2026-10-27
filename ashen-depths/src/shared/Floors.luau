@@ -145,6 +145,9 @@ end
 -- Guardians' floors: the last room before the stairs is a locked hall where three waves of the floor's
 -- monsters come, the last led by a giant Skeleton Captain. Its reward is a boss's (no new model needed).
 Floors.Guardians = { [10] = true } :: { [number]: boolean }
+if CHAPTER_II then
+	Floors.Guardians[25] = true -- the infected hall, led by Captain Mira Fell of the Ninth Patrol
+end
 
 -- How many combat rooms stand between the entrance and the stairs.
 function Floors.CombatRooms(floor: number): number

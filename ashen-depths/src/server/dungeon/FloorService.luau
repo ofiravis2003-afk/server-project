@@ -330,19 +330,33 @@ local GUARDIAN_WAVES = {
 	{ { "SkeletonArcher", 3 }, { "Skeleton", 3 } },
 	{ { "Captain", 1 }, { "Skeleton", 2 }, { "SkeletonArcher", 2 } },
 }
+-- The caverns' hall (floor 25): the infected, and at the last Captain Mira Fell herself.
+local ROTWOOD_WAVES = {
+	{ { "FungalHusk", 4 }, { "SporeRat", 2 } },
+	{ { "HuskArcher", 3 }, { "Mycelid", 1 }, { "FungalHusk", 2 } },
+	{ { "Captain", 1 }, { "FungalHusk", 2 }, { "HuskArcher", 2 } },
+}
+-- Who leads each hall's last wave: the enemy it's built on, its title, how big, and what is shouted as it rises.
+local function hallOf(floor: number): { Waves: { any }, Leader: string, Title: string, Scale: number, Rises: string }
+	if Floors.IsRotwood(floor) then
+		return { Waves = ROTWOOD_WAVES, Leader = "MiraFell", Title = "Captain Mira Fell", Scale = 1.25, Rises = "Captain Mira Fell steps out of the rot!" }
+	end
+	return { Waves = GUARDIAN_WAVES, Leader = "Skeleton", Title = "Skeleton Captain", Scale = 1.5, Rises = "The Skeleton Captain rises!" }
+end
 
 local function spawnWave(room: CombatRoom, floor: number, wave: number)
 	room.Spawning = true
 	room.Wave = wave
 	local rng = Random.new()
 	local extra = math.max(#Players:GetPlayers(), 1) - 1
+	local hall = hallOf(floor)
 	for _, player in Players:GetPlayers() do
 		local root = aliveRoot(player)
 		if root and isInside(room.Built, root.Position, -4) then
-			notifyRemote:FireClient(player, if wave == #GUARDIAN_WAVES then "The Skeleton Captain rises!" else `Wave {wave} of {#GUARDIAN_WAVES}`)
+			notifyRemote:FireClient(player, if wave == #hall.Waves then hall.Rises else `Wave {wave} of {#hall.Waves}`)
 		end
 	end
-	for _, group in GUARDIAN_WAVES[wave] do
+	for _, group in hall.Waves[wave] do
 		local name, count = group[1], group[2]
 		if name ~= "Captain" then
 			count += extra
@@ -355,12 +369,12 @@ local function spawnWave(room: CombatRoom, floor: number, wave: number)
 			local spot = freeSpot(room.Built, rng, 6)
 			effectRemote:FireAllClients("Rise", spot)
 			local captain = name == "Captain"
-			local ok, enemy = pcall(EnemyService.Spawn, if captain then "Skeleton" else name, CFrame.lookAt(spot, room.Built.Center), {
+			local ok, enemy = pcall(EnemyService.Spawn, if captain then hall.Leader else name, CFrame.lookAt(spot, room.Built.Center), {
 				HealthMultiplier = Floors.EnemyHealthMultiplier(floor) * (if captain then 3 * (1 + 0.6 * extra) else 1),
 				DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
 				Elite = captain,
-				Title = if captain then "Skeleton Captain" else nil,
-				ExtraScale = if captain then 1.5 else nil,
+				Title = if captain then hall.Title else nil,
+				ExtraScale = if captain then hall.Scale else nil,
 				OnDied = function(dead)
 					onEnemyDied(room, dead)
 				end,
@@ -435,7 +449,7 @@ roomEmptied = function(room: CombatRoom)
 		room.Hoard = false
 		placeHoard(room)
 	end
-	if room.Guardians and (room.Wave or 0) < #GUARDIAN_WAVES then
+	if room.Guardians and (room.Wave or 0) < #hallOf(currentFloor).Waves then
 		local nextWave = (room.Wave or 0) + 1
 		room.Spawning = true -- nothing else may clear the hall while the next wave is on its way
 		task.delay(2.5, function()
@@ -1422,6 +1436,20 @@ guardiansDefeated = function(room: CombatRoom)
 		end
 	end
 	notifyRemote:FireAllClients("The guardians have fallen! A Gold Chest waits in the hall.")
+	if Floors.IsRotwood(currentFloor) then
+		-- Mira Fell wakes from the rot for a moment
+		task.spawn(function()
+			for _, line in {
+				"Mira Fell: ...you wear the Guild's Brand. Then the Guild still stands.",
+				"Mira Fell: The rot has let go of me, for now. Six years... I don't remember most of them.",
+				"Mira Fell: Take my journal. Read what Aldric told us before we came down.",
+				"Mira Fell: I'll find my own way up. Go. It's still growing below.",
+			} do
+				task.wait(3.2)
+				notifyRemote:FireAllClients(line)
+			end
+		end)
+	end
 	task.delay(2.5, function()
 		if room.Built.Model.Parent then
 			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")
