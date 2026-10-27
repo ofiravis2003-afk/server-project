@@ -939,6 +939,9 @@ function RoomDecor.Overgrow(ctx: Context, roomType: string)
 			local at = onWall(ctx, wall, rng:NextNumber(-ctx.Size / 2 + 5, ctx.Size / 2 - 5), 3.5)
 			local roots = Props.Place("HangingRoots", ctx.Model, at - Vector3.new(0, at.Y - top, 0), rng:NextNumber(0.8, 1.3))
 			if roots then
+				-- (Place stands a prop on the point; these hang from it)
+				local _, size = roots:GetBoundingBox()
+				roots:PivotTo(roots:GetPivot() - Vector3.new(0, size.Y - 0.3, 0))
 				for _, p in roots:GetDescendants() do
 					if p:IsA("BasePart") then
 						p.CanCollide = false
