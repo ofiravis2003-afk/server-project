@@ -99,6 +99,25 @@ function Audio.Start(place: string)
 		end
 	end
 	playMusic(place)
+	local ambience = (Sounds.Ambience :: any)[place]
+	if ambience then
+		local s = Instance.new("Sound")
+		s.Name = "Ambience"
+		s.SoundId = ambience.Id
+		s.Volume = ambience.Volume
+		s.Looped = true
+		s.Parent = SoundService
+		s:Play()
+	end
+	if place == "Town" then
+		-- a far-off caw every so often
+		task.spawn(function()
+			while true do
+				task.wait(25 + math.random() * 35)
+				Audio.Play("Caw")
+			end
+		end)
+	end
 	if place == "Depths" then
 		-- the boss theme while a boss bar is on screen
 		task.spawn(function()

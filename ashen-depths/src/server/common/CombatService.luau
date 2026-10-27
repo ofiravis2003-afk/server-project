@@ -2,6 +2,8 @@
 -- Player attacks. The client only says "I attacked with this weapon, in this direction".
 -- The server checks the weapon is really in the player's hand and off cooldown, then finds
 -- the hits itself from where everything really is.
+-- What can be hit comes from the place: the Depths' monsters (EnemyService), Emberhold's training dummies
+-- (TrainingService). Each target has a Root part; Damage(target, amount, player, kind) lands a blow.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,10 +12,15 @@ local Items = require(ReplicatedStorage.Shared.Items)
 local Leveling = require(ReplicatedStorage.Shared.Leveling)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Weapons = require(ReplicatedStorage.Shared.Weapons)
-local DataService = require(script.Parent.Parent.Common.DataService)
-local InventoryService = require(script.Parent.Parent.Common.InventoryService)
-local BlightService = require(script.Parent.Parent.Common.BlightService)
-local EnemyService = require(script.Parent.EnemyService)
+local DataService = require(script.Parent.DataService)
+local InventoryService = require(script.Parent.InventoryService)
+local BlightService = require(script.Parent.BlightService)
+
+export type Target = { Root: BasePart }
+export type Targets = {
+	GetAlive: () -> { any },
+	Damage: (any, number, Player, string) -> (),
+}
 
 local COOLDOWN_TOLERANCE = 0.85 -- accept attacks slightly early, for network jitter
 local ENEMY_RADIUS = 1.5 -- an enemy's body counts as hit this far from its center
@@ -23,6 +30,7 @@ local CombatService = {}
 local attackRemote = Remotes.Event("Attack")
 local effectRemote = Remotes.Event("Effect")
 local damageNumberRemote = Remotes.Event("DamageNumber")
+local targets: Targets
 local lastAttack: { [Player]: number } = {}
 local comboCount: { [Player]: number } = {}
 
@@ -110,9 +118,9 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 		return amount, "Hit"
 	end
 
-	local function hit(enemy: EnemyService.Enemy)
+	local function hit(enemy: Target)
 		local amount, kind = roll()
-		EnemyService.Damage(enemy, amount, player, kind)
+		targets.Damage(enemy, amount, player, kind)
 	end
 
 	if not weapon.Swings then
@@ -130,7 +138,7 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 
 	if weapon.Kind == "Melee" then
 		local minDot = math.cos(math.rad((weapon.Arc or 90) / 2))
-		for _, enemy in EnemyService.GetAlive() do
+		for _, enemy in targets.GetAlive() do
 			local offset = flat(enemy.Root.Position - origin)
 			local distance = offset.Magnitude
 			if distance <= weapon.Range + ENEMY_RADIUS and (distance < 2 or aim:Dot(offset.Unit) >= minDot) then
@@ -151,7 +159,7 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 		effectRemote:FireAllClients("Fireball", from, point, travel)
 		task.delay(travel, function()
 			effectRemote:FireAllClients("Blast", point, radius)
-			for _, enemy in EnemyService.GetAlive() do
+			for _, enemy in targets.GetAlive() do
 				if flat(enemy.Root.Position - point).Magnitude <= radius + ENEMY_RADIUS then
 					hit(enemy)
 				end
@@ -160,9 +168,9 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 	elseif weapon.Kind == "Mend" then
 		-- A bolt of light at the enemy closest to the aim line...
 		local width = weapon.Width or 3
-		local target: EnemyService.Enemy? = nil
+		local target: Target? = nil
 		local targetAlong = weapon.Range
-		for _, enemy in EnemyService.GetAlive() do
+		for _, enemy in targets.GetAlive() do
 			local offset = flat(enemy.Root.Position - origin)
 			local along = offset:Dot(aim)
 			local across = (offset - aim * along).Magnitude
@@ -212,7 +220,8 @@ local function onAttack(player: Player, itemId: unknown, direction: unknown, aim
 	end
 end
 
-function CombatService.Start()
+function CombatService.Start(what: Targets)
+	targets = what
 	attackRemote.OnServerEvent:Connect(onAttack)
 	Players.PlayerRemoving:Connect(function(player)
 		lastAttack[player] = nil

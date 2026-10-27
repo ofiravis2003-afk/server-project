@@ -18,7 +18,7 @@ local DailyService = require(Common.DailyService)
 local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
-local CombatService = require(script.Parent.CombatService)
+local CombatService = require(Common.CombatService)
 local EnemyService = require(script.Parent.EnemyService)
 local FloorService = require(script.Parent.FloorService)
 
@@ -32,7 +32,7 @@ Travel.Start()
 ProgressService.Start()
 QuestService.Start()
 EnemyService.Start()
-CombatService.Start()
+CombatService.Start(EnemyService)
 FloorService.Start()
 
 -- Last: everything that reacts to a player's data loading has registered by now.

@@ -12,7 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 local Device = require(ReplicatedStorage.Shared.Device)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Weapons = require(ReplicatedStorage.Shared.Weapons)
-local Audio = require(script.Parent.Parent.Common.Audio)
+local Audio = require(script.Parent.Audio)
 
 local ACTION = "AshenAttack"
 local AUTO_AIM_REACH = 1.3 -- melee weapons look for targets a bit past their reach

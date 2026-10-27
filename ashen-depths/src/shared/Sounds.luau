@@ -20,5 +20,10 @@ return {
 		GateSlam = { Id = "rbxassetid://9116700296", Volume = 0.7 }, -- a room's iron gates slamming shut
 		BossRoar = { Id = "rbxassetid://116597157482674", Volume = 0.8 },
 		LevelUp = { Id = "rbxassetid://96659579913194", Volume = 0.6 },
+		Caw = { Id = "rbxassetid://5829815715", Volume = 0.25 }, -- a bird calling over the town, now and then
+	},
+	-- Under the music, all the time: the town's birdsong.
+	Ambience = {
+		Town = { Id = "rbxassetid://9112832288", Volume = 0.35 }, -- "Mountain Birds 1"
 	},
 }
