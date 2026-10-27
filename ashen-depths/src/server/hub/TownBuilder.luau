@@ -658,11 +658,11 @@ function TownBuilder.Build(): Town
 			local b = from + (to - from) * ((i + 1) / count)
 			local mid = (a + b) / 2
 			if section and section:IsA("Model") then
-				-- (the fence model runs along its Z)
-				local piece = prop("FenceSection", model, CFrame.lookAt(mid, mid + (b - a).Unit))
+				-- (the fence model runs along its X)
+				local piece = prop("FenceSection", model, CFrame.lookAt(mid, mid + (b - a).Unit) * CFrame.Angles(0, math.rad(90), 0))
 				if piece then
 					local _, size = piece:GetBoundingBox()
-					piece:ScaleTo(piece:GetScale() * ((b - a).Magnitude + 0.4) / size.Z)
+					piece:ScaleTo(piece:GetScale() * ((b - a).Magnitude + 0.4) / size.X)
 					local box, scaled = piece:GetBoundingBox()
 					piece:PivotTo(piece:GetPivot() + (mid - (box.Position - Vector3.new(0, scaled.Y / 2, 0))))
 				end
