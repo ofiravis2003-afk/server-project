@@ -33,6 +33,13 @@ local WARM = Color3.fromRGB(255, 176, 96)
 local SQUARE = 150 -- the square's width (as laid out; everything is then spread out by SPREAD)
 local SPREAD = 1.25 -- how far apart the village is drawn: every piece's place from the Well times this
 local MARKET_AT = Vector3.new(66, 0, 0) -- the Market Square's middle (as laid out)
+-- The news board by the plaza: the latest updates, newest first (one line each).
+local NEWS = {
+	"- Emberhold rebuilt: the Guild to the north, every shop round the Market Square to the east",
+	"- The Training Yard (west): try your weapons on the dummies and see your damage per second",
+	"- Halloween: a lost Jack-o'-Lantern hides on every floor of the Depths, until Nov 2",
+	"- Smoke from the hearths, falling leaves and birds over the town",
+}
 local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 
 -- The townsfolk's standing animations (published from ServerStorage.TownClips).
@@ -121,6 +128,104 @@ local function sign(parent: Instance, text: string, cframe: CFrame)
 	part(parent, "SignBracket", Vector3.new(0.3, 0.3, 1.4), cframe * CFrame.new(0, 1.3, 0.6), Color3.fromRGB(40, 38, 36), Enum.Material.Metal)
 end
 
+-- A name board floating over a shop, seen from across the town: its name and what it sells.
+local SHOP_SIGNS: { [string]: { string } } = {
+	["Guild Hall"] = { "Guild Hall", "Quests and the Guild" },
+	["Ironhide Armory"] = { "Ironhide Armory", "Armor" },
+	["The Gilded Tome"] = { "The Gilded Tome", "Potions and brews" },
+	["The Sunken Hearth"] = { "The Sunken Hearth", "Tavern and quests" },
+	["Brakka's Forge"] = { "Brakka's Forge", "Weapons and upgrades" },
+}
+local function shopSign(building: Model, name: string)
+	local words = SHOP_SIGNS[name]
+	if not words then
+		return
+	end
+	local box, size = building:GetBoundingBox()
+	local anchor = part(building, "ShopSign", Vector3.new(0.5, 0.5, 0.5), CFrame.new(box.Position + Vector3.new(0, size.Y / 2 + 3, 0)), Color3.new(), Enum.Material.SmoothPlastic)
+	anchor.Transparency = 1
+	anchor.CanCollide = false
+	anchor.CanQuery = false
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromScale(16, 4.2) -- (in studs: it shrinks with distance)
+	gui.MaxDistance = 220
+	gui.LightInfluence = 0
+	local back = Instance.new("Frame")
+	back.Size = UDim2.fromScale(1, 1)
+	back.BackgroundColor3 = Color3.fromRGB(34, 24, 18)
+	back.BackgroundTransparency = 0.2
+	back.Parent = gui
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.2, 0)
+	corner.Parent = back
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(196, 150, 84)
+	stroke.Thickness = 2
+	stroke.Parent = back
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.fromScale(0.92, 0.58)
+	title.Position = UDim2.fromScale(0.04, 0.04)
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.Fondamento
+	title.TextScaled = true
+	title.TextColor3 = Color3.fromRGB(255, 214, 140)
+	title.Text = words[1]
+	title.Parent = back
+	local sub = Instance.new("TextLabel")
+	sub.Size = UDim2.fromScale(0.92, 0.32)
+	sub.Position = UDim2.fromScale(0.04, 0.62)
+	sub.BackgroundTransparency = 1
+	sub.FontFace = Fonts.Text
+	sub.TextScaled = true
+	sub.TextColor3 = Color3.fromRGB(226, 208, 180)
+	sub.Text = words[2]
+	sub.Parent = back
+	gui.Parent = anchor
+end
+
+-- A painted board (for the signpost and the news board): text on both faces.
+local function board(parent: Instance, name: string, size: Vector3, cframe: CFrame, text: string, pixels: number, xAlign: Enum.TextXAlignment?): Part
+	local p = part(parent, name, size, cframe, TIMBER, Enum.Material.WoodPlanks)
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = pixels
+		gui.LightInfluence = 1
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.fromScale(0.92, 0.86)
+		label.Position = UDim2.fromScale(0.04, 0.07)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.Fondamento
+		label.TextScaled = true
+		label.TextWrapped = true
+		label.TextXAlignment = xAlign or Enum.TextXAlignment.Center
+		label.TextYAlignment = Enum.TextYAlignment.Center
+		label.TextColor3 = Color3.fromRGB(240, 212, 150)
+		label.Text = text
+		label.Parent = gui
+		gui.Parent = p
+	end
+	return p
+end
+
+-- The signpost at the plaza where newcomers come in: a post with an arrow board pointing to each quarter.
+local function signpost(parent: Instance, at: Vector3, places: { { Name: string, Toward: Vector3 } })
+	local m = Instance.new("Model")
+	m.Name = "Signpost"
+	part(m, "Post", Vector3.new(0.7, 9, 0.7), CFrame.new(at + Vector3.new(0, 4.5, 0)), Color3.fromRGB(70, 48, 32), Enum.Material.Wood)
+	part(m, "PostCap", Vector3.new(1.1, 0.5, 1.1), CFrame.new(at + Vector3.new(0, 9.2, 0)), Color3.fromRGB(40, 38, 36), Enum.Material.Metal)
+	for i, place in places do
+		local dir = Vector3.new(place.Toward.X - at.X, 0, place.Toward.Z - at.Z).Unit
+		local y = 8.2 - (i - 1) * 1.35
+		-- the board sticks out from the post toward the place
+		local center = at + dir * 2.4 + Vector3.new(0, y, 0)
+		local frame = CFrame.lookAt(center, center + dir) * CFrame.Angles(0, math.rad(90), 0)
+		board(m, "Arrow", Vector3.new(4.2, 1.1, 0.2), frame, place.Name, 60)
+	end
+	m.Parent = parent
+end
+
 -- A two-storey house front facing the square: stone ground floor, timber-framed plaster upstairs, a steep
 -- roof, a door, and warm lit windows. `name` goes on its sign (nil for a plain house).
 -- A Tripo building from TownProps with its front on the frame's front line (the frame's -Z faces the square),
@@ -163,6 +268,9 @@ local function house(parent: Instance, frame: CFrame, width: number, name: strin
 			local box, size = made:GetBoundingBox()
 			made:PivotTo(made:GetPivot() + (frame.Position - (box.Position - Vector3.new(0, size.Y / 2, 0))))
 			made:PivotTo(made:GetPivot() * CFrame.new(0, 0, size.Z / 2 - 0.5))
+		end
+		if name then
+			shopSign(made, name)
 		end
 		return
 	end
@@ -530,6 +638,7 @@ local function forge(parent: Instance, frame: CFrame): BasePart
 	else
 		spot = standIn(m, "Brakka", brakkaAt, 4.6, Color3.fromRGB(80, 50, 36))
 	end
+	shopSign(m, "Brakka's Forge")
 	m.Parent = parent
 	return spot
 end
@@ -766,6 +875,27 @@ function TownBuilder.Build(): Town
 	end
 	scaled("HayCart", CFrame.new(-50, 0, 78) * CFrame.Angles(0, math.rad(20), 0), 1.4)
 	scaled("HayCart", CFrame.new(MARKET.X - 16, 0, -20) * CFrame.Angles(0, math.rad(-70), 0), 1.4)
+
+	-- where newcomers walk in from the gate: a signpost to every quarter, and the news board
+	signpost(model, Vector3.new(9, 0, 30), {
+		{ Name = "Guild Hall", Toward = Vector3.new(0, 0, -72) },
+		{ Name = "Market Square", Toward = MARKET },
+		{ Name = "Training Yard", Toward = YARD },
+		{ Name = "Town Gate", Toward = Vector3.new(0, 0, 126) },
+	})
+	local news = "What's new in Emberwell
+
+" .. table.concat(NEWS, "
+")
+	local newsAt = CFrame.lookAt(Vector3.new(-12, 0, 32), Vector3.new(-12, 0, 60))
+	local newsModel = Instance.new("Model")
+	newsModel.Name = "NewsBoard"
+	board(newsModel, "Board", Vector3.new(8, 5.4, 0.3), newsAt * CFrame.new(0, 4.2, 0), news, 42, Enum.TextXAlignment.Left)
+	for _, side in { -1, 1 } do
+		part(newsModel, "Leg", Vector3.new(0.5, 7.2, 0.5), newsAt * CFrame.new(side * 3.7, 3.6, 0.3), Color3.fromRGB(70, 48, 32), Enum.Material.Wood)
+	end
+	part(newsModel, "Roof", Vector3.new(9, 0.4, 1.4), newsAt * CFrame.new(0, 7.3, 0.2), Color3.fromRGB(64, 44, 38), Enum.Material.Slate)
+	newsModel.Parent = model
 
 	-- lamp posts round the plaza and along each road
 	for _, at in { Vector3.new(-24, 0, -24), Vector3.new(24, 0, -24), Vector3.new(-24, 0, 24), Vector3.new(24, 0, 24),
