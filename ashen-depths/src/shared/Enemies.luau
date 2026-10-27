@@ -460,15 +460,15 @@ Enemies.Mycelid = {
 	Drops = { { Item = "SporeCap", Chance = 0.8, Count = { 1, 2 } } },
 	RespawnTime = 5,
 	Animations = {
-		Idle = "rbxassetid://136232633690859",
-		Walk = "rbxassetid://127440334357560",
-		Hit = "rbxassetid://90575180896043",
-		Death = "rbxassetid://136520788241534",
+		Idle = "rbxassetid://79958205251840",
+		Walk = "rbxassetid://77858763048258",
+		Hit = "rbxassetid://135183169427636",
+		Death = "rbxassetid://90639097220735",
 	},
 	AnimationSpeeds = { Hit = 1.6 },
 	AttackClips = {
-		{ Id = "rbxassetid://133391076160303", HitAt = 1.27 },
-		{ Id = "rbxassetid://123658034826736", HitAt = 1.3 },
+		{ Id = "rbxassetid://90498405942116", HitAt = 1.27 },
+		{ Id = "rbxassetid://140403280569744", HitAt = 1.3 },
 	},
 	Sink = 0.45, -- its clips bend the knees with the hips held still
 	Blight = 2,
