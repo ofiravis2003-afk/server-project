@@ -154,9 +154,11 @@ local function house(parent: Instance, frame: CFrame, width: number, name: strin
 	end
 	local made = building(modelName :: string, parent, frame)
 	if made then
-		if not name then
-			-- (the plain house models are small next to the shops: a home is a size up)
-			made:ScaleTo(made:GetScale() * 1.4)
+		-- (the plain house models are small next to the shops: a home is a size up; the Guild Hall, the heart
+		-- of the town, bigger still)
+		local scale = if not name then 1.4 elseif name == "Guild Hall" then 1.3 else 1
+		if scale ~= 1 then
+			made:ScaleTo(made:GetScale() * scale)
 			made:PivotTo(frame)
 			local box, size = made:GetBoundingBox()
 			made:PivotTo(made:GetPivot() + (frame.Position - (box.Position - Vector3.new(0, size.Y / 2, 0))))
