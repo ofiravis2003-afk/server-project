@@ -28,6 +28,7 @@ local BlightService = require(script.Parent.Parent.Common.BlightService)
 local BadgeAwards = require(script.Parent.Parent.Common.BadgeAwards)
 local Leaderboard = require(script.Parent.Parent.Common.Leaderboard)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
+local Onboarding = require(script.Parent.Parent.Common.Onboarding)
 local Halloween = require(script.Parent.Parent.Common.Halloween)
 local Travel = require(script.Parent.Parent.Common.Travel)
 local MonetizationService = require(script.Parent.Parent.Common.MonetizationService)
@@ -251,6 +252,9 @@ local function clearRoom(room: CombatRoom)
 		if root and isInside(room.Built, root.Position, 0) then
 			notifyRemote:FireClient(player, "Room cleared. The gates rise.")
 			TipService.Show(player, "Cleared")
+			if currentFloor == 1 then
+				Onboarding.Step(player, "FirstRoomCleared")
+			end
 		end
 	end
 end
@@ -500,6 +504,9 @@ local function activateRoom(room: CombatRoom, floor: number)
 
 	for _, player in Players:GetPlayers() do
 		TipService.Show(player, "Locked")
+		if floor == 1 then
+			Onboarding.Step(player, "FirstFight")
+		end
 	end
 
 	local rng = Random.new()
@@ -2029,6 +2036,11 @@ startFloor = function(floor: number)
 			task.delay(6, TipService.Show, player, "Rope")
 		end
 		DailyService.OnFloor(player)
+		if floor == 1 then
+			Onboarding.Step(player, "ReachedDepths")
+		elseif floor == 2 then
+			Onboarding.Step(player, "ReachedFloor2")
+		end
 		if data and floor > data.DeepestFloor and not devJump then
 			data.DeepestFloor = floor
 			Leaderboard.Record(player, floor)

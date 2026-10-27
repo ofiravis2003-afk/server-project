@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
+local Onboarding = require(script.Parent.Parent.Common.Onboarding)
 
 local IntroService = {}
 
@@ -46,6 +47,7 @@ function IntroService.Begin(player: Player, town: { Model: Model, Spawn: CFrame 
 	local character = player.Character or player.CharacterAdded:Wait()
 	character:WaitForChild("HumanoidRootPart", 10)
 	inIntro[player] = true
+	Onboarding.Step(player, "Joined")
 	-- in at the south gate, looking up the road at the Well
 	local gate = town.Spawn.Position + Vector3.new(0, 0, 80)
 	character:PivotTo(CFrame.lookAt(gate, Vector3.new(0, gate.Y, 0)))
@@ -96,6 +98,7 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 		if not inIntro[player] then
 			return
 		end
+		Onboarding.Step(player, "IntroWatched")
 		local aldric = town.Model:FindFirstChild("Aldric", true)
 		local character = player.Character
 		if not aldric or not aldric:IsA("Model") or not character then
@@ -115,6 +118,7 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 		end
 		inIntro[player] = nil
 		data.IntroDone = true
+		Onboarding.Step(player, "TookBrand")
 		if player.Character then
 			brand(player.Character)
 		end
