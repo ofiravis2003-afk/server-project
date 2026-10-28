@@ -12,6 +12,8 @@ local RunService = game:GetService("RunService")
 
 local Remotes = require(game:GetService("ReplicatedStorage").Shared.Remotes)
 local DataTemplate = require(script.Parent.DataTemplate)
+local Migrations = require(script.Parent.Migrations)
+local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 
 local STORE_NAME = "PlayerData_v1"
 local AUTOSAVE_INTERVAL = 60
@@ -204,6 +206,7 @@ local function onPlayerAdded(player: Player)
 	end
 
 	local data = profile.Data
+	Migrations.Apply(data, Config.ChapterII == true)
 	local now = os.time()
 	if data.FirstJoinTime == 0 then
 		data.FirstJoinTime = now

@@ -31,7 +31,7 @@ function Floors.IsHollow(floor: number): boolean
 	return floor >= Floors.HollowFirst
 end
 
--- A floor where a run may start: any reached floor of chapter I, or a Hollow checkpoint (16, 21, 26, ...: the
+-- A floor where a run may start: any reached floor of a chapter, or a Hollow checkpoint (its first floor, then every fifth: the
 -- floor after a boss) the player has earned.
 function Floors.IsHollowCheckpoint(floor: number): boolean
 	return Floors.IsHollow(floor) and (floor - Floors.HollowFirst) % 5 == 0

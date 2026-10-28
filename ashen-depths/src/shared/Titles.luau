@@ -64,7 +64,7 @@ local Titles: { Title } = {
 		return total >= 1000
 	end },
 	{ Id = "HollowWalker", Name = "Hollow Walker", Hint = "Go deeper than the last chapter, into The Hollow.", Color = LEGEND, Earned = function(d)
-		return (d.DeepestFloor or 0) >= Floors.HollowFirst
+		return (d.DeepestFloor or 0) >= Floors.HollowFirst or d.HollowReached == true
 	end },
 	{ Id = "Founder", Name = "Founder", Hint = "One of the first 250 adventurers of Emberwell.", Color = LEGEND, Earned = function(d)
 		return d.FounderNumber ~= nil

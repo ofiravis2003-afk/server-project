@@ -28,7 +28,7 @@ return {
 		Founder = 4321961558595406, -- one of the first 250 (FounderService)
 		Gravekeeper = 946718100821034, -- the Gravekeeper defeated (floor 5)
 		BoneWarden = 929651792145795, -- the Bone Warden defeated (floor 15)
-		Hollow = 1481544442634936, -- reached The Hollow (floor 16)
+		Hollow = 1481544442634936, -- reached The Hollow (the first floor past the last chapter)
 		Party = 3082723086033753, -- went down with a full party of four
 	},
 	Products = {

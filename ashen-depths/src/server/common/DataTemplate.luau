@@ -30,6 +30,8 @@ return {
 	Kills = {}, -- [enemy name] = how many this player has slain (for titles)
 	BestDps = 0, -- the best damage per second dealt in the Training Yard
 	FullParty = nil :: boolean?, -- went down the Well with a full party of four
+	ChapterIIMoved = nil :: boolean?, -- this save was moved to chapter II's floors (Migrations)
+	HollowReached = nil :: boolean?, -- had been in The Hollow before chapter II moved it down (Migrations)
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
 }

@@ -148,7 +148,7 @@ function FloorPicker.Start()
 				end)
 			end
 		end
-		-- The Hollow: the checkpoints earned there (16, 21, 26, ...)
+		-- The Hollow: the checkpoints earned there (its first floor, then every fifth)
 		for i, floor in offer.Hollow or {} do
 			local cell = Instance.new("TextButton")
 			cell.Name = `Floor{floor}`
