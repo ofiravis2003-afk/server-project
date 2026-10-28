@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Device = require(ReplicatedStorage.Shared.Device)
 local Titles = require(script.Parent.Titles)
 
 local GOLD = Color3.fromRGB(240, 190, 90)
@@ -14,6 +15,7 @@ local PANEL = Color3.fromRGB(22, 18, 20)
 local EDGE = Color3.fromRGB(120, 90, 50)
 
 local Hud = {}
+Hud.PhoneScale = 0.7 -- the top-left panels' size on a phone
 
 local function corner(parent: Instance, radius: number)
 	local c = Instance.new("UICorner")
@@ -54,6 +56,12 @@ function Hud.Start()
 	panel.Parent = gui
 	corner(panel, 8)
 	stroke(panel, EDGE, 1.5)
+	if Device.Touch() then
+		-- (a phone's screen is crowded: the panel a size down; RunHud sits right under it)
+		local scale = Instance.new("UIScale")
+		scale.Scale = Hud.PhoneScale
+		scale.Parent = panel
+	end
 
 	local badge = Instance.new("Frame")
 	badge.Position = UDim2.fromOffset(8, 8)

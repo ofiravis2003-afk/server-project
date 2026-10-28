@@ -8,6 +8,8 @@ local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Device = require(ReplicatedStorage.Shared.Device)
+local Hud = require(script.Parent.Parent.Common.Hud)
 
 local KEY_COLORS = {
 	Bronze = Color3.fromRGB(196, 128, 72),
@@ -43,6 +45,13 @@ function RunHud.Start()
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 8)
 	corner.Parent = panel
+	if Device.Touch() then
+		-- the same size down as the level panel above it, and right under it
+		local scale = Instance.new("UIScale")
+		scale.Scale = Hud.PhoneScale
+		scale.Parent = panel
+		panel.Position = UDim2.fromOffset(12, 12 + math.ceil(64 * Hud.PhoneScale) + 6)
+	end
 
 	local floorText = label(panel, Fonts.Title, 15, Color3.fromRGB(230, 220, 200))
 	floorText.Position = UDim2.fromOffset(10, 4)
