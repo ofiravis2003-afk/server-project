@@ -31,6 +31,13 @@
   - שדרוג נשקי המערות מ-+6 דורש Spore Cap, ‏Toad Hide ו-Heartwood. הנשקים הרגילים לא השתנו.
   - **עוד חסר:** מוזיקה, ולהוסיף את Toad Hide ואת Heartwood לשלל של הבוסים כשייבנו.
 
+### 📍 איפה עצרנו (2026-10-28, ערב)
+- **אויבים עם מודל אמיתי:** Mycelid, ‏Spore Wisp, ‏Rot Crawler (‏ModelYaw 90, עולה בגובה מלא לפי `FloorY`), ‏Cap Spitter (‏ModelYaw 90). כולם נבדקו.
+- **Mira Fell:** ‏`פרק 2\למיקסמו\mira_fell_mixamo.fbx` מוכן. **הבא:** המשתמש עושה ריג ב-Mixamo ומוריד 6 אנימציות (Sword And Shield: Idle, ‏Walk עם In Place, ‏Slash, ‏Attack, ‏Impact, ‏Death) ואת `mira_rigged.fbx` לתיקייה `אנימציות\פרק 2\mira`, ואז מייבא ל-Depths (‏Rig Type Custom). את הטקסטורות לוקחים מ-`ServerStorage.ImportedTextures.MiraFellTextures`. מגדירים כמו את ה-Mycelid: ‏`HeldProps` של RustySword, ואת ה-IDs של הקליפים שהועלו אוטומטית בייבוא ("####" ב-Creator Hub).
+- **Tripo:** נשארו 280 קרדיטים (7 מודלים). תוכנית: 4 נשקים ירוקים (ההודעות בצ'אט מ-2026-10-28), ואז אוהל, שרידי הרפתקן ו-Spore Pod. המשתמש ביקש לחכות עם זה. מחולל Roblox יצר חרב ילדותית, לכן הנשקים יהיו מ-Tripo.
+- **עוד בתור (קוד):** סיפור (8 דפים, 7 משימות, Mira בעיר; הטקסטים לאישור המשתמש), חדר Spore Garden, מוזיקה, שלל הבוסים (Toad Hide ו-Heartwood).
+- **בשמירה של המשתמש התואר התאפס ל-Adventurer** בגלל בדיקה ב-Studio (תוקן: מעכשיו הבחירה לא נמחקת). צריך לבחור שוב מהפאנל.
+
 ### שלב א: מודלים שנשארו (👤 Tripo, ‏🤖 הגדרה) · ~6 מודלים · ~240 🪙
 | # | מודל | ריג? | הערות |
 |---|---|---|---|
