@@ -28,7 +28,6 @@ local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
 local RateLimiter = require(Common.RateLimiter)
-local Quests = require(ReplicatedStorage.Shared.Quests)
 local IntroService = require(script.Parent.IntroService)
 local DepthsBoard = require(script.Parent.DepthsBoard)
 local TownBuilder = require(script.Parent.TownBuilder)
@@ -222,49 +221,7 @@ function ShopService.Start()
 		end
 	end)
 
-	-- each player's Guild rank over their head, in its color
-	local function rankTag(player: Player, character: Model)
-		local head = character:WaitForChild("Head", 10) :: BasePart?
-		if not head then
-			return
-		end
-		local tag = Instance.new("BillboardGui")
-		tag.Name = "RankTag"
-		tag.Size = UDim2.fromOffset(240, 22)
-		tag.StudsOffset = Vector3.new(0, 2.6, 0)
-		tag.MaxDistance = 60
-		local text = Instance.new("TextLabel")
-		text.Size = UDim2.fromScale(1, 1)
-		text.BackgroundTransparency = 1
-		text.Font = Enum.Font.Fondamento
-		text.TextSize = 18
-		text.TextStrokeTransparency = 0.3
-		text.Parent = tag
-		local function refresh()
-			local label = (player:GetAttribute("GuildRank") :: string?) or "Copper I"
-			local founder = player:GetAttribute("Founder") :: number?
-			text.Text = (if player:GetAttribute("VIP") then "VIP  ·  " else "") .. label .. (if founder then `  ·  Founder #{founder}` else "")
-			text.TextColor3 = Quests.ColorOf(string.split(label, " ")[1])
-		end
-		refresh()
-		player:GetAttributeChangedSignal("GuildRank"):Connect(refresh)
-		player:GetAttributeChangedSignal("Founder"):Connect(refresh)
-		player:GetAttributeChangedSignal("VIP"):Connect(refresh)
-		tag.Parent = head
-	end
-	Players.PlayerAdded:Connect(function(player)
-		player.CharacterAdded:Connect(function(character)
-			rankTag(player, character)
-		end)
-	end)
-	for _, player in Players:GetPlayers() do
-		if player.Character then
-			task.spawn(rankTag, player, player.Character)
-		end
-		player.CharacterAdded:Connect(function(character)
-			rankTag(player, character)
-		end)
-	end
+	-- (the tag over each player's head, their title and Guild rank, is TitleService's, in both places)
 
 	Remotes.Event("ShopBuy").OnServerEvent:Connect(function(player, index: any)
 		local shop = openShop[player]

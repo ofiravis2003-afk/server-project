@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Leveling = require(ReplicatedStorage.Shared.Leveling)
+local Abilities = require(ReplicatedStorage.Shared.Abilities)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.DataService)
 
@@ -18,6 +19,7 @@ function ProgressService.PushStats(player: Player)
 	if not data then
 		return
 	end
+	player:SetAttribute("Level", data.Level)
 	statsRemote:FireClient(player, {
 		Level = data.Level,
 		XP = data.XP,
@@ -54,6 +56,7 @@ function ProgressService.AddXP(player: Player, amount: number)
 	end
 	data.XP += amount
 	local leveledUp = false
+	local from = data.Level
 	while data.Level < Leveling.MaxLevel and data.XP >= Leveling.XPToNext(data.Level) do
 		data.XP -= Leveling.XPToNext(data.Level)
 		data.Level += 1
@@ -66,6 +69,15 @@ function ProgressService.AddXP(player: Player, amount: number)
 		applyHealth(player)
 		soundRemote:FireClient(player, "LevelUp")
 		notifyRemote:FireClient(player, `Level up! You are now level {data.Level}.`)
+		for i, at in Abilities.RankLevels do
+			if from < at and data.Level >= at then
+				task.delay(2.5, function()
+					notifyRemote:FireClient(player, if i == 1
+						then "Your weapon has learned a special move! Press Q (or the round button) to use it."
+						else `Your special moves grow stronger (rank {i}): more damage, less waiting.`)
+				end)
+			end
+		end
 	end
 	ProgressService.PushStats(player)
 end

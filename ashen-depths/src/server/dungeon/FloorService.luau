@@ -2031,6 +2031,9 @@ startFloor = function(floor: number)
 		end
 		if #Players:GetPlayers() >= Config.MaxPartySize then
 			BadgeAwards.Give(player, "Party")
+			if data then
+				data.FullParty = true
+			end
 		end
 		if floor >= 2 then
 			task.delay(6, TipService.Show, player, "Rope")

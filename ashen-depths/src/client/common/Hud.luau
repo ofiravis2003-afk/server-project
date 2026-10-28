@@ -1,5 +1,5 @@
 --!strict
--- Top-left panel: level, XP bar and gold.
+-- Top-left panel: level, XP bar, gold, and the title worn (click the panel to open the Titles window).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,6 +7,7 @@ local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local Titles = require(script.Parent.Titles)
 
 local GOLD = Color3.fromRGB(240, 190, 90)
 local PANEL = Color3.fromRGB(22, 18, 20)
@@ -69,7 +70,20 @@ function Hud.Start()
 	levelCaption.Position = UDim2.fromOffset(66, 6)
 	levelCaption.Size = UDim2.fromOffset(100, 18)
 	levelCaption.TextXAlignment = Enum.TextXAlignment.Left
+	levelCaption.TextTruncate = Enum.TextTruncate.AtEnd
 	levelCaption.Text = "Adventurer"
+	Titles.OnWearing(function(name: string)
+		levelCaption.Text = name
+	end)
+	-- the whole panel opens the Titles window
+	local open = Instance.new("TextButton")
+	open.Name = "OpenTitles"
+	open.Size = UDim2.fromScale(1, 1)
+	open.BackgroundTransparency = 1
+	open.Text = ""
+	open.ZIndex = 5
+	open.Parent = panel
+	open.Activated:Connect(Titles.Toggle)
 
 	local goldText = label(panel, Fonts.Body, 15, GOLD)
 	goldText.Position = UDim2.fromOffset(150, 6)

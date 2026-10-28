@@ -12,6 +12,7 @@ local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
+local TitleService = require(script.Parent.Parent.Common.TitleService)
 
 local SPACING = 7
 local WINDOW = 5 -- seconds of hits the damage-per-second counts
@@ -130,6 +131,10 @@ local function refresh(dummy: Dummy)
 	-- (over at least a second, so one blow doesn't read as a huge rate)
 	local dps = total / math.max(now - first, 1)
 	dummy.Board.Text = `{last.Player.DisplayName}\n{math.floor(dps + 0.5)} damage / sec`
+	-- a rate kept up for a few seconds counts toward the Dummy Destroyer title (not one lucky blow)
+	if now - first >= 3 then
+		TitleService.OnDps(last.Player, dps)
+	end
 end
 
 local function rock(dummy: Dummy, from: Vector3)

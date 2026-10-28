@@ -43,6 +43,9 @@ local EVENT_NAMES = {
 	"PartyUpdated", -- server -> client: the player's party (leader and members), or nil when not in one
 	"PartyInvite", -- server -> client: someone invites this player to their party (who, how long it stands)
 	"PartyAction", -- client -> server: Invite / Accept / Decline (a player) or Leave
+	"Ability", -- client -> server: use the held weapon's special move (Q), in a direction / at a point
+	"TitlesUpdated", -- server -> client: the titles this player has earned, and the one they wear
+	"TitleChoose", -- client -> server: wear this title
 }
 
 local FUNCTION_NAMES = {}

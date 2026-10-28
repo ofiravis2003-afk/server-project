@@ -26,6 +26,10 @@ return {
 	Tips = {}, -- [tipId] = true: the new-adventurer tips this player has seen (TipService)
 	Referrals = {}, -- [userId] = true: friends this player brought in with a game invite (ReferralService)
 	IntroDone = nil :: boolean?, -- the first-visit fly-over and Aldric's Brand (IntroService); nil = decide on load
+	Title = "Adventurer", -- the title worn over the head (shared/Titles)
+	Kills = {}, -- [enemy name] = how many this player has slain (for titles)
+	BestDps = 0, -- the best damage per second dealt in the Training Yard
+	FullParty = nil :: boolean?, -- went down the Well with a full party of four
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
 }

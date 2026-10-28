@@ -35,10 +35,10 @@ local SPREAD = 1.25 -- how far apart the village is drawn: every piece's place f
 local MARKET_AT = Vector3.new(66, 0, 0) -- the Market Square's middle (as laid out)
 -- The news board by the plaza: the latest updates, newest first (one line each).
 local NEWS = {
-	"- Emberhold rebuilt: every shop round the Market Square",
+	"- Special moves: every weapon learns one at level 3 (press Q)",
+	"- Titles: earn them, wear them (click your panel, top left)",
 	"- The Training Yard: test your weapons on the dummies",
 	"- Halloween: find the lost Jack-o'-Lanterns (until Nov 2)",
-	"- Smoke, falling leaves and birds over the town",
 }
 local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 

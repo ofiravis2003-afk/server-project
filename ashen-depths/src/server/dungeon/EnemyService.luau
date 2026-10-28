@@ -22,6 +22,7 @@ local BlightService = require(script.Parent.Parent.Common.BlightService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local QuestService = require(script.Parent.Parent.Common.QuestService)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
+local TitleService = require(script.Parent.Parent.Common.TitleService)
 local Items = require(ReplicatedStorage.Shared.Items)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local Props = require(script.Parent.Props)
@@ -991,6 +992,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 			local text = `+{xp} XP   +{gold} Gold`
 			QuestService.OnKill(player, enemy.Name)
 			DailyService.OnKill(player, enemy.Name)
+			TitleService.OnKill(player, enemy.Name)
 			-- Each player gets their own share of what it leaves behind.
 			for _, drop in enemy.Def.Drops or {} do
 				if enemy.Elite or math.random() < drop.Chance then
