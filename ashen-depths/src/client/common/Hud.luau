@@ -68,9 +68,13 @@ function Hud.Start()
 
 	local levelCaption = label(panel, Fonts.Title, 15, Color3.fromRGB(230, 220, 200))
 	levelCaption.Position = UDim2.fromOffset(66, 6)
-	levelCaption.Size = UDim2.fromOffset(100, 18)
+	levelCaption.Size = UDim2.fromOffset(84, 18)
 	levelCaption.TextXAlignment = Enum.TextXAlignment.Left
-	levelCaption.TextTruncate = Enum.TextTruncate.AtEnd
+	-- (a long title shrinks to fit beside the gold)
+	levelCaption.TextScaled = true
+	local captionLimit = Instance.new("UITextSizeConstraint")
+	captionLimit.MaxTextSize = 15
+	captionLimit.Parent = levelCaption
 	levelCaption.Text = "Adventurer"
 	Titles.OnWearing(function(name: string)
 		levelCaption.Text = name
