@@ -428,6 +428,7 @@ Enemies.CapSpitter = {
 	Rooted = true,
 	Blight = 2,
 	DeathStyle = "Splat",
+	ModelYaw = 90, -- (the Tripo model's mouth faces its -X)
 }
 Enemies.RotCrawler = {
 	DisplayName = "Rot Crawler",
