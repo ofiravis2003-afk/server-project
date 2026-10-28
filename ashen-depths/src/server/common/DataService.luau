@@ -206,7 +206,10 @@ local function onPlayerAdded(player: Player)
 	end
 
 	local data = profile.Data
-	Migrations.Apply(data, Config.ChapterII == true)
+	-- (never in Studio: testing chapter II there with the switch flipped must not move a real save)
+	if not RunService:IsStudio() then
+		Migrations.Apply(data, Config.ChapterII == true)
+	end
 	local now = os.time()
 	if data.FirstJoinTime == 0 then
 		data.FirstJoinTime = now
