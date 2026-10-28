@@ -80,7 +80,8 @@ export type Enemy = {
 	Options: SpawnOptions,
 	Burrowed: boolean?, -- (Rot Crawler) under the floor: no blow reaches it
 	LastSprout: number?, -- (Mycelid) when it last sprouted mushrooms
-	GroundY: number?, -- (Rot Crawler) where the floor is
+	GroundY: number?, -- (Rot Crawler) the root's height when it stands up out of the floor
+	FloorY: number?, -- (Rot Crawler) the floor's height, where its circles and dust show
 }
 
 export type BossState = {
@@ -1217,7 +1218,14 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		humanoid.JumpPower = 0
 	end
 	if def.Burrow then
-		enemy.GroundY = cframe.Position.Y
+		-- up out of the floor it stands like anything else (its whole body above the floor)
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = { folder, model }
+		local hit = workspace:Raycast(cframe.Position + Vector3.new(0, 3, 0), Vector3.new(0, -30, 0), params)
+		local floorY = if hit then hit.Position.Y else cframe.Position.Y - 2.5
+		enemy.FloorY = floorY
+		enemy.GroundY = floorY + humanoid.HipHeight + root.Size.Y / 2
 		task.defer(sink, enemy)
 	end
 	enemies[model] = enemy
@@ -1498,7 +1506,7 @@ function sink(enemy: Enemy)
 	if bar and bar:IsA("BillboardGui") then
 		bar.Enabled = false
 	end
-	effectRemote:FireAllClients("Rise", Vector3.new(enemy.Root.Position.X, enemy.GroundY or enemy.Root.Position.Y, enemy.Root.Position.Z))
+	effectRemote:FireAllClients("Rise", Vector3.new(enemy.Root.Position.X, enemy.FloorY or enemy.Root.Position.Y, enemy.Root.Position.Z))
 	riseTo(enemy, (enemy.GroundY or enemy.Root.Position.Y) - BURROW_DEPTH, 0.5)
 end
 
@@ -1507,10 +1515,10 @@ local function burrowStrike(enemy: Enemy, targetRoot: BasePart)
 	enemy.Attacking = true
 	enemy.LastAttack = os.clock()
 	local ground = enemy.GroundY or 0
-	local spot = Vector3.new(targetRoot.Position.X, ground, targetRoot.Position.Z)
+	local spot = Vector3.new(targetRoot.Position.X, enemy.FloorY or ground, targetRoot.Position.Z)
 	-- under the floor it slides beneath the player; the floor shows a red circle (and dust) where it will come up
 	enemy.Model:PivotTo(enemy.Root.CFrame.Rotation + Vector3.new(spot.X, ground - BURROW_DEPTH, spot.Z))
-	effectRemote:FireAllClients("Telegraph", spot - Vector3.new(0, 2.5, 0), burrow.Radius, enemy.Def.Windup)
+	effectRemote:FireAllClients("Telegraph", spot, burrow.Radius, enemy.Def.Windup)
 	effectRemote:FireAllClients("Rise", spot)
 	task.wait(enemy.Def.Windup)
 	if enemy.Dead then
