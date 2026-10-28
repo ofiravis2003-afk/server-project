@@ -151,11 +151,12 @@ local function findModel(look: string, rarity: string): BasePart?
 end
 
 -- A glow (and for Mythic, flames) in the rarity's color, so a better weapon shows from across the room.
-local function addAura(handle: BasePart, rarity: string)
+-- (`tint`: a weapon's own glow color instead, the caverns' green)
+local function addAura(handle: BasePart, rarity: string, tint: Color3?)
 	if rarity ~= "Epic" and rarity ~= "Legendary" and rarity ~= "Mythic" then
 		return
 	end
-	local color = (Rarity.Info[rarity] or Rarity.Info.Common).Color
+	local color = tint or (Rarity.Info[rarity] or Rarity.Info.Common).Color
 	local light = Instance.new("PointLight")
 	light.Color = color
 	light.Range = if rarity == "Epic" then 6 else 9
@@ -236,8 +237,9 @@ local function burn(handle: BasePart)
 	light.Parent = blade
 end
 
--- Returns a ready Tool for the given look ("Sword", "Axe", "Staff", "Tome") and rarity.
-function WeaponBuilder.Build(look: string, rarity: string?): Tool
+-- Returns a ready Tool for the given look ("Sword", "Axe", "Staff", "Tome") and rarity; `tint` is the
+-- weapon's own glow color (Items Aura), if it has one.
+function WeaponBuilder.Build(look: string, rarity: string?, tint: Color3?): Tool
 	local tool = Instance.new("Tool")
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
@@ -255,7 +257,7 @@ function WeaponBuilder.Build(look: string, rarity: string?): Tool
 		if look == "FoundersBlade" then
 			burn(handle)
 		else
-			addAura(handle, rarity or "Common")
+			addAura(handle, rarity or "Common", tint)
 		end
 		if WeaponBuilder.LeftHanded[look] then
 			local offHand = handle
@@ -282,7 +284,7 @@ function WeaponBuilder.Build(look: string, rarity: string?): Tool
 	local handle = makeHandle(Vector3.new(0.28, 1.1, 0.28), LEATHER, Enum.Material.Fabric)
 	local build = builders[look] or builders.Sword
 	build(handle)
-	addAura(handle, rarity or "Common")
+	addAura(handle, rarity or "Common", tint)
 	handle.Parent = tool
 	return tool
 end

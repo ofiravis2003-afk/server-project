@@ -261,7 +261,7 @@ function ShopService.Start()
 		if level >= Upgrades.Max then
 			return
 		end
-		local cost = Upgrades.Cost(item.Rarity, level + 1)
+		local cost = Upgrades.Cost(item.Rarity, level + 1, item.Item)
 		if data.Gold < cost.Gold then
 			notifyRemote:FireClient(player, "Not enough gold.")
 			return

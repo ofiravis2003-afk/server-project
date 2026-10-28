@@ -13,7 +13,7 @@
 local Rarity = require(script.Parent.Rarity)
 
 export type Stats = { Defense: number, Health: number, Speed: number, SpellPower: number }
-export type Piece = { Name: string, DisplayName: string, Set: string, Slot: string, Look: string?, Stats: Stats }
+export type Piece = { Name: string, DisplayName: string, Set: string, Slot: string, Look: string?, Stats: Stats, Chapter: number? }
 export type Bonus = { Defense: number?, Health: number?, Speed: number?, SpellPower: number? }
 export type SetInfo = {
 	Name: string,
@@ -70,11 +70,15 @@ Armor.Sets = {
 	},
 } :: { SetInfo }
 
--- Rings: no look on the body, just numbers.
+-- Rings: no look on the body, just numbers. Chapter 2's are found only in the Rotwood Caverns; the Sporeward
+-- Band also keeps half the spores off (ArmorService's BlightWard, read by BlightService).
 local RINGS = {
 	{ Name = "SignetRing", DisplayName = "Old Signet Ring", Stats = { Defense = 4, Health = 20, Speed = 0, SpellPower = 0 } },
 	{ Name = "EmberBand", DisplayName = "Ember Band", Stats = { Defense = 0, Health = 0, Speed = 0, SpellPower = 0.08 } },
+	{ Name = "SporewardBand", DisplayName = "Sporeward Band", Chapter = 2, Stats = { Defense = 2, Health = 10, Speed = 0, SpellPower = 0 } },
+	{ Name = "RotgutSignet", DisplayName = "Rotgut Signet", Chapter = 2, Stats = { Defense = 6, Health = 45, Speed = 0, SpellPower = 0 } },
 }
+Armor.BlightWardRings = { SporewardBand = true } :: { [string]: boolean }
 
 Armor.Pieces = {} :: { [string]: Piece }
 Armor.List = {} :: { Piece }
@@ -103,7 +107,7 @@ for _, set in Armor.Sets do
 	end
 end
 for _, ring in RINGS do
-	local piece: Piece = { Name = ring.Name, DisplayName = ring.DisplayName, Set = "Ring", Slot = "Ring", Look = nil, Stats = ring.Stats }
+	local piece: Piece = { Name = ring.Name, DisplayName = ring.DisplayName, Set = "Ring", Slot = "Ring", Look = nil, Stats = ring.Stats, Chapter = (ring :: any).Chapter }
 	Armor.Pieces[piece.Name] = piece
 	table.insert(Armor.List, piece)
 end

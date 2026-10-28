@@ -73,6 +73,17 @@ local HOLLOW_LOOT = {
 	Gold = { Gold = LOOT.Gold.Gold, Potions = LOOT.Gold.Potions, Materials = LOOT.Gold.Materials, WeaponChance = 1, Rarities = { { "Legendary", 0.8 }, { "Mythic", 0.2 } } },
 }
 
+-- The Rotwood Caverns' chests: chapter I's, but a Gold chest from floor 25 on can hold Mythic gear; and a
+-- share of what's found is the caverns' own (their green weapons, Epic and up, or their rings).
+local ROTWOOD_LOOT = {
+	Bronze = LOOT.Bronze,
+	Silver = LOOT.Silver,
+	Gold = LOOT.Gold,
+	DeepGold = { Gold = LOOT.Gold.Gold, Potions = LOOT.Gold.Potions, Materials = LOOT.Gold.Materials, WeaponChance = 1, Rarities = { { "Epic", 0.5 }, { "Legendary", 0.38 }, { "Mythic", 0.12 } } },
+}
+local ROTWOOD_GEAR_CHANCE = 0.4
+local RARITY_RANK = { Common = 1, Rare = 2, Epic = 3, Legendary = 4, Mythic = 5 }
+
 type Keys = { Bronze: number, Silver: number, Gold: number }
 
 type CombatRoom = {
@@ -667,7 +678,10 @@ local function rollRarity(rng: Random, table_: { { any } }): string
 end
 
 local function giveLoot(player: Player, tier: string, position: Vector3)
-	local loot = (if Floors.IsHollow(currentFloor) then HOLLOW_LOOT else LOOT :: any)[tier]
+	local loot = if Floors.IsHollow(currentFloor)
+		then (HOLLOW_LOOT :: any)[tier]
+		elseif Floors.IsRotwood(currentFloor) then (ROTWOOD_LOOT :: any)[if tier == "Gold" and currentFloor >= 25 then "DeepGold" else tier]
+		else (LOOT :: any)[tier]
 	local data = DataService.GetData(player)
 	if not loot or not data then
 		return
@@ -707,6 +721,11 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 			then Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]
 			else Items.ArmorPieces[rng:NextInteger(1, #Items.ArmorPieces)]
 		local rarity = rollRarity(rng, loot.Rarities)
+		if Floors.IsRotwood(currentFloor) and rng:NextNumber() < ROTWOOD_GEAR_CHANCE then
+			itemName = if RARITY_RANK[rarity] >= RARITY_RANK.Epic
+				then Items.ChapterIIWeapons[rng:NextInteger(1, #Items.ChapterIIWeapons)]
+				else Items.ChapterIIRings[rng:NextInteger(1, #Items.ChapterIIRings)]
+		end
 		InventoryService.GiveItem(player, itemName, rarity)
 		text ..= `   {rarity} {Items.NameFor(itemName, rarity)}!`
 	end

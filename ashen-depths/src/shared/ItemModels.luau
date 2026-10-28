@@ -103,7 +103,7 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 		return model
 	end
 	if def and def.Look then
-		local tool = WeaponBuilder.Build(def.Look, rarity)
+		local tool = WeaponBuilder.Build(def.Look, rarity, def.Aura)
 		for _, child in tool:GetChildren() do
 			if child:IsA("BasePart") or child:IsA("Model") then
 				child.Parent = model

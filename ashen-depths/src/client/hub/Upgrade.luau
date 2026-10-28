@@ -224,7 +224,7 @@ function Upgrade.Start()
 		step.TextYAlignment = Enum.TextYAlignment.Top
 		step.Text = `+{level}  →  <font color="#{GOOD:ToHex()}">+{level + 1}</font>\nDamage {nowDamage}  →  <font color="#{GOOD:ToHex()}">{nextDamage}</font>`
 
-		local cost = Upgrades.Cost(saved.Rarity, level + 1)
+		local cost = Upgrades.Cost(saved.Rarity, level + 1, saved.Item)
 		local y = 110
 		local enough = true
 		local function costLine(text: string, ok: boolean)

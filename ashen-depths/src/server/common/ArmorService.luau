@@ -233,6 +233,13 @@ local function applyStats(player: Player, worn: { [string]: { Item: string, Rari
 	player:SetAttribute("SpellPower", total.SpellPower)
 	player:SetAttribute("BonusHealth", math.floor(total.Health + 0.5))
 	player:SetAttribute("SpeedBonus", total.Speed)
+	local ward = false
+	for _, item in list do
+		if Armor.BlightWardRings[item.Item] then
+			ward = true
+		end
+	end
+	player:SetAttribute("BlightWard", if ward then true else nil)
 	local data = DataService.GetData(player)
 	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if humanoid and data and humanoid.Health > 0 then

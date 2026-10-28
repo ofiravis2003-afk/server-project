@@ -23,6 +23,19 @@ local function stacks(player: Player): number
 end
 
 function BlightService.Add(player: Player, amount: number)
+	if player:GetAttribute("BlightWard") then
+		-- the Sporeward Band: each stack has an even chance of not taking hold
+		local kept = 0
+		for _ = 1, amount do
+			if math.random() < 0.5 then
+				kept += 1
+			end
+		end
+		amount = kept
+		if amount == 0 then
+			return
+		end
+	end
 	local now = os.clock()
 	lastHit[player] = now
 	lastFade[player] = now

@@ -23,10 +23,14 @@ export type ItemDef = {
 	Damage: number?,
 	Heal: number?, -- tome only: health given back per cast
 	Look: string?, -- which shape WeaponBuilder makes
+	Aura: Color3?, -- weapons: the glow it gives off at Epic and up, instead of its rarity's color
+	Chapter: number?, -- gear found only in that chapter (2: the Rotwood Caverns), upgraded with its materials
 	Names: { [string]: string }?, -- the item's name at each rarity (its look changes with rarity too)
 }
 
 local Items = {}
+
+local ROT_GLOW = Color3.fromRGB(90, 235, 150) -- the green ember
 
 Items.Defs = {
 	RustySword = {
@@ -74,6 +78,49 @@ Items.Defs = {
 		Description = "Forged for the first 250 adventurers to go down the Great Well. It never stops burning.",
 	},
 
+	-- The Rotwood Caverns' weapons (chapter II): found only there, Epic and up, glowing the green ember's color.
+	MycelEdge = {
+		DisplayName = "Mycel Edge",
+		Slot = "Weapon",
+		WeaponType = "Sword",
+		Damage = 17,
+		Look = "Sword",
+		Aura = ROT_GLOW,
+		Chapter = 2,
+		Names = { Epic = "Mycel Edge", Legendary = "Rotbloom Blade", Mythic = "Thorn of the Green Ember" },
+	},
+	RotwoodCleaver = {
+		DisplayName = "Rotwood Cleaver",
+		Slot = "Weapon",
+		WeaponType = "Axe",
+		Damage = 25,
+		Look = "Axe",
+		Aura = ROT_GLOW,
+		Chapter = 2,
+		Names = { Epic = "Rotwood Cleaver", Legendary = "Sporefall Axe", Mythic = "The Mother's Bite" },
+	},
+	SporecallerStaff = {
+		DisplayName = "Sporecaller Staff",
+		Slot = "Weapon",
+		WeaponType = "Staff",
+		Damage = 17,
+		Look = "Staff",
+		Aura = ROT_GLOW,
+		Chapter = 2,
+		Names = { Epic = "Sporecaller Staff", Legendary = "Glowcap Scepter", Mythic = "Staff of the Green Ember" },
+	},
+	CodexOfTheDeep = {
+		DisplayName = "Codex of the Deep",
+		Slot = "Weapon",
+		WeaponType = "Tome",
+		Damage = 8,
+		Heal = 15,
+		Look = "Tome",
+		Aura = ROT_GLOW,
+		Chapter = 2,
+		Names = { Epic = "Codex of the Deep", Legendary = "Mycelial Codex", Mythic = "Book of the Green Ember" },
+	},
+
 	-- Materials: every monster leaves something of itself behind.
 	Bone = { DisplayName = "Bone", Slot = "Material", Stack = 99, Price = 2, Description = "Dropped by skeletons." },
 	Fletching = { DisplayName = "Black Fletching", Slot = "Material", Stack = 99, Price = 3, Description = "Arrow feathers from skeleton archers." },
@@ -81,6 +128,8 @@ Items.Defs = {
 	SlimeGel = { DisplayName = "Slime Gel", Slot = "Material", Stack = 99, Price = 2, Description = "What's left of a slime." },
 	SporeCap = { DisplayName = "Spore Cap", Slot = "Material", Stack = 99, Price = 4, Description = "A glowing cap off one of the infected. Handle with gloves." },
 	GraveShroud = { DisplayName = "Grave Shroud", Slot = "Material", Stack = 99, Price = 60, Description = "Torn from the Gravekeeper's coat. Rare." },
+	ToadHide = { DisplayName = "Toad Hide", Slot = "Material", Stack = 99, Price = 80, Description = "A slick strip of the Rotgut Toad's hide. Rare." },
+	Heartwood = { DisplayName = "Heartwood", Slot = "Material", Stack = 99, Price = 150, Description = "The living core of the Mother Spore. It still beats. Very rare." },
 
 	-- Keepsakes: quest items, carried until they're handed over.
 	FoxHelmet = { DisplayName = "Dented Fox Helmet", Slot = "Material", Stack = 1, Limit = 1, Keepsake = true, Description = "A dented helmet with a fox painted on it. Old Pip's boy wore it." },
@@ -98,12 +147,19 @@ Items.Defs = {
 -- Armor pieces and rings (shared/Armor): worn in their slot, one per bag place.
 local Armor = require(script.Parent.Armor)
 for _, piece in Armor.List do
-	Items.Defs[piece.Name] = { DisplayName = piece.DisplayName, Slot = piece.Slot :: any, Set = piece.Set }
+	Items.Defs[piece.Name] = { DisplayName = piece.DisplayName, Slot = piece.Slot :: any, Set = piece.Set, Chapter = piece.Chapter }
 end
+-- What chests hand out: the gear of chapter I everywhere, and in the caverns their own as well.
 Items.ArmorPieces = {} :: { string }
+Items.ChapterIIRings = {} :: { string }
 for _, piece in Armor.List do
-	table.insert(Items.ArmorPieces, piece.Name)
+	if piece.Chapter == 2 then
+		table.insert(Items.ChapterIIRings, piece.Name)
+	else
+		table.insert(Items.ArmorPieces, piece.Name)
+	end
 end
+Items.ChapterIIWeapons = { "MycelEdge", "RotwoodCleaver", "SporecallerStaff", "CodexOfTheDeep" }
 
 -- One starter weapon of each type, in hotbar order.
 Items.StarterWeapons = { "RustySword", "WoodcutterAxe", "ApprenticeStaff", "AcolyteTome" }
