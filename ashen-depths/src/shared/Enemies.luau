@@ -445,6 +445,7 @@ Enemies.RotCrawler = {
 	Procedural = "Burrow",
 	Burrow = { Radius = 5, Surface = 3 },
 	Blight = 1,
+	ModelYaw = 90, -- (the Tripo model's jaws point along its -X)
 }
 
 -- The Mycelid: a walking mushroom (Tripo model rigged in Mixamo, 6.4 studs). Slow, tough, hits hard.
