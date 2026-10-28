@@ -41,8 +41,8 @@ local Titles: { Title } = {
 	{ Id = "DeepDiver", Name = "Deep Diver", Hint = "Reach floor 10 of the Depths.", Color = GOOD, Earned = function(d)
 		return (d.DeepestFloor or 0) >= 10
 	end },
-	{ Id = "DummyDestroyer", Name = "Dummy Destroyer", Hint = "Deal 250 damage per second in the Training Yard.", Color = GOOD, Earned = function(d)
-		return (d.BestDps or 0) >= 250
+	{ Id = "DummyDestroyer", Name = "Dummy Destroyer", Hint = "Deal 200 damage per second in the Training Yard.", Color = GOOD, Earned = function(d)
+		return (d.BestDps or 0) >= 200
 	end },
 	{ Id = "Fellowship", Name = "Fellowship", Hint = "Go down the Well with a full party of four.", Color = GOOD, Earned = function(d)
 		return d.FullParty == true
