@@ -23,6 +23,14 @@
 
 - **ח המעבר:** נעשה ונבדק (2026-10-28). `server/common/Migrations.luau` רץ פעם אחת על כל שמירה כש-`ChapterII` נדלק: מי שהיה מעבר לקומה 15 מקבל DeepestFloor ו-Checkpoint של 16, ‏WardLit של 15, וסימן `HollowReached` (לתואר Hollow Walker). לוח השיאים שומר על השיאים. **לא רץ ב-Studio**, כדי שבדיקה עם המתג דלוק לא תזיז שמירה אמיתית. נבדק על 5 מקרים.
 
+- **ז שלל:** נעשה ונבדק (2026-10-28):
+  - 4 נשקים ירוקים: Mycel Edge, ‏Rotwood Cleaver, ‏Sporecaller Staff, ‏Codex of the Deep. ברמת Epic ומעלה, עם `Aura` ירוק, ובערך 13% חזקים יותר.
+  - 2 טבעות: Sporeward Band (חצי מה-Blight לא נדבק, דרך `BlightWard`) ו-Rotgut Signet.
+  - חומרים: Toad Hide ו-Heartwood. עדיין אין מי שמפיל אותם, כי הבוסים לא נבנו.
+  - תיבות במערות: 40% מהשלל הוא ציוד המערות, ובתיבות Gold מקומה 25 יש סיכוי ל-Mythic.
+  - שדרוג נשקי המערות מ-+6 דורש Spore Cap, ‏Toad Hide ו-Heartwood. הנשקים הרגילים לא השתנו.
+  - **עוד חסר:** מוזיקה, ולהוסיף את Toad Hide ואת Heartwood לשלל של הבוסים כשייבנו.
+
 ### שלב א: מודלים שנשארו (👤 Tripo, ‏🤖 הגדרה) · ~6 מודלים · ~240 🪙
 | # | מודל | ריג? | הערות |
 |---|---|---|---|
