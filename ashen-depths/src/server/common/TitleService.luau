@@ -52,11 +52,10 @@ function TitleService.Refresh(player: Player, quiet: boolean?)
 	if not changed then
 		return
 	end
-	if not now[data.Title or ""] then
-		data.Title = "Adventurer"
-	end
-	player:SetAttribute("Title", data.Title)
-	titlesRemote:FireClient(player, { Earned = now, Wearing = data.Title })
+	-- a title not (or no longer) earned shows as Adventurer, but the choice stays in the save for when it is
+	local wearing = if now[data.Title or ""] then data.Title else "Adventurer"
+	player:SetAttribute("Title", wearing)
+	titlesRemote:FireClient(player, { Earned = now, Wearing = wearing })
 end
 
 function TitleService.OnKill(player: Player, enemyName: string)
