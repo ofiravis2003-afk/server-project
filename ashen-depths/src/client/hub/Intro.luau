@@ -290,15 +290,16 @@ function Intro.Start()
 		local respawn = player.CharacterAdded:Connect(follow)
 		local conn: RBXScriptConnection
 		conn = RunService.Heartbeat:Connect(function()
-			-- the beam is as wide as its attachments' X axis: keep both ends' X level and across the path, so it
-			-- lies flat on the ground
+			-- the beam is as wide as its attachments' secondary (Y) axis: keep both ends' Y level and across the
+			-- path, so it lies flat on the ground
 			local feet = trail.Attachment0
 			if feet then
 				local from = feet.WorldPosition
 				local flat = Vector3.new(goalAt.X, from.Y, goalAt.Z)
 				if (flat - from).Magnitude > 0.1 then
-					feet.WorldCFrame = CFrame.lookAt(from, flat)
-					goal.WorldCFrame = CFrame.lookAt(flat, flat + (flat - from)) -- (at the player's ground height)
+					local across = CFrame.Angles(0, 0, math.rad(90))
+					feet.WorldCFrame = CFrame.lookAt(from, flat) * across
+					goal.WorldCFrame = CFrame.lookAt(flat, flat + (flat - from)) * across -- (at the player's ground height)
 				end
 			end
 			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
