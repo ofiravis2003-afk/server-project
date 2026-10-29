@@ -32,6 +32,7 @@ return {
 	FullParty = nil :: boolean?, -- went down the Well with a full party of four
 	ChapterIIMoved = nil :: boolean?, -- this save was moved to chapter II's floors (Migrations)
 	HollowReached = nil :: boolean?, -- had been in The Hollow before chapter II moved it down (Migrations)
+	AskedLike = nil :: boolean?, -- was asked once to like the game (ShopService)
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
 }

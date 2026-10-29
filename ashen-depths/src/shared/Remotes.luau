@@ -46,6 +46,7 @@ local EVENT_NAMES = {
 	"Ability", -- client -> server: use the held weapon's special move (Q), in a direction / at a point
 	"TitlesUpdated", -- server -> client: the titles this player has earned, and the one they wear
 	"TitleChoose", -- client -> server: wear this title
+	"AskLike", -- server -> client: ask an adventurer who has been down a while to like the game and bring friends (once)
 }
 
 local FUNCTION_NAMES = {}

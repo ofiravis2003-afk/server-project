@@ -131,6 +131,15 @@ function ShopService.Start()
 		if (data.DeepestFloor or 0) > 0 then
 			task.delay(8, TipService.Show, player, "Town")
 		end
+		-- back in town after reaching floor 3 (they like it enough to keep going): ask once for a like and friends
+		if (data.DeepestFloor or 0) >= 3 and not data.AskedLike then
+			data.AskedLike = true
+			task.delay(25, function()
+				if player.Parent then
+					Remotes.Event("AskLike"):FireClient(player)
+				end
+			end)
+		end
 	end)
 	DepthsBoard.Start(town)
 	local openRemote = Remotes.Event("ShopOpen")
