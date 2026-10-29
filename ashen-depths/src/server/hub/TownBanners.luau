@@ -7,6 +7,7 @@
 -- The flags are tagged "TownFlag" and waved by the client (TownFlags), so the server sends nothing per frame.
 
 local CollectionService = game:GetService("CollectionService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local BANNER = "rbxassetid://79992070057290" -- tools/logo/banner_emberwell.png
 local PENNANT = "rbxassetid://105400265779631" -- tools/logo/pennant_emberwell.png
@@ -17,6 +18,7 @@ local CREAM = Color3.fromRGB(226, 210, 176)
 local IRON = Color3.fromRGB(34, 32, 32)
 local WOOD = Color3.fromRGB(62, 42, 28)
 local WARM = Color3.fromRGB(255, 170, 90)
+local TORCH_SCALE = 1.6 -- the generated sconce is about 2 studs tall
 
 local TownBanners = {}
 
@@ -84,15 +86,38 @@ local function flagPole(parent: Instance, base: Vector3, poleHeight: number)
 	CollectionService:AddTag(flag, "TownFlag")
 end
 
--- An iron torch bracket on the wall: an arm out of the stone, a cup, a flame and its warm light.
+-- A torch on the wall, its flame and its warm light. The sconce is the Studio-generated
+-- ServerStorage.TownProps.WallTorch (its plate on its -Z side, the torch standing out along +Z); without it, a
+-- plain iron bracket and cup.
 local function torch(parent: Instance, at: Vector3, out: Vector3)
-	local frame = CFrame.lookAt(at, at + out)
-	part(parent, "TorchPlate", Vector3.new(1.4, 2.4, 0.3), frame, IRON, Enum.Material.Metal)
-	part(parent, "TorchArm", Vector3.new(0.4, 0.4, 2.4), frame * CFrame.new(0, 0.4, -1.1) * CFrame.Angles(math.rad(-20), 0, 0), IRON, Enum.Material.Metal)
-	local cup = part(parent, "TorchCup", Vector3.new(1.3, 0.9, 1.3), frame * CFrame.new(0, 0.9, -2.3), IRON, Enum.Material.Metal)
-	-- the glowing coals in the cup, seen even by day
-	local coals = part(parent, "TorchCoals", Vector3.new(1, 0.3, 1), cup.CFrame * CFrame.new(0, 0.4, 0), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
-	coals.CastShadow = false
+	local folder = ServerStorage:FindFirstChild("TownProps")
+	local source = folder and folder:FindFirstChild("WallTorch")
+	local head: BasePart
+	if source and source:IsA("Model") then
+		local sconce = source:Clone()
+		sconce:ScaleTo(TORCH_SCALE)
+		sconce:PivotTo(CFrame.lookAt(at, at - out))
+		local box, size = sconce:GetBoundingBox()
+		-- the plate flat on the stone, then the flame on the torch's head (the top, toward the outer end)
+		sconce:PivotTo(sconce:GetPivot() + out * (size.Z / 2 - (box.Position - at):Dot(out) - 0.1))
+		for _, d in sconce:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.Anchored = true
+				d.CanCollide = false
+			end
+		end
+		sconce.Parent = parent
+		box, size = sconce:GetBoundingBox()
+		head = part(parent, "TorchFlame", Vector3.new(0.4, 0.4, 0.4), CFrame.new(box.Position + Vector3.new(0, size.Y / 2 - 0.2, 0) + out * size.Z * 0.22), WARM, Enum.Material.Neon)
+		head.Transparency = 1
+	else
+		local frame = CFrame.lookAt(at, at + out)
+		part(parent, "TorchPlate", Vector3.new(1.4, 2.4, 0.3), frame, IRON, Enum.Material.Metal)
+		part(parent, "TorchArm", Vector3.new(0.4, 0.4, 2.4), frame * CFrame.new(0, 0.4, -1.1) * CFrame.Angles(math.rad(-20), 0, 0), IRON, Enum.Material.Metal)
+		head = part(parent, "TorchCup", Vector3.new(1.3, 0.9, 1.3), frame * CFrame.new(0, 0.9, -2.3), IRON, Enum.Material.Metal)
+	end
+	head.CastShadow = false
+	local cup = head
 	local flame = Instance.new("ParticleEmitter")
 	flame.LightEmission = 1
 	flame.Color = ColorSequence.new({
