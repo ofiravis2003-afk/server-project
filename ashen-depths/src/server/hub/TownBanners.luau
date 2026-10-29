@@ -77,7 +77,7 @@ local function flagPole(parent: Instance, base: Vector3, poleHeight: number)
 	part(parent, "FlagPole", Vector3.new(poleHeight, 0.35, 0.35), CFrame.new(base + Vector3.new(0, poleHeight / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), WOOD, Enum.Material.Wood, Enum.PartType.Cylinder)
 	part(parent, "FlagTop", Vector3.new(0.7, 0.7, 0.7), CFrame.new(base + Vector3.new(0, poleHeight + 0.2, 0)), GOLD, Enum.Material.Metal, Enum.PartType.Ball)
 	-- the flag flies out sideways from the pole: its long side along the wind (X), hinged on the pole
-	local w, h = 7, 3.6
+	local w, h = 10, 5
 	local hinge = CFrame.new(base + Vector3.new(0, poleHeight - h / 2 - 0.3, 0)) * CFrame.Angles(0, math.rad(30), 0)
 	local flag = cloth(parent, "Flag", PENNANT, Vector2.new(h, w), hinge * CFrame.new(w / 2, 0, 0) * CFrame.Angles(0, 0, math.rad(90)))
 	flag:SetAttribute("Hinge", hinge)
@@ -87,9 +87,12 @@ end
 -- An iron torch bracket on the wall: an arm out of the stone, a cup, a flame and its warm light.
 local function torch(parent: Instance, at: Vector3, out: Vector3)
 	local frame = CFrame.lookAt(at, at + out)
-	part(parent, "TorchPlate", Vector3.new(0.9, 1.4, 0.2), frame, IRON, Enum.Material.Metal)
-	part(parent, "TorchArm", Vector3.new(0.25, 0.25, 1.4), frame * CFrame.new(0, 0, -0.7) * CFrame.Angles(math.rad(-25), 0, 0), IRON, Enum.Material.Metal)
-	local cup = part(parent, "TorchCup", Vector3.new(0.8, 0.6, 0.8), frame * CFrame.new(0, 0.5, -1.4), IRON, Enum.Material.Metal)
+	part(parent, "TorchPlate", Vector3.new(1.4, 2.4, 0.3), frame, IRON, Enum.Material.Metal)
+	part(parent, "TorchArm", Vector3.new(0.4, 0.4, 2.4), frame * CFrame.new(0, 0.4, -1.1) * CFrame.Angles(math.rad(-20), 0, 0), IRON, Enum.Material.Metal)
+	local cup = part(parent, "TorchCup", Vector3.new(1.3, 0.9, 1.3), frame * CFrame.new(0, 0.9, -2.3), IRON, Enum.Material.Metal)
+	-- the glowing coals in the cup, seen even by day
+	local coals = part(parent, "TorchCoals", Vector3.new(1, 0.3, 1), cup.CFrame * CFrame.new(0, 0.4, 0), Color3.fromRGB(255, 120, 40), Enum.Material.Neon)
+	coals.CastShadow = false
 	local flame = Instance.new("ParticleEmitter")
 	flame.LightEmission = 1
 	flame.Color = ColorSequence.new({
@@ -97,7 +100,7 @@ local function torch(parent: Instance, at: Vector3, out: Vector3)
 		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 140, 50)),
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 40, 20)),
 	})
-	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.7), NumberSequenceKeypoint.new(1, 0.1) })
+	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 0.2) })
 	flame.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
 	flame.Lifetime = NumberRange.new(0.4, 0.7)
 	flame.Rate = 30
@@ -171,10 +174,10 @@ function TownBanners.Decorate(town: Model)
 			local probe = Vector3.new(box.Position.X, y, box.Position.Z)
 			local face = surface(piece, probe + inn * (size.X + 10), probe)
 			if face then
-				hangBanner(folder, face + inn * 0.4, inn, 4.2)
+				hangBanner(folder, face + inn * 0.4, inn, 5.2)
 			end
 			-- the flag flies from the very top
-			flagPole(folder, Vector3.new(box.Position.X, bottom + size.Y - 0.6, box.Position.Z), 9)
+			flagPole(folder, Vector3.new(box.Position.X, bottom + size.Y - 0.6, box.Position.Z), 11)
 		elseif piece.Name == "Gatehouse" then
 			local inn = inward(box.Position)
 			local across = Vector3.new(-inn.Z, 0, inn.X)
