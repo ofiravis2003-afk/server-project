@@ -18,7 +18,7 @@ local Intro = {}
 
 local GOLD = Color3.fromRGB(240, 190, 90)
 local TEXT = Color3.fromRGB(230, 220, 205)
-local GUIDE_ARROW = "rbxassetid://111233344208279" -- tools/logo/guide_chevron.png
+local GUIDE_ARROW = "rbxassetid://80020066849273" -- tools/logo/guide_chevron.png (the arrow points up the picture)
 
 local function card(parent: Instance): (TextLabel, TextLabel)
 	local title = Instance.new("TextLabel")
@@ -262,9 +262,9 @@ function Intro.Start()
 		trail.Name = "ObjectiveTrail"
 		trail.Texture = GUIDE_ARROW
 		trail.TextureMode = Enum.TextureMode.Static
-		trail.TextureLength = 3
+		trail.TextureLength = 4
 		trail.TextureSpeed = 1.2
-		trail.Width0, trail.Width1 = 2.6, 2.6
+		trail.Width0, trail.Width1 = 3.4, 3.4
 		trail.FaceCamera = false
 		trail.LightEmission = 1
 		trail.LightInfluence = 0
