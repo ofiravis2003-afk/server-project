@@ -255,9 +255,9 @@ function Intro.Start()
 		-- a trail of glowing arrows on the ground from the player's feet to the place, moving toward it
 		local goal = Instance.new("Attachment")
 		goal.Name = "ObjectiveGoal"
-		goal.CFrame = CFrame.Angles(0, 0, math.rad(90)) -- (the beam lies in the plane its attachments' Axis is normal to)
 		goal.Parent = beam
-		goal.WorldPosition = Vector3.new(where.X, where.Y - 1.5, where.Z)
+		local goalAt = Vector3.new(where.X, where.Y - 1.5, where.Z)
+		goal.WorldPosition = goalAt
 		local trail = Instance.new("Beam")
 		trail.Name = "ObjectiveTrail"
 		trail.Texture = GUIDE_ARROW
@@ -290,6 +290,17 @@ function Intro.Start()
 		local respawn = player.CharacterAdded:Connect(follow)
 		local conn: RBXScriptConnection
 		conn = RunService.Heartbeat:Connect(function()
+			-- the beam is as wide as its attachments' X axis: keep both ends' X level and across the path, so it
+			-- lies flat on the ground
+			local feet = trail.Attachment0
+			if feet then
+				local from = feet.WorldPosition
+				local flat = Vector3.new(goalAt.X, from.Y, goalAt.Z)
+				if (flat - from).Magnitude > 0.1 then
+					feet.WorldCFrame = CFrame.lookAt(from, flat)
+					goal.WorldCFrame = CFrame.lookAt(flat, flat + (flat - from)) -- (at the player's ground height)
+				end
+			end
 			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if root and (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(where.X, 0, where.Z)).Magnitude < 14 then
 				conn:Disconnect()
