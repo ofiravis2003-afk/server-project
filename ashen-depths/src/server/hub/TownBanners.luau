@@ -18,7 +18,7 @@ local CREAM = Color3.fromRGB(226, 210, 176)
 local IRON = Color3.fromRGB(34, 32, 32)
 local WOOD = Color3.fromRGB(62, 42, 28)
 local WARM = Color3.fromRGB(255, 170, 90)
-local TORCH_SCALE = 1.6 -- the generated sconce is about 2 studs tall
+local TORCH_SCALE = 2.6 -- the generated sconce is about 2 studs tall (about 5 once scaled, for a 20-stud wall)
 
 local TownBanners = {}
 
@@ -125,10 +125,10 @@ local function torch(parent: Instance, at: Vector3, out: Vector3)
 		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 140, 50)),
 		ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 40, 20)),
 	})
-	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.2), NumberSequenceKeypoint.new(1, 0.2) })
+	flame.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1.6), NumberSequenceKeypoint.new(1, 0.3) })
 	flame.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(1, 1) })
 	flame.Lifetime = NumberRange.new(0.4, 0.7)
-	flame.Rate = 30
+	flame.Rate = 40
 	flame.Speed = NumberRange.new(2, 3.5)
 	flame.SpreadAngle = Vector2.new(12, 12)
 	flame.EmissionDirection = Enum.NormalId.Top
