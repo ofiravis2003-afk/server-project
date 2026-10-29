@@ -2,13 +2,14 @@
 -- A new adventurer's first look at Emberhold: the screen fades in on the town from above, the camera sweeps
 -- down to the Great Well and over to the Guild Hall while title cards tell where they are, then hands over
 -- to Aldric (IntroService on the server). A Skip button goes straight to Aldric. Afterwards, the objective: a line at the top of the screen and a
--- pillar of light over the Well, until they get there.
+-- pillar of light over the Well and a trail of glowing arrows on the ground leading to it, until they get there.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
@@ -17,6 +18,7 @@ local Intro = {}
 
 local GOLD = Color3.fromRGB(240, 190, 90)
 local TEXT = Color3.fromRGB(230, 220, 205)
+local GUIDE_ARROW = "rbxassetid://111233344208279" -- tools/logo/guide_chevron.png
 
 local function card(parent: Instance): (TextLabel, TextLabel)
 	local title = Instance.new("TextLabel")
@@ -250,13 +252,53 @@ function Intro.Start()
 		beam.Parent = workspace
 		local pulse = TweenService:Create(beam, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Transparency = 0.88 })
 		pulse:Play()
+		-- a trail of glowing arrows on the ground from the player's feet to the place, moving toward it
+		local goal = Instance.new("Attachment")
+		goal.Name = "ObjectiveGoal"
+		goal.CFrame = CFrame.Angles(0, 0, math.rad(90)) -- (the beam lies in the plane its attachments' Axis is normal to)
+		goal.Parent = beam
+		goal.WorldPosition = Vector3.new(where.X, where.Y - 1.5, where.Z)
+		local trail = Instance.new("Beam")
+		trail.Name = "ObjectiveTrail"
+		trail.Texture = GUIDE_ARROW
+		trail.TextureMode = Enum.TextureMode.Static
+		trail.TextureLength = 3
+		trail.TextureSpeed = 1.2
+		trail.Width0, trail.Width1 = 2.6, 2.6
+		trail.FaceCamera = false
+		trail.LightEmission = 1
+		trail.LightInfluence = 0
+		trail.Color = ColorSequence.new(Color3.fromRGB(255, 200, 110))
+		trail.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.08, 0.15), NumberSequenceKeypoint.new(1, 0.15) })
+		trail.Attachment1 = goal
+		trail.Parent = beam
+		local function follow(character: Model)
+			local root = character:WaitForChild("HumanoidRootPart", 10) :: BasePart?
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if not root or not trail.Parent then
+				return
+			end
+			local feet = Instance.new("Attachment")
+			feet.Name = "ObjectiveFeet"
+			feet.Position = Vector3.new(0, -(root.Size.Y / 2 + (if humanoid then humanoid.HipHeight else 2)) + 0.25, 0)
+			feet.Parent = root
+			trail.Attachment0 = feet
+		end
+		if player.Character then
+			task.spawn(follow, player.Character)
+		end
+		local respawn = player.CharacterAdded:Connect(follow)
 		local conn: RBXScriptConnection
 		conn = RunService.Heartbeat:Connect(function()
 			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if root and (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(where.X, 0, where.Z)).Magnitude < 14 then
 				conn:Disconnect()
+				respawn:Disconnect()
 				pulse:Cancel()
-				line.Text = "◆  Hold E at the Well to descend"
+				trail:Destroy()
+				line.Text = if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+					then "◆  Hold the button at the Well to descend"
+					else "◆  Hold E at the Well to descend"
 				task.delay(8, function()
 					gui:Destroy()
 					beam:Destroy()

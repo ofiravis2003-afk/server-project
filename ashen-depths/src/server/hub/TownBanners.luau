@@ -236,6 +236,16 @@ function TownBanners.Decorate(town: Model)
 			table.insert(lamps, Vector3.new(box.Position.X, box.Position.Y + size.Y / 2 - 2.2, box.Position.Z))
 		end
 	end
+	-- (no string across the way to the news board, where it would hang in front of the writing)
+	local board = town:FindFirstChild("NewsBoard")
+	local boardAt = if board and board:IsA("Model") then board:GetPivot().Position else nil
+	local function clearOfBoard(a: Vector3, b: Vector3): boolean
+		if not boardAt then
+			return true
+		end
+		local mid = (a + b) / 2
+		return Vector3.new(mid.X - boardAt.X, 0, mid.Z - boardAt.Z).Magnitude > 26
+	end
 	local used: { [Vector3]: boolean } = {}
 	for _, a in lamps do
 		-- string each post to its nearest neighbour that is a sensible span away (not one already strung to it)
@@ -246,7 +256,7 @@ function TownBanners.Decorate(town: Model)
 				best, bestDist = b, d
 			end
 		end
-		if best then
+		if best and clearOfBoard(a, best) then
 			used[a] = true
 			bunting(folder, a, best, bestDist * 0.07)
 		end

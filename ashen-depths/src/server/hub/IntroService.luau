@@ -2,7 +2,8 @@
 -- A new adventurer's first minute in Emberhold (data.IntroDone not yet set):
 --   1. they arrive at the south gate and the camera flies over the town and the Great Well (client/hub/Intro)
 --   2. Aldric greets them (the AldricIntro dialogue) and they take the Guild Brand: a burning mark on the hand
---   3. the way down is marked: "Descend the Great Well", a beam of light over it, until they go
+--   3. the way down is marked: "Descend the Great Well", a beam of light over it and arrows on the ground, until
+--      they go (and again on every visit until they have been down once)
 -- Players who have been here before (JoinCount > 1 when this was added) skip it.
 
 local Players = game:GetService("Players")
@@ -68,6 +69,14 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 		else
 			local character = player.Character or player.CharacterAdded:Wait()
 			brand(character)
+			-- back again but never yet went down: show them the way once more
+			if (data.DeepestFloor or 0) == 0 then
+				task.delay(3, function()
+					if player.Parent then
+						objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position)
+					end
+				end)
+			end
 		end
 	end)
 	Players.PlayerAdded:Connect(function(player)

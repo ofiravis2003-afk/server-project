@@ -33,12 +33,14 @@ local WARM = Color3.fromRGB(255, 176, 96)
 local SQUARE = 150 -- the square's width (as laid out; everything is then spread out by SPREAD)
 local SPREAD = 1.25 -- how far apart the village is drawn: every piece's place from the Well times this
 local MARKET_AT = Vector3.new(66, 0, 0) -- the Market Square's middle (as laid out)
--- The news board by the plaza: the latest updates, newest first (one line each).
-local NEWS = {
-	"- Special moves: every weapon learns one at level 3 (press Q)",
-	"- Titles: earn them, wear them (click your panel, top left)",
-	"- The Training Yard: test your weapons on the dummies",
-	"- Halloween: find the lost Jack-o'-Lanterns (until Nov 2)",
+-- The news board by the plaza: the latest updates, newest first (one line each). A line with `Until` (a UTC
+-- time) comes down by itself once that day comes.
+local NEWS: { { Text: string, Until: number? } } = {
+	{ Text = "- Emberhold flies its colours: banners, flags and torches on the walls" },
+	{ Text = "- Special moves: every weapon learns one at level 3 (press Q)" },
+	{ Text = "- Titles: earn them, wear them (click your panel, top left)" },
+	{ Text = "- The Training Yard: test your weapons on the dummies" },
+	{ Text = "- Halloween: find the lost Jack-o'-Lanterns (until Nov 2)", Until = DateTime.fromUniversalTime(2026, 11, 2).UnixTimestamp },
 }
 local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 
@@ -929,9 +931,15 @@ function TownBuilder.Build(): Town
 	local listLayout = Instance.new("UIListLayout")
 	listLayout.Padding = UDim.new(0.03, 0)
 	listLayout.Parent = list
+	local lines = {}
 	for _, line in NEWS do
+		if not line.Until or os.time() < line.Until then
+			table.insert(lines, line.Text)
+		end
+	end
+	for _, line in lines do
 		local item = Instance.new("TextLabel")
-		item.Size = UDim2.fromScale(1, 1 / #NEWS - 0.03)
+		item.Size = UDim2.fromScale(1, 1 / #lines - 0.03)
 		item.BackgroundTransparency = 1
 		item.Font = Enum.Font.Fondamento
 		item.TextScaled = true
