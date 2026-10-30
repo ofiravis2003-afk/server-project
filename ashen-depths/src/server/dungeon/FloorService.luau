@@ -1525,7 +1525,7 @@ guardiansDefeated = function(room: CombatRoom)
 				data.MiraSaved = true
 			end
 		end
-		-- The rot falls away from her where she lies, she speaks, and as the screen goes dark she is gone.
+		-- The rot falls away from her, she stands and speaks, and as the screen goes dark she is gone.
 		local mira = room.Fallen
 		room.Fallen = nil
 		if mira and mira.Parent then
@@ -1535,6 +1535,30 @@ guardiansDefeated = function(room: CombatRoom)
 					piece:Destroy()
 				end
 			end
+			-- once her fall is over she gets back up and stands facing whoever beat her
+			task.delay(3, function()
+				local animator = mira:FindFirstChildWhichIsA("Animator", true)
+				local root = mira:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if not animator or not root then
+					return
+				end
+				for _, player in Players:GetPlayers() do
+					local them = aliveRoot(player)
+					if them then
+						root.CFrame = CFrame.lookAt(root.Position, Vector3.new(them.Position.X, root.Position.Y, them.Position.Z))
+						break
+					end
+				end
+				local idle = Instance.new("Animation")
+				idle.AnimationId = (Enemies.MiraFell.Animations :: any).Idle
+				local track = animator:LoadAnimation(idle)
+				track.Priority = Enum.AnimationPriority.Action4
+				track.Looped = true
+				for _, playing in animator:GetPlayingAnimationTracks() do
+					playing:Stop(1.2)
+				end
+				track:Play(1.2)
+			end)
 			CollectionService:AddTag(mira, "BossIntro")
 			bossIntroRemote:FireAllClients(mira, "Mira Fell", "", {
 				"...you wear the Guild's Brand. Then the Guild still stands.",

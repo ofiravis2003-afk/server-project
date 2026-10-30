@@ -132,8 +132,8 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 			return
 		end
 		if ending then
-			-- (down beside her: the clip has laid her on the floor, so a boss's close-up would be under it)
-			local near = face() - toBoss * 8 + Vector3.new(0, 3.5, 0) + toBoss:Cross(Vector3.yAxis) * 2
+			-- (from the player's side: the room behind her may be too tight for a boss's close-up)
+			local near = face() - toBoss * 9 + Vector3.new(0, 1, 0) + toBoss:Cross(Vector3.yAxis) * 2
 			camera.CFrame = CFrame.lookAt(near, face())
 			TweenService:Create(camera, TweenInfo.new(duration * 0.6, Enum.EasingStyle.Sine), {
 				CFrame = CFrame.lookAt(near + toBoss * 2, face()),
