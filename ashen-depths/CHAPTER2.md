@@ -36,6 +36,11 @@
   - **נבדק:** הטקסטים נטענים עם המתג כבוי ודלוק, ושני המקומות עולים בלי שגיאות. **לא נבדק במשחק עם המתג דלוק:** קריאת דף, הגשת משימה, לקיחת התרמיל.
   - **חסר:** Mira בעיר (צריך את המודל, ולהראות אותה רק למי ש-`MiraSaved`), המשפט של Seraphine אחרי Mother Spore (כשהבוס ייבנה), והמחנה עצמו (בינתיים התרמיל בחדר האוצר).
 
+### 📍 איפה עצרנו (2026-10-30, ערב)
+- **נוספו:** מחנה הסיירת בקומה 23 (`ChapterProps.PatrolTent/PatrolCampfire/PatrolBedroll`, אבן עם 8 שמות, נוצרו ב-generate_mesh), מוזיקה (`Caverns`, ‏`CavernsBoss`, נבחרו בלי שמיעה), ומירה בעיר (קוד בלבד: צריך להעתיק ידנית את `EnemyModels.MiraFell` מ-Depths אל `ServerStorage.TownProps` של העיר).
+- **לא נראה בעיניים:** המחנה. Studio התחיל להציג מסך לבן בשני המקומות, גם במצב עריכה, אז אין צילום. הפריטים נוצרו בקוד והמוזיקה נטענת.
+- **זהירות:** Play ב-Studio כותב לשמירה האמיתית. בדיקות מירה קבעו בשמירה של המשתמש `Checkpoint = 26` ו-`MiraSaved = true`, והוסיפו זהב ו-XP. לא לבדוק עוד סיפור ב-Play לפני שמחליטים מה לעשות עם זה.
+
 ### 📍 איפה עצרנו (2026-10-28, ערב)
 - **אויבים עם מודל אמיתי:** Mycelid, ‏Spore Wisp, ‏Rot Crawler (‏ModelYaw 90, עולה בגובה מלא לפי `FloorY`), ‏Cap Spitter (‏ModelYaw 90). כולם נבדקו.
 - **Mira Fell:** ‏`פרק 2\למיקסמו\mira_fell_mixamo.fbx` מוכן. **הבא:** המשתמש עושה ריג ב-Mixamo ומוריד 6 אנימציות (Sword And Shield: Idle, ‏Walk עם In Place, ‏Slash, ‏Attack, ‏Impact, ‏Death) ואת `mira_rigged.fbx` לתיקייה `אנימציות\פרק 2\mira`, ואז מייבא ל-Depths (‏Rig Type Custom). את הטקסטורות לוקחים מ-`ServerStorage.ImportedTextures.MiraFellTextures`. מגדירים כמו את ה-Mycelid: ‏`HeldProps` של RustySword, ואת ה-IDs של הקליפים שהועלו אוטומטית בייבוא ("####" ב-Creator Hub).
