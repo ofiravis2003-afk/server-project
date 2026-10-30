@@ -498,10 +498,10 @@ Enemies.MiraFell = infected("Skeleton", {
 	Sink = 0.9, -- her guard stance bends the knees
 	ModelYaw = 0,
 	FungusScale = 0.45, -- a person, not a mushroom: the rot is only starting on her
-	-- (her hand bones turn differently from the skeleton's: her own copies of its props, with the grips turned to match)
+	-- (her hand bones turn differently from the skeleton's: her own copy of its sword, the grip turned to match, until
+	-- she has a sword of her own. No shield.)
 	HeldProps = {
 		{ Prop = "MiraSword", Bone = "mixamorig:RightHand" },
-		{ Prop = "MiraShield", Bone = "mixamorig:LeftForeArm" },
 	},
 	Animations = {
 		Idle = "rbxassetid://117963004734144",
