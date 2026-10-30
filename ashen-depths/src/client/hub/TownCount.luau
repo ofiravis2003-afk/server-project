@@ -23,7 +23,11 @@ function TownCount.Start()
 	line.AnchorPoint = Vector2.new(0.5, 0)
 	line.Position = UDim2.new(0.5, 0, 0, if Device.Touch() then 8 else 58)
 	line.Size = UDim2.fromOffset(280, 22)
-	line.BackgroundTransparency = 1
+	line.BackgroundColor3 = Color3.fromRGB(20, 16, 16)
+	line.BackgroundTransparency = 0.4
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = line
 	line.FontFace = Fonts.Title
 	line.TextSize = if Device.Touch() then 15 else 18
 	line.TextColor3 = Color3.fromRGB(235, 215, 170)
