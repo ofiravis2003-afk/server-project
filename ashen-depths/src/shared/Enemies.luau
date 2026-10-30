@@ -15,6 +15,7 @@
 --                plays its death clip first and shatters `At` seconds in, FallBack studs from where it stood
 --                (where the clip has laid the body; the server can't see the clip's bones once the body is still),
 --                FallAngle degrees turned from the way it faces (default 180: straight behind).
+--   FungusScale: size of the infected's mushrooms compared to the usual.
 --   Sink: studs to lower the body (at the model's own size), for clips that crouch below the standing pose
 --         (the Mixamo clips lost their crouch when their hips were zeroed, so the feet hovered).
 --   ModelYaw: degrees to turn the model's facing, when its animations face another way than its
@@ -494,8 +495,9 @@ Enemies.MiraFell = infected("Skeleton", {
 	Drops = { { Item = "SporeCap", Chance = 1, Count = { 2, 4 } } },
 	Model = "MiraFell",
 	Scale = 1,
-	Sink = 0,
+	Sink = 0.9, -- her guard stance bends the knees
 	ModelYaw = 0,
+	FungusScale = 0.45, -- a person, not a mushroom: the rot is only starting on her
 	Animations = {
 		Idle = "rbxassetid://117963004734144",
 		Walk = "rbxassetid://70915522281239",

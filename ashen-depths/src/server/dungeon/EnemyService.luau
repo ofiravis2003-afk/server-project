@@ -107,7 +107,7 @@ local folder: Folder
 -- A floor's curse (the Ember Altar event in FloorService): every monster that rises after it is tougher, and
 -- pays more. Back to normal on the next floor.
 local floorModifier = { Health = 1, Damage = 1, Rewards = 1 }
-local infect: (Model) -> ()
+local infect: (Model, number?) -> ()
 local sink: (any) -> ()
 local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring together
 local VIP_BONUS = 1.2 -- and 20% more for a VIP
@@ -511,7 +511,7 @@ local function mushroom(size: number): Model
 	return m
 end
 
-function infect(template: Model)
+function infect(template: Model, fungusScale: number?)
 	local root = template:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
 		return
@@ -528,7 +528,7 @@ function infect(template: Model)
 		local bone = template:FindFirstChild(spot.Bone, true)
 		if bone and bone:IsA("Bone") then
 			placed = true
-			local m = mushroom(height * spot.Size * 0.35)
+			local m = mushroom(height * spot.Size * 0.35 * (fungusScale or 1))
 			for _, p in m:GetDescendants() do
 				if p:IsA("BasePart") then
 					p.Anchored = false
@@ -548,7 +548,7 @@ function infect(template: Model)
 					end
 				end
 				-- the stalk's foot held on the bone (a little off it, by Offset), so it moves with the body
-				m:PivotTo((bone :: Bone).WorldCFrame * CFrame.new(spot.Offset * height * 0.15))
+				m:PivotTo((bone :: Bone).WorldCFrame * CFrame.new(spot.Offset * height * 0.15 * (fungusScale or 1)))
 				local a = Instance.new("Attachment")
 				a.Parent = base
 				a.WorldCFrame = (bone :: Bone).WorldCFrame
@@ -625,7 +625,7 @@ local function getTemplate(name: string): Model
 			template:ScaleTo(template:GetScale() * def.Scale)
 		end
 		if def.Infected then
-			infect(template)
+			infect(template, (def :: any).FungusScale)
 		end
 		template.Name = name
 		templates[name] = template
