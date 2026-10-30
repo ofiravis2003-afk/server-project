@@ -13,6 +13,9 @@ return {
 
 	MaxPartySize = 4,
 
+	-- Play in Studio loads the real save but never writes it back (no lock, no saving), so tests can't change it.
+	StudioSaves = false,
+
 	-- Chapter II (the Rotwood Caverns, floors 16-30), being built: off, so the live game stays as it is
 	-- (The Hollow from floor 16). On, chapter II takes floors 16-30 and The Hollow starts at 31.
 	ChapterII = false,

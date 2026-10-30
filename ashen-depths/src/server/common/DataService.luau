@@ -31,6 +31,7 @@ type Profile = {
 local DataService = {}
 
 local store = DataStoreService:GetDataStore(STORE_NAME)
+local readOnly = RunService:IsStudio() and not Config.StudioSaves -- (see Config)
 local profiles: { [Player]: Profile } = {}
 local releasingUserIds: { [number]: boolean } = {} -- final save still running for these players
 local loadedCallbacks: { (Player, { [string]: any }) -> () } = {}
@@ -77,6 +78,17 @@ end
 
 local function loadRecord(player: Player): (boolean, { [string]: any }?, string?)
 	local lastError = "unknown error"
+
+	if readOnly then
+		-- Studio: a look at the save, without taking the lock
+		local success, result = pcall(function()
+			return store:GetAsync(keyFor(player))
+		end)
+		if success then
+			return true, result, nil
+		end
+		return false, nil, if isStudioAccessError(result) then "studio" else tostring(result)
+	end
 
 	for attempt = 1, LOAD_ATTEMPTS do
 		local lockedByOtherServer = false
@@ -180,7 +192,7 @@ local function onPlayerAdded(player: Player)
 		-- Left while loading. If we did take the lock, give it back right away.
 		if loaded then
 			profiles[player] =
-				{ Data = (record and record.Data) or deepCopy(DataTemplate), CanSave = true, Released = true }
+				{ Data = (record and record.Data) or deepCopy(DataTemplate), CanSave = not readOnly, Released = true }
 			saveProfile(player, true)
 			profiles[player] = nil
 		end
@@ -191,7 +203,7 @@ local function onPlayerAdded(player: Player)
 	if loaded then
 		local data = (record and record.Data) or deepCopy(DataTemplate)
 		reconcile(data, DataTemplate)
-		profile = { Data = data, CanSave = true, Released = false }
+		profile = { Data = data, CanSave = not readOnly, Released = false }
 	elseif reason == "studio" then
 		warn(
 			"[DataService] Saving is OFF: turn on Game Settings > Security > Enable Studio Access to API Services. "

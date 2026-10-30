@@ -4,6 +4,10 @@
 
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local Config = require(ReplicatedStorage.Shared.Config)
 
 local Leaderboard = {}
 
@@ -22,6 +26,9 @@ end
 
 -- A player reached a new deepest floor (only ever goes up).
 function Leaderboard.Record(player: Player, floor: number)
+	if RunService:IsStudio() and not Config.StudioSaves then
+		return
+	end
 	task.spawn(function()
 		local s = getStore()
 		if not s then
