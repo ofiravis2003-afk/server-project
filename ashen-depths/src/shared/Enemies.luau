@@ -484,14 +484,36 @@ Enemies.FungalHusk = infected("Skeleton", { DisplayName = "Fungal Husk", XP = 14
 Enemies.HuskArcher = infected("SkeletonArcher", { DisplayName = "Husk Archer", XP = 16, Gold = { 5, 8 } })
 Enemies.SporeRat = infected("Rat", { DisplayName = "Spore Rat", XP = 7, Gold = { 1, 3 } })
 -- Captain Mira Fell (floor 25): the Ninth Patrol's leader, taken by the rot. She leads the last wave of the
--- infected hall. (For now on the infected skeleton's body; her own model will replace it.)
+-- infected hall. Her own Tripo model, rigged in Mixamo (the clips are the ones Studio uploaded on import); she
+-- keeps the skeleton's sword and shield, but she falls and lives, so she doesn't crumble into bones.
 Enemies.MiraFell = infected("Skeleton", {
 	DisplayName = "Captain Mira Fell",
 	XP = 120,
 	Gold = { 40, 60 },
 	Blight = 2,
 	Drops = { { Item = "SporeCap", Chance = 1, Count = { 2, 4 } } },
+	Model = "MiraFell",
+	Scale = 1,
+	Sink = 0,
+	ModelYaw = 0,
+	Animations = {
+		Idle = "rbxassetid://117963004734144",
+		Walk = "rbxassetid://70915522281239",
+		Hit = "rbxassetid://84000419721523",
+		Death = "rbxassetid://98765433512240",
+	},
+	AnimationSpeeds = {},
+	AttackClips = {
+		{ Id = "rbxassetid://133116384046648", HitAt = 0.57 },
+		{ Id = "rbxassetid://71118428074056", HitAt = 0.4 },
+	},
 })
+do
+	local mira = Enemies.MiraFell :: any
+	mira.CrumbleInto = nil
+	mira.EliteAttackClips = nil
+	mira.EliteHeldProps = nil
+end
 Enemies.Bloater = infected("Slime", {
 	DisplayName = "Bloater",
 	XP = 12,
