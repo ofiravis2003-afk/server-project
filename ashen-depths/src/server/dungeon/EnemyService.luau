@@ -1048,6 +1048,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	humanoid.MaxHealth = health
 	humanoid.Health = health
 	humanoid.WalkSpeed = def.WalkSpeed
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false) -- (a big body would climb the room's props in hops)
 
 	local eyeColor = if elite then ELITE_EYE else EYE
 	local eyes = {}

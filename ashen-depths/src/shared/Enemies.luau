@@ -508,7 +508,8 @@ Enemies.MiraFell = infected("Skeleton", {
 		Hit = "rbxassetid://84000419721523",
 		Death = "rbxassetid://98765433512240",
 	},
-	AnimationSpeeds = {},
+	WalkSpeed = 7.5, -- (scaling her up for the hall scales this too: about 11.6 there, and the walk clip kept in step)
+	AnimationSpeeds = { Walk = 1.5 },
 	AttackClips = {
 		{ Id = "rbxassetid://133116384046648", HitAt = 0.57 },
 		{ Id = "rbxassetid://71118428074056", HitAt = 0.4 },
