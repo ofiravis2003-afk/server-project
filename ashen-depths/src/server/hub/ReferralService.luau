@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local Common = script.Parent.Parent.Common
 local DataService = require(Common.DataService)
@@ -13,8 +14,8 @@ local ProgressService = require(Common.ProgressService)
 
 local ReferralService = {}
 
-local WELCOME_GOLD = 100
-local FINDER_GOLD = 250
+local WELCOME_GOLD = Config.InviteGoldNewcomer
+local FINDER_GOLD = Config.InviteGoldFinder
 local MAX_REWARDED = 20
 
 function ReferralService.Start()

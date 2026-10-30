@@ -13,6 +13,10 @@ return {
 
 	MaxPartySize = 4,
 
+	-- A friend brought in with a game invite (ReferralService): gold for the newcomer and for who invited them.
+	InviteGoldNewcomer = 100,
+	InviteGoldFinder = 250,
+
 	-- Play in Studio loads the real save but never writes it back (no lock, no saving), so tests can't change it.
 	StudioSaves = false,
 

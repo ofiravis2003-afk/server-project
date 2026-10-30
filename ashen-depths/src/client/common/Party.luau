@@ -179,9 +179,13 @@ function Party.Start(inTown: boolean)
 				pcall(SocialService.PromptGameInvite, SocialService, player)
 			end
 		end)
+		local reward = label(panel, Fonts.Body, 15, GOLD)
+		reward.Position = UDim2.fromOffset(16, 80)
+		reward.Size = UDim2.new(1, -32, 0, 20)
+		reward.Text = `Invite a friend who's new: +{Config.InviteGoldFinder} gold for you, +{Config.InviteGoldNewcomer} for them.`
 		local rows = Instance.new("ScrollingFrame")
-		rows.Position = UDim2.fromOffset(12, 86)
-		rows.Size = UDim2.new(1, -24, 1, -98)
+		rows.Position = UDim2.fromOffset(12, 106)
+		rows.Size = UDim2.new(1, -24, 1, -118)
 		rows.BackgroundTransparency = 1
 		rows.BorderSizePixel = 0
 		rows.ScrollBarThickness = 6
