@@ -31,6 +31,11 @@
   - שדרוג נשקי המערות מ-+6 דורש Spore Cap, ‏Toad Hide ו-Heartwood. הנשקים הרגילים לא השתנו.
   - **עוד חסר:** מוזיקה, ולהוסיף את Toad Hide ואת Heartwood לשלל של הבוסים כשייבנו.
 
+- **ו סיפור:** נעשה (2026-10-30, בקוד, מאחורי המתג). 8 דפים ב-`Lore.luau` (סטים `Ilvane2` ו-`Patrol`, נספרים בנפרד), 7 משימות ב-`Quests.luau`, ‏`WilsPack` בחדר האוצר של קומה 23, דיאלוגים של Mira ו-`<שם>_Mira` למי ששמר אותה (`data.MiraSaved`), חנות `MiraFell` עם Antidote.
+  - **הוחלט:** הבן של Pip נקרא Wil, הוא לא היה בסיירת אלא ירד לחפש אותה, והקסדה בקומה 12 רק נפלה ממנו. מירה עברה את השער עם מילים ש-Aldric נתן לה. השם שלה הועבר בקיר הנופלים לשורה חדשה.
+  - **נבדק:** הטקסטים נטענים עם המתג כבוי ודלוק, ושני המקומות עולים בלי שגיאות. **לא נבדק במשחק עם המתג דלוק:** קריאת דף, הגשת משימה, לקיחת התרמיל.
+  - **חסר:** Mira בעיר (צריך את המודל, ולהראות אותה רק למי ש-`MiraSaved`), המשפט של Seraphine אחרי Mother Spore (כשהבוס ייבנה), והמחנה עצמו (בינתיים התרמיל בחדר האוצר).
+
 ### 📍 איפה עצרנו (2026-10-28, ערב)
 - **אויבים עם מודל אמיתי:** Mycelid, ‏Spore Wisp, ‏Rot Crawler (‏ModelYaw 90, עולה בגובה מלא לפי `FloorY`), ‏Cap Spitter (‏ModelYaw 90). כולם נבדקו.
 - **Mira Fell:** ‏`פרק 2\למיקסמו\mira_fell_mixamo.fbx` מוכן. **הבא:** המשתמש עושה ריג ב-Mixamo ומוריד 6 אנימציות (Sword And Shield: Idle, ‏Walk עם In Place, ‏Slash, ‏Attack, ‏Impact, ‏Death) ואת `mira_rigged.fbx` לתיקייה `אנימציות\פרק 2\mira`, ואז מייבא ל-Depths (‏Rig Type Custom). את הטקסטורות לוקחים מ-`ServerStorage.ImportedTextures.MiraFellTextures`. מגדירים כמו את ה-Mycelid: ‏`HeldProps` של RustySword, ואת ה-IDs של הקליפים שהועלו אוטומטית בייבוא ("####" ב-Creator Hub).
