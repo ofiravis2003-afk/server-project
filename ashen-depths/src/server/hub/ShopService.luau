@@ -95,6 +95,11 @@ local STOCK: { [string]: { Title: string, Line: string, Offers: { Offer } } } = 
 -- Chapter II: Seraphine brews the cure for the caverns' spores
 if Config.ChapterII then
 	table.insert(STOCK.Seraphine.Offers, { Item = "Antidote", Rarity = "Common", Price = 45 })
+	STOCK.MiraFell = {
+		Title = "Mira's Remedies",
+		Line = "Six years down there taught me one thing. Drink it early.",
+		Offers = { { Item = "Antidote", Rarity = "Common", Price = 40 } },
+	}
 end
 
 local ShopService = {}
@@ -164,11 +169,17 @@ function ShopService.Start()
 		if at then
 			local talk = prompt(at, "Talk", d.Name)
 			talk.Triggered:Connect(function(player)
-				dialogueRemote:FireClient(player, person)
+				-- (someone who brought Mira Fell home hears the town talking about it)
+				local data = DataService.GetData(player)
+				local after = `{key}_Mira`
+				dialogueRemote:FireClient(player, person, if data and data.MiraSaved and Dialogues[after] then after else nil)
 			end)
 		end
 	end
 	Remotes.Event("DialogueAction").OnServerEvent:Connect(function(player, key: any, action: any)
+		if type(key) == "string" then
+			key = (string.gsub(key, "_Mira$", ""))
+		end
 		local person = type(key) == "string" and town.Model:FindFirstChild(if key == "AldricIntro" then "Aldric" else key, true)
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -179,12 +190,12 @@ function ShopService.Start()
 			IntroService.TakeBrand(player)
 		elseif key == "Brakka" and action == "Trade" then
 			openBrakka(player)
-		elseif (key == "Thorne" or key == "Seraphine") and action == "Trade" then
+		elseif (key == "Thorne" or key == "Seraphine" or key == "MiraFell") and action == "Trade" then
 			local at = person.PrimaryPart or person:FindFirstChildWhichIsA("BasePart", true)
 			if at then
 				openStore(player, key, at)
 			end
-		elseif action == "Quests" and (key == "Aldric" or key == "OldPip" or key == "Seraphine") then
+		elseif action == "Quests" and (key == "Aldric" or key == "OldPip" or key == "Seraphine" or key == "Thorne" or key == "MiraFell") then
 			QuestService.SetGiver(player, key)
 			QuestService.Push(player)
 			Remotes.Event("QuestBoardOpen"):FireClient(player, true, key)

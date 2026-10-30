@@ -4,10 +4,12 @@
 --   Kill: slay Count of Target (an enemy name; a boss counts too)
 --   Collect: bring Count of Target (an item) to Aldric; they're taken when the quest is turned in
 --   Reach: get down to floor Count
---   Lore: find Count of Ilvane's pages (shared/Lore); reading one keeps it, nothing is taken
+--   Lore: find Count of the pages of PageSet (shared/Lore; chapter I's if not set); reading one keeps it, nothing is taken
 -- A player can carry MaxActive quests at once. Bounties (Repeatable) can be taken again and again.
 -- Ranks go up with rank points: five ranks of ten tiers each (Copper I .. Mythril X), each tier costing more
 -- than the last, so the top takes a long time (about 13,000 points in all).
+
+local Config = require(script.Parent.Config)
 
 export type Quest = {
 	Id: string,
@@ -20,6 +22,7 @@ export type Quest = {
 	XP: number,
 	Points: number,
 	Needs: string?, -- another quest that must be done first
+	PageSet: string?, -- a Lore quest: which pages count
 	Repeatable: boolean?, -- a bounty: can be taken again once turned in
 	Giver: string?, -- who hands it out and takes it back (Aldric and the Guild board if not set)
 	Thanks: string?, -- what the giver says when it's turned in
@@ -44,6 +47,20 @@ Quests.List = {
 	{ Id = "IlvanesJournal", Title = "Ilvane's Journal", Text = "Recover all eight pages of Ilvane's journal from the Drowned Catacombs.", Kind = "Lore", Count = 8, Gold = 800, XP = 1000, Points = 120, Giver = "Seraphine", Needs = "ATornPage", Thanks = "Seraphine goes very quiet at the last page. \"Something green, beneath the gate... I need to read more. Much more.\"" },
 	{ Id = "FoxHelmet", Title = "The Fox Helmet", Text = "Old Pip's son went down to the twelfth floor last spring and never came back. Find his helmet, the one with the fox.", Kind = "Collect", Target = "FoxHelmet", Count = 1, Gold = 350, XP = 600, Points = 60, Giver = "OldPip", Thanks = "Pip turns the helmet over in his hands for a long while. \"...Thank you. Your stew is on the house. For good.\"" },
 } :: { Quest }
+
+if Config.ChapterII then
+	for _, quest in {
+		{ Id = "PastTheSealedGate", Title = "Past the Sealed Gate", Text = "The gate has cracked. Go through and reach the twentieth floor. Tell me everything you see.", Kind = "Reach", Count = 20, Gold = 1800, XP = 1600, Points = 450, Needs = "BoneWarden", Thanks = "Aldric leans in. \"Twenty floors. Any camps down there? Any... names?\" He catches himself. \"Well done.\"" },
+		{ Id = "RotgutToad", Title = "The Rotgut Toad", Text = "Something huge has been swallowing my scouts on the twentieth floor. Kill it.", Kind = "Kill", Target = "RotgutToad", Count = 1, Gold = 2500, XP = 2200, Points = 600, Needs = "PastTheSealedGate", Thanks = "\"Good. That's one less mouth down there.\" For a moment he doesn't look pleased at all." },
+		{ Id = "MotherSpore", Title = "Mother Spore", Text = "The rot has a heart, on the thirtieth floor. Cut it out.", Kind = "Kill", Target = "MotherSpore", Count = 1, Gold = 5000, XP = 4500, Points = 1000, Needs = "RotgutToad", Thanks = "\"Dead? Truly?\" He looks at your hand, not your face. \"The Guild is in your debt.\"" },
+		{ Id = "IlvanesPagesII", Title = "Ilvane's Pages II", Text = "There are more of Ilvane's pages below the gate. She wrote about the green fire. I need them.", Kind = "Lore", PageSet = "Ilvane2", Count = 4, Gold = 2000, XP = 2500, Points = 300, Giver = "Seraphine", Needs = "IlvanesJournal", Thanks = "Seraphine reads the last page twice. \"It isn't burning. It's growing. And it's heading for the Flame.\"" },
+		{ Id = "NinthPatrol", Title = "The Ninth Patrol", Text = "My Wil's helmet was on twelve, but he wasn't. He went looking for the Ninth Patrol. Find their camp. Find his pack.", Kind = "Collect", Target = "WilsPack", Count = 1, Gold = 1500, XP = 2000, Points = 250, Giver = "OldPip", Needs = "FoxHelmet", Thanks = "Pip unfolds the letter. \"'Gone deeper, Da. Don't wait up.'\" He sits down very slowly. \"That's his hand. That's my boy's hand.\"" },
+		{ Id = "OldDebts", Title = "Old Debts", Text = "The Ninth made camp somewhere past twenty. Find it, then tell me what the walls look like. Humour an old man.", Kind = "Reach", Count = 24, Gold = 1800, XP = 2000, Points = 250, Giver = "Thorne", Thanks = "Thorne is quiet for a long time. \"Same walls. I sat in that cave forty years ago. Don't ask me who with.\"" },
+		{ Id = "CleanAir", Title = "Clean Air", Text = "I can make a cure from the thing that's killing us. Bring me Spore Caps. Burn your gloves after.", Kind = "Collect", Target = "SporeCap", Count = 20, Gold = 900, XP = 1200, Points = 120, Repeatable = true, Giver = "MiraFell", Thanks = "\"That's enough for a few days of breathing. Thank you. Don't tell Aldric where I keep it.\"" },
+	} :: { Quest } do
+		table.insert(Quests.List, quest)
+	end
+end
 
 Quests.ById = {} :: { [string]: Quest }
 for _, q in Quests.List do

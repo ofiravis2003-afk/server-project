@@ -69,7 +69,6 @@ function LorePage.Start()
 	local from = label(sheet, Fonts.Body, 14, FADED)
 	from.Position = UDim2.fromOffset(30, 22)
 	from.Size = UDim2.new(1, -60, 0, 18)
-	from.Text = "From the journal of Ilvane, court wizard of Valdren"
 	local title = label(sheet, Fonts.Title, 30, INK)
 	title.Position = UDim2.fromOffset(30, 44)
 	title.Size = UDim2.new(1, -60, 0, 70)
@@ -126,9 +125,10 @@ function LorePage.Start()
 		if not page then
 			return
 		end
+		from.Text = Lore.From(page)
 		title.Text = page.Title
 		body.Text = page.Text
-		count.Text = if type(found) == "number" then `Pages found: {found} of {#Lore.Pages}` else ""
+		count.Text = if type(found) == "number" then `Pages found: {found} of {Lore.SetSize(page.Set)}` else ""
 		local screen = workspace.CurrentCamera.ViewportSize
 		fit.Scale = math.min(1, (screen.Y - 60) / sheet.Size.Y.Offset, (screen.X - 24) / sheet.Size.X.Offset)
 		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?

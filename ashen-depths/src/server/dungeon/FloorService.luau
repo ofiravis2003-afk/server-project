@@ -825,6 +825,49 @@ local function placeFoxHelmet(parent: Instance, position: Vector3)
 	end)
 end
 
+-- Floor 23's treasure room, once the Ninth Patrol's camp: Old Pip's boy got this far, and left his pack with a
+-- letter in it. Each player can take it once, if they haven't handed it to Pip already.
+local function placeWilsPack(parent: Instance, position: Vector3)
+	local spot = Instance.new("Model")
+	spot.Name = "WilsPack"
+	local function piece(name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.CanCollide = false
+		p.Size = size
+		p.CFrame = CFrame.new(position) * CFrame.Angles(0, math.rad(25), 0) * offset
+		p.Color = color
+		p.Material = material
+		p.Parent = spot
+		return p
+	end
+	local leather = Color3.fromRGB(92, 64, 40)
+	local body = piece("Pack", Vector3.new(2.2, 2.4, 1.3), CFrame.new(0, 1.2, 0), leather, Enum.Material.Fabric)
+	piece("Flap", Vector3.new(2.3, 0.9, 1.4), CFrame.new(0, 2.25, 0), leather:Lerp(Color3.new(), 0.25), Enum.Material.Fabric)
+	piece("Strap", Vector3.new(0.3, 2.5, 1.45), CFrame.new(-0.6, 1.25, 0), Color3.fromRGB(50, 34, 22), Enum.Material.Fabric)
+	piece("Strap", Vector3.new(0.3, 2.5, 1.45), CFrame.new(0.6, 1.25, 0), Color3.fromRGB(50, 34, 22), Enum.Material.Fabric)
+	piece("Letter", Vector3.new(0.9, 0.06, 0.6), CFrame.new(1.7, 0.05, 0.4), Color3.fromRGB(222, 202, 160), Enum.Material.Fabric)
+	spot.Parent = parent
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromRGB(255, 170, 90)
+	glow.Brightness = 1.2
+	glow.Range = 9
+	glow.Parent = body
+	local take = prompt(body, "Take", "A Worn Pack", 0.6, 8)
+	take.Triggered:Connect(function(player)
+		if not QuestService.Wants(player, "NinthPatrol") then
+			notifyRemote:FireClient(player, "An empty camp. Someone sat here not long ago.")
+			return
+		end
+		if InventoryService.GiveItem(player, "WilsPack", "Common", 1) > 0 then
+			notifyRemote:FireClient(player, "A worn pack with a fox stitched on the flap, and a letter inside. This belongs to Old Pip.")
+		else
+			notifyRemote:FireClient(player, "Your bag is full.")
+		end
+	end)
+end
+
 ------------------------------------------------------------------------------------------------
 -- Ilvane's journal: on its floor, a page lies on a lectern in the treasure room. Reading it keeps it
 -- (data.Pages) and shows it on screen; it can be read again any time.
@@ -885,15 +928,18 @@ local function placeLorePage(parent: Instance, position: Vector3, page: Lore.Pag
 		end
 		local first = not data.Pages[page.Id]
 		data.Pages[page.Id] = true
-		local found = 0
-		for _ in data.Pages do
-			found += 1
-		end
+		local found = Lore.CountIn(data.Pages, page.Set)
 		loreRemote:FireClient(player, page.Id, found)
 		if first then
 			ProgressService.AddXP(player, 40 + 5 * currentFloor)
-			notifyRemote:FireClient(player, `A page of Ilvane's journal ({found}/{#Lore.Pages}). Seraphine will want to hear of this.`)
-			QuestService.OnPage(player)
+			local total = Lore.SetSize(page.Set)
+			notifyRemote:FireClient(
+				player,
+				if page.Set == "Patrol"
+					then `A page of the Ninth Patrol's journal ({found}/{total}). They came much further than Aldric said.`
+					else `A page of Ilvane's journal ({found}/{total}). Seraphine will want to hear of this.`
+			)
+			QuestService.OnPage(player, page.Set)
 		end
 	end)
 end
@@ -1463,12 +1509,18 @@ guardiansDefeated = function(room: CombatRoom)
 	end
 	notifyRemote:FireAllClients("The guardians have fallen! A Gold Chest waits in the hall.")
 	if Floors.IsRotwood(currentFloor) then
-		-- Mira Fell wakes from the rot for a moment
+		-- Mira Fell wakes from the rot for a moment, and everyone here saw it: she goes home to Emberhold
+		for _, player in Players:GetPlayers() do
+			local data = DataService.GetData(player)
+			if data then
+				data.MiraSaved = true
+			end
+		end
 		task.spawn(function()
 			for _, line in {
 				"Mira Fell: ...you wear the Guild's Brand. Then the Guild still stands.",
 				"Mira Fell: The rot has let go of me, for now. Six years... I don't remember most of them.",
-				"Mira Fell: Take my journal. Read what Aldric told us before we came down.",
+				"Mira Fell: I tore one page out of my journal and hid it, further down. Find it. Read what Aldric did.",
 				"Mira Fell: I'll find my own way up. Go. It's still growing below.",
 			} do
 				task.wait(3.2)
@@ -1871,6 +1923,9 @@ startFloor = function(floor: number)
 			local page = Lore.ByFloor[floor]
 			if page then
 				placeLorePage(room.Model, room.Center + Vector3.new(0, 0, 7), page)
+			end
+			if floor == 23 and Floors.IsRotwood(floor) then
+				placeWilsPack(room.Model, room.Center + Vector3.new(-8, 0, 6))
 			end
 			if stairsKey.Needed and stairsKey.Where == "Treasure" then
 				local pedestal = FloorBuilder.KeyPedestal(room.Model, room.Center + Vector3.new(0, 0, -7), "Silver")

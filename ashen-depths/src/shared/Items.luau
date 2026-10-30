@@ -133,6 +133,7 @@ Items.Defs = {
 
 	-- Keepsakes: quest items, carried until they're handed over.
 	FoxHelmet = { DisplayName = "Dented Fox Helmet", Slot = "Material", Stack = 1, Limit = 1, Keepsake = true, Description = "A dented helmet with a fox painted on it. Old Pip's boy wore it." },
+	WilsPack = { DisplayName = "Wil's Pack", Slot = "Material", Stack = 1, Limit = 1, Keepsake = true, Description = "A worn pack with a fox stitched on the flap, and a letter inside. Old Pip should read it." },
 
 	-- Potions: drunk from the hotbar (slot 2).
 	HealthPotion = { DisplayName = "Health Potion", Slot = "Potion", Stack = 5, Limit = 5, Price = 8, HealFraction = 0.4, Description = "Gives back 40% of your health." },

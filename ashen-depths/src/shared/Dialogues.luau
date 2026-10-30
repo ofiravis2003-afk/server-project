@@ -2,6 +2,10 @@
 -- What Emberhold's townsfolk say when a player talks to them: their name and title, what they say first
 -- (Lines, one page at a time), and more if asked (More). Action (or Actions, for more than one) adds a button that does something
 -- (Brakka's "Trade" opens her shop). Keyed by the townsperson's model name in the town.
+-- Chapter II: `<name>_Mira` is what a townsperson says instead to someone who has beaten Captain Mira Fell and
+-- so brought her home (data.MiraSaved, ShopService).
+
+local Config = require(script.Parent.Config)
 
 export type Dialogue = { Name: string, Title: string, Lines: { string }, More: { string }?, Action: string?, Actions: { string }?, Required: boolean? }
 
@@ -88,5 +92,32 @@ local Dialogues: { [string]: Dialogue } = {
 		Action = "Quests",
 	},
 }
+
+if Config.ChapterII then
+	Dialogues.Thorne.Action = nil
+	Dialogues.Thorne.Actions = { "Trade", "Quests" }
+	Dialogues.MiraFell = {
+		Name = "Mira Fell",
+		Title = "Healer, once of the Ninth Patrol",
+		Lines = {
+			"You're the one who woke me. I owe you six years.",
+			"I can sell you what the rot hates. Drink it before the air turns green, not after.",
+		},
+		More = { "I don't go to the Guild Hall. Aldric sends his regards every morning. I send nothing back." },
+		Actions = { "Trade", "Quests" },
+	}
+	-- the same townsperson, with one more thing to say first
+	for key, line in {
+		Aldric = "Captain Fell, alive. A miracle. I always said so.",
+		OldPip = "Aldric told me the Ninth died on twelve. Six years I poured that man's ale, and he never drank it.",
+		Thorne = "She came back. Nobody comes back. Watch your step around the Guild Hall.",
+		GateGuard = "Forty years at this Well. First time I've seen anyone come home from past the gate.",
+	} do
+		local after = table.clone(Dialogues[key])
+		after.Lines = table.clone(after.Lines)
+		table.insert(after.Lines, 1, line)
+		Dialogues[key .. "_Mira"] = after
+	end
+end
 
 return Dialogues

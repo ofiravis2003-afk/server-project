@@ -6,6 +6,8 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Dialogues = require(ReplicatedStorage.Shared.Dialogues)
+local Lore = require(ReplicatedStorage.Shared.Lore)
 local Quests = require(ReplicatedStorage.Shared.Quests)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.DataService)
@@ -19,16 +21,19 @@ local updatedRemote = Remotes.Event("QuestsUpdated")
 local notifyRemote = Remotes.Event("Notify")
 local actionLimiter = RateLimiter.new(0.3)
 
+-- The name of whoever a quest goes back to.
+local function giverName(quest: Quests.Quest): string
+	local key = Quests.GiverOf(quest)
+	local d = Dialogues[key]
+	return if d then d.Name else key
+end
+
 -- How far along a quest is right now (Collect counts what's in the bag).
 local function progressOf(player: Player, data: { [string]: any }, quest: Quests.Quest): number
 	if quest.Kind == "Collect" then
 		return math.min(InventoryService.CountOf(player, quest.Target :: string), quest.Count)
 	elseif quest.Kind == "Lore" then
-		local found = 0
-		for _ in data.Pages or {} do
-			found += 1
-		end
-		return math.min(found, quest.Count)
+		return math.min(Lore.CountIn(data.Pages, quest.PageSet), quest.Count)
 	end
 	local saved = data.Quests[quest.Id]
 	return if saved then math.min(saved.Progress or 0, quest.Count) else 0
@@ -82,7 +87,7 @@ local function advance(player: Player, kind: string, target: string?, amount: nu
 			if saved.Progress ~= before then
 				changed = true
 				if saved.Progress >= quest.Count and before < quest.Count then
-					notifyRemote:FireClient(player, `Quest complete: {quest.Title}. Report to Aldric in Emberhold.`)
+					notifyRemote:FireClient(player, `Quest complete: {quest.Title}. Report to {giverName(quest)} in Emberhold.`)
 				end
 			end
 		end
@@ -97,20 +102,17 @@ function QuestService.OnKill(player: Player, enemyName: string)
 	advance(player, "Kill", enemyName, 1, false)
 end
 
--- A player found a page of Ilvane's journal (already kept in data.Pages): any Lore quest it finishes says so.
-function QuestService.OnPage(player: Player)
+-- A player found a page of `set` (already kept in data.Pages): any Lore quest it finishes says so.
+function QuestService.OnPage(player: Player, set: string?)
 	local data = DataService.GetData(player)
 	if not data then
 		return
 	end
-	local found = 0
-	for _ in data.Pages do
-		found += 1
-	end
+	local found = Lore.CountIn(data.Pages, set)
 	for _, quest in Quests.List do
 		local saved = data.Quests[quest.Id]
-		if saved and saved.State == "Active" and quest.Kind == "Lore" and found == quest.Count then -- just reached it
-			notifyRemote:FireClient(player, `Quest complete: {quest.Title}. Bring the news to Seraphine.`)
+		if saved and saved.State == "Active" and quest.Kind == "Lore" and quest.PageSet == set and found == quest.Count then -- just reached it
+			notifyRemote:FireClient(player, `Quest complete: {quest.Title}. Bring the news to {giverName(quest)}.`)
 		end
 	end
 	QuestService.Push(player)

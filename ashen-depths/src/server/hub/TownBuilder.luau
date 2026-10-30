@@ -371,6 +371,9 @@ local function wallOfTheFallen(parent: Instance, frame: CFrame)
 		for r = 1, rows do
 			table.insert(names, `{FIRST[rng:NextInteger(1, #FIRST)]} {LAST[rng:NextInteger(1, #LAST)]}`)
 		end
+		if c == 0 then
+			names[2] = "Mira Fell" -- lost with the Ninth Patrol, six years ago
+		end
 		local column = Instance.new("TextLabel")
 		column.BackgroundTransparency = 1
 		column.Position = UDim2.new(c / columns, 6, 0, 66)
@@ -394,7 +397,7 @@ local function wallOfTheFallen(parent: Instance, frame: CFrame)
 	oldest.TextSize = 16
 	oldest.TextColor3 = Color3.fromRGB(150, 144, 132)
 	oldest.TextTransparency = 0.55
-	oldest.Text = "Odo Harrow   ·   Mira Fell   ·   A. Vane   ·   Bram Ashby   ·   Kael Rook"
+	oldest.Text = "Odo Harrow   ·   Edda Holt   ·   A. Vane   ·   Bram Ashby   ·   Kael Rook"
 	oldest.Parent = gui
 	-- candles and a little light at its foot
 	for _, x in { -3.6, -2.9, 3.1 } do
