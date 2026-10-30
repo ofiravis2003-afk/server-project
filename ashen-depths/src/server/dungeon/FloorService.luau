@@ -2009,6 +2009,9 @@ startFloor = function(floor: number)
 	if floor >= 2 and (lairAhead or forcedEvent or rng:NextNumber() < EVENT_CHANCE) then
 		local lairFloor = Floors.Bosses[floor] ~= nil or Floors.Guardians[floor] == true
 		local kinds = { "Ambush", "Traps", "Merchant", "Altar", "Cache", "Hoard" }
+		if Floors.IsRotwood(floor) then
+			table.insert(kinds, "SporeGarden")
+		end
 		local kind = if lairFloor then "Merchant" else forcedEvent or kinds[rng:NextInteger(1, #kinds)]
 		forcedEvent = nil
 		local later = {}
@@ -2057,6 +2060,14 @@ startFloor = function(floor: number)
 			room.Hoard = true
 			room.EventKind = "Hoard"
 			floorEvent = "Rumors speak of a hoard on this floor, free for the taking..."
+		elseif kind == "SporeGarden" then
+			local room = later[rng:NextInteger(1, #later)]
+			room.EventKind = "Traps"
+			room.RewardChest = "Silver"
+			for _ = 1, 5 do
+				TrapService.SporePod(room.Built.Model, CFrame.new(freeSpot(room.Built, rng, 6)), TRAP_DAMAGE * 0.7 * Floors.EnemyDamageMultiplier(floor))
+			end
+			floorEvent = "A Spore Garden has grown in one of this floor's rooms. Mind the pods: a Silver Chest waits past them."
 		else
 			local room = later[rng:NextInteger(1, #later)]
 			room.EventKind = "Traps"

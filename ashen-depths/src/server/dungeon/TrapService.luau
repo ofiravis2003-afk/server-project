@@ -4,6 +4,8 @@
 --   Spikes: an iron grate in the floor glows red, then spikes shoot up.
 --   Flames: a vent hisses sparks, then a column of fire bursts out for a moment.
 --   Arrows: a slit in a corridor wall glows, then an arrow flies across the corridor.
+--   SporePod: a clump of mushrooms in the caverns swells, a red circle shows its reach, then it bursts into a cloud of
+--             spores: damage and Blight to whoever is still inside.
 -- Traps only run while a player is close, and stop when their floor is destroyed.
 
 local Players = game:GetService("Players")
@@ -12,10 +14,16 @@ local TweenService = game:GetService("TweenService")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArmorService = require(script.Parent.Parent.Common.ArmorService)
+local BlightService = require(script.Parent.Parent.Common.BlightService)
+local Props = require(script.Parent.Props)
 
 local ACTIVE_RANGE = 70
 local IRON = Color3.fromRGB(40, 38, 38)
 local WARN = Color3.fromRGB(255, 60, 30)
+local SPORE = Color3.fromRGB(120, 255, 160)
+local POD_RADIUS = 7
+local POD_WARNING = 1.6 -- seconds the circle shows before it bursts
+local POD_BLIGHT = 2
 
 local TrapService = {}
 
@@ -192,6 +200,64 @@ function TrapService.Arrows(parent: Instance, wallCFrame: CFrame, span: number, 
 		local mid = CFrame.lookAt((from + to) / 2, to)
 		for _, target in playersInBox(mid, Vector3.new(3, 6, span)) do
 			hurt(target, damage)
+		end
+	end)
+end
+
+-- `cframe` is the pod's center on the floor. Without the MushroomCluster prop it's a plain glowing bulb.
+function TrapService.SporePod(parent: Instance, cframe: CFrame, damage: number)
+	local model = Instance.new("Model")
+	model.Name = "SporePod"
+	model.Parent = parent
+	local cluster = Props.Place("MushroomCluster", model, cframe, 1.3)
+	if cluster then
+		for _, p in cluster:GetDescendants() do
+			if p:IsA("BasePart") then
+				p.CanCollide = false
+			end
+		end
+	end
+	local core = part(model, "Core", Vector3.new(1.6, 1.6, 1.6), cframe * CFrame.new(0, 1.2, 0), SPORE, Enum.Material.Neon)
+	core.Shape = Enum.PartType.Ball
+	core.CanCollide = false
+	core.CanQuery = false
+	core.CastShadow = false
+	core.Transparency = if cluster then 1 else 0.2
+	local glow = Instance.new("PointLight")
+	glow.Color = SPORE
+	glow.Range = 10
+	glow.Brightness = 0.6
+	glow.Parent = core
+	local cloud = Instance.new("ParticleEmitter")
+	cloud.Color = ColorSequence.new(SPORE, Color3.fromRGB(50, 170, 100))
+	cloud.LightEmission = 0.5
+	cloud.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.8), NumberSequenceKeypoint.new(1, 4) })
+	cloud.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 1) })
+	cloud.Lifetime = NumberRange.new(1, 1.8)
+	cloud.Speed = NumberRange.new(4, 9)
+	cloud.SpreadAngle = Vector2.new(180, 180)
+	cloud.Rate = 0
+	cloud.Parent = core
+	local floor = cframe.Position
+	loop(core, 6, function()
+		effectRemote:FireAllClients("Telegraph", floor, POD_RADIUS, POD_WARNING)
+		TweenService:Create(glow, TweenInfo.new(POD_WARNING), { Brightness = 4, Range = 16 }):Play()
+		task.wait(POD_WARNING)
+		if not core.Parent then
+			return
+		end
+		cloud:Emit(40)
+		glow.Brightness = 0.6
+		glow.Range = 10
+		effectRemote:FireAllClients("Quake", floor, POD_RADIUS)
+		for _, target in playersInBox(CFrame.new(floor), Vector3.new(POD_RADIUS * 2, 14, POD_RADIUS * 2)) do
+			if Vector3.new(target.Root.Position.X - floor.X, 0, target.Root.Position.Z - floor.Z).Magnitude <= POD_RADIUS then
+				hurt(target, damage)
+				local player = Players:GetPlayerFromCharacter(target.Humanoid.Parent)
+				if player then
+					BlightService.Add(player, POD_BLIGHT)
+				end
+			end
 		end
 	end)
 end
