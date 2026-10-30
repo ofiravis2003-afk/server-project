@@ -33,6 +33,7 @@ return {
 	ChapterIIMoved = nil :: boolean?, -- this save was moved to chapter II's floors (Migrations)
 	HollowReached = nil :: boolean?, -- had been in The Hollow before chapter II moved it down (Migrations)
 	AskedLike = nil :: boolean?, -- was asked once to like the game (ShopService)
+	FirstChestOpened = nil :: boolean?, -- has had the first chest's guaranteed Rare weapon, or was past it (FloorService)
 	MiraSaved = nil :: boolean?, -- beat Captain Mira Fell on floor 25: she's home in Emberhold, and the town talks
 	FirstJoinTime = 0,
 	LastJoinTime = 0,

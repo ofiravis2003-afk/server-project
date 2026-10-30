@@ -10,5 +10,7 @@ return {
 	Potion = "Low on health? Drink a Health Potion from your hotbar (slots 2-4). Resting between fights heals too.",
 	Death = "You fell, but the Guild Brand brought you back to the entrance. Everything you found is safe.",
 	Rope = "The rope at every floor's entrance climbs back to Emberhold, with everything you found.",
+	FirstWeapon = "A Rare weapon! Open your Bag and equip it, it hits far harder.",
+	Party = "The Depths are better with friends. Open Party to invite them, or to go down with others in town.",
 	Town = "Back in town: sell loot and upgrade weapons at Brakka, buy armor from Thorne, and take quests at the Guild.",
 }

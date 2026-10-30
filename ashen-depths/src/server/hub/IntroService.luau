@@ -11,11 +11,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.Parent.Common.DataService)
+local InventoryService = require(script.Parent.Parent.Common.InventoryService)
+local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local Onboarding = require(script.Parent.Parent.Common.Onboarding)
 
 local IntroService = {}
 
 local inIntro: { [Player]: boolean } = {}
+
+-- What the Guild gives a new adventurer with the Brand.
+local WELCOME_GOLD = 150
+local WELCOME_POTIONS = 2
 
 -- The Brand: a small ember on the back of the right hand that never goes out.
 local function brand(character: Model)
@@ -132,6 +138,9 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 			brand(player.Character)
 		end
 		notifyRemote:FireClient(player, "The Guild Brand burns into your hand. It will bring you home.")
+		ProgressService.AddGold(player, WELCOME_GOLD)
+		InventoryService.GiveItem(player, "HealthPotion", "Common", WELCOME_POTIONS)
+		notifyRemote:FireClient(player, `A gift from the Guild: {WELCOME_GOLD} gold and {WELCOME_POTIONS} Health Potions.`)
 		objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position)
 	end
 end

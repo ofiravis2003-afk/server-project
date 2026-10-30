@@ -724,7 +724,16 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 			text ..= `   +{got} {Items.Defs[material].DisplayName}`
 		end
 	end
-	if rng:NextNumber() < loot.WeaponChance then
+	-- A new adventurer's first chest always holds a Rare weapon of the kind they fight with.
+	local firstChest = not data.FirstChestOpened and (data.DeepestFloor or 0) < 3
+	data.FirstChestOpened = true
+	if firstChest then
+		local equipped = data.Inventory[data.Equipped.Weapon or ""]
+		local itemName = if equipped and table.find(Items.StarterWeapons, equipped.Item) then equipped.Item else "RustySword"
+		InventoryService.GiveItem(player, itemName, "Rare")
+		text ..= `   Rare {Items.NameFor(itemName, "Rare")}!`
+		TipService.Show(player, "FirstWeapon")
+	elseif rng:NextNumber() < loot.WeaponChance then
 		-- half the time a weapon, half the time a piece of armor
 		local itemName = if rng:NextNumber() < 0.5
 			then Items.StarterWeapons[rng:NextInteger(1, #Items.StarterWeapons)]

@@ -135,6 +135,7 @@ function ShopService.Start()
 	DataService.OnLoaded(function(player, data)
 		if (data.DeepestFloor or 0) > 0 then
 			task.delay(8, TipService.Show, player, "Town")
+			task.delay(20, TipService.Show, player, "Party")
 		end
 		player:SetAttribute("MiraSaved", data.MiraSaved == true)
 		-- back in town after reaching floor 3 (they like it enough to keep going): ask once for a like and friends
