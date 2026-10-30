@@ -132,7 +132,9 @@ function Audio.Start(place: string)
 						end
 					end
 				end
-				playMusic(if showing then "Boss" else "Depths")
+				-- (FloorService marks the caverns' floors on workspace)
+				local caverns = workspace:GetAttribute("Caverns") == true
+				playMusic(if showing then (if caverns then "CavernsBoss" else "Boss") elseif caverns then "Caverns" else "Depths")
 			end
 		end)
 		Remotes.Event("BossIntro").OnClientEvent:Connect(function(model: any)

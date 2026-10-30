@@ -834,6 +834,52 @@ local function placeFoxHelmet(parent: Instance, position: Vector3)
 	end)
 end
 
+-- Floor 23's treasure room is what's left of the Ninth Patrol's camp: a torn tent, a cold fire, their gear, and the
+-- eight names they carved in a slab of rock.
+local function placePatrolCamp(room: FloorBuilder.BuiltRoom)
+	local c = room.Center
+	local half = room.Size / 2
+	local function place(name: string, at: Vector3, turn: number)
+		local prop = Props.Place(name, room.Model, CFrame.new(c + at) * CFrame.Angles(0, math.rad(turn), 0))
+		if prop then
+			for _, p in prop:GetDescendants() do
+				if p:IsA("BasePart") then
+					p.CanCollide = false
+				end
+			end
+		end
+	end
+	place("PatrolTent", Vector3.new(half - 8, 0, -(half - 8)), 215)
+	place("PatrolTent", Vector3.new(-(half - 8), 0, -(half - 8)), 140)
+	place("PatrolCampfire", Vector3.new(9, 0, 8), 0)
+	place("PatrolBedroll", Vector3.new(5, 0, 11), 40)
+	place("PatrolBedroll", Vector3.new(13, 0, 4), 200)
+	place("PatrolBedroll", Vector3.new(-8, 0, -8), 110)
+	local slab = Instance.new("Part")
+	slab.Name = "CarvedNames"
+	slab.Anchored = true
+	slab.Size = Vector3.new(9, 7, 1.2)
+	slab.Color = Color3.fromRGB(62, 58, 54)
+	slab.Material = Enum.Material.Slate
+	slab.CFrame = CFrame.lookAt(c + Vector3.new(0, 3.4, half - 3), c + Vector3.new(0, 3.4, 0)) * CFrame.Angles(math.rad(-6), 0, 0)
+	slab.Parent = room.Model
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 40
+	gui.LightInfluence = 1
+	gui.Parent = slab
+	local names = Instance.new("TextLabel")
+	names.Size = UDim2.fromScale(1, 1)
+	names.BackgroundTransparency = 1
+	names.Font = Enum.Font.Fondamento
+	names.TextSize = 32
+	names.TextColor3 = Color3.fromRGB(196, 186, 166)
+	names.LineHeight = 1.1
+	names.Text = "THE NINTH\n\nMira Fell   Corin Hale\nWren Ashby   Tilda Roe\nJory Dunn   Sten Rook\nNell Harrow   Odo Marsh"
+	names.Parent = gui
+end
+
 -- Floor 23's treasure room, once the Ninth Patrol's camp: Old Pip's boy got this far, and left his pack with a
 -- letter in it. Each player can take it once, if they haven't handed it to Pip already.
 local function placeWilsPack(parent: Instance, position: Vector3)
@@ -1883,6 +1929,7 @@ local function sendToEntrance(player: Player)
 end
 
 startFloor = function(floor: number)
+	workspace:SetAttribute("Caverns", Floors.IsRotwood(floor)) -- (the music: client/common/Audio)
 	changingFloor = true
 	local rng = Random.new()
 	local layout = FloorLayout.Generate(floor, rng)
@@ -1969,6 +2016,7 @@ startFloor = function(floor: number)
 				placeLorePage(room.Model, room.Center + Vector3.new(0, 0, 7), page)
 			end
 			if floor == 23 and Floors.IsRotwood(floor) then
+				placePatrolCamp(room)
 				placeWilsPack(room.Model, room.Center + Vector3.new(-8, 0, 6))
 			end
 			if stairsKey.Needed and stairsKey.Where == "Treasure" then

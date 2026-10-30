@@ -11,6 +11,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 
 local TownBuilder = {}
@@ -52,6 +53,7 @@ local IDLE: { [string]: number } = {
 	Thorne = 106330872617044, -- Mixamo "Breathing Idle" (the "Dwarf Idle" leaned him to one side)
 	Seraphine = 89523763247665, -- Mixamo "Happy Idle"
 	OldPip = 106330872617044, -- Mixamo "Breathing Idle"
+	MiraFell = 117963004734144, -- Mixamo "Sword And Shield Idle"
 }
 
 local function part(parent: Instance, name: string, size: Vector3, cframe: CFrame, color: Color3, material: Enum.Material, shape: Enum.PartType?): Part
@@ -752,6 +754,10 @@ function TownBuilder.Build(): Town
 	local tavernFrame = facingFrom(MARKET + Vector3.new(26, 0, 18), MARKET + Vector3.new(0, 0, 18))
 	house(model, tavernFrame, 45, "The Sunken Hearth")
 	townsperson("OldPip", model, infront(tavernFrame, 5))
+	if Config.ChapterII then
+		-- (seen only by those who brought her home: client/hub/MiraInTown)
+		townsperson("MiraFell", model, facingFrom(Vector3.new(26, 0, -30), Vector3.new(0, 0, 0)))
+	end
 	prop("MarketStall", model, facingFrom(MARKET + Vector3.new(-8, 0, -9), MARKET + Vector3.new(-30, 0, -9)))
 	prop("MarketStall", model, facingFrom(MARKET + Vector3.new(-8, 0, 10), MARKET + Vector3.new(-30, 0, 10)))
 

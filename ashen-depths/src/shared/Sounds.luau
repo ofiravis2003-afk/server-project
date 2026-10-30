@@ -7,6 +7,8 @@ return {
 		Town = { Id = "rbxassetid://99301366639600", Volume = 0.3 }, -- "Royal Courtyard"
 		Depths = { Id = "rbxassetid://79559833217506", Volume = 0.3 }, -- "burial"
 		Boss = { Id = "rbxassetid://80766740746561", Volume = 0.4 }, -- "Rise of Vaurinox"
+		Caverns = { Id = "rbxassetid://96727522170625", Volume = 0.3 }, -- "strange hallway": the Rotwood Caverns
+		CavernsBoss = { Id = "rbxassetid://1848159364", Volume = 0.4 }, -- "Darkness On The Edge Of Time D"
 	},
 	Effects = {
 		Swing = { Id = "rbxassetid://5789211405", Volume = 0.5 }, -- a blade cutting the air
