@@ -495,7 +495,7 @@ Enemies.MiraFell = infected("Skeleton", {
 	Drops = { { Item = "SporeCap", Chance = 1, Count = { 2, 4 } } },
 	Model = "MiraFell",
 	Scale = 1,
-	Sink = 0.9, -- her guard stance bends the knees
+	Sink = 0.3, -- measured in the hall: the feet on the floor standing and walking (the deep slash still dips a little)
 	ModelYaw = 0,
 	FungusScale = 0.45, -- a person, not a mushroom: the rot is only starting on her
 	-- (her own Tripo sword, DungeonProps.MiraSword, with its Grip made for her hand bone. No shield.)
