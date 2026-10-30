@@ -15,6 +15,8 @@
 --                plays its death clip first and shatters `At` seconds in, FallBack studs from where it stood
 --                (where the clip has laid the body; the server can't see the clip's bones once the body is still),
 --                FallAngle degrees turned from the way it faces (default 180: straight behind).
+--   Survives: falls and lives: its death clip plays and the body stays down, for whoever ends its story (FloorService)
+--               to take away (it is cleared by itself after a few minutes, if no one does).
 --   FungusScale: size of the infected's mushrooms compared to the usual.
 --   Sink: studs to lower the body (at the model's own size), for clips that crouch below the standing pose
 --         (the Mixamo clips lost their crouch when their hips were zeroed, so the feet hovered).
@@ -97,6 +99,7 @@ export type EnemyDef = {
 	ModelYaw: number?,
 	Sink: number?,
 	CrumbleInto: { Prop: string, At: number, AfterDeathClip: boolean?, FallBack: number?, FallAngle: number? }?,
+	Survives: boolean?,
 	Ranged: { KeepAway: number, ProjectileSpeed: number, HitRadius: number, Shot: string? }?, -- Shot: what flies ("Arrow")
 	HeldProps: { HeldProp }?,
 	EliteHeldProps: { HeldProp }?,
@@ -497,6 +500,7 @@ Enemies.MiraFell = infected("Skeleton", {
 	Scale = 1,
 	Sink = 0.3, -- measured in the hall: the feet on the floor standing and walking (the deep slash still dips a little)
 	ModelYaw = 0,
+	Survives = true,
 	FungusScale = 0.45, -- a person, not a mushroom: the rot is only starting on her
 	-- (her own Tripo sword, DungeonProps.MiraSword, with its Grip made for her hand bone. No shield.)
 	HeldProps = {

@@ -1,6 +1,8 @@
 --!strict
 -- A boss's entrance scene, when its lair locks: black bars slide in, the camera leaves the player and closes in on
 -- the boss, it speaks its lines (typed out at the bottom), and its name comes up big before the fight begins.
+-- With an empty subtitle it's an ending instead (Captain Mira Fell's words as she lies in her hall): the camera
+-- stays on the player's side, no big name, a Skip button, and the screen goes dark at the end.
 -- The player can't move or attack while it plays (attribute "Cutscene" on the player).
 
 local CollectionService = game:GetService("CollectionService")
@@ -51,6 +53,8 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 		return
 	end
 	local head = model:FindFirstChild("mixamorig:Head", true) :: Bone?
+	local ending = subtitle == ""
+	local skipped = false
 
 	player:SetAttribute("Cutscene", true)
 	local walkSpeed, jumpPower = humanoid.WalkSpeed, humanoid.JumpPower
@@ -92,6 +96,23 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 	words.TextYAlignment = Enum.TextYAlignment.Top
 	words.Text = ""
 
+	if ending then
+		local skip = Instance.new("TextButton")
+		skip.AnchorPoint = Vector2.new(1, 0.5)
+		skip.Position = UDim2.fromScale(0.97, 0.5)
+		skip.Size = UDim2.fromOffset(90, 34)
+		skip.BackgroundColor3 = Color3.fromRGB(50, 42, 36)
+		skip.FontFace = Fonts.Title
+		skip.TextSize = 18
+		skip.TextColor3 = Color3.fromRGB(235, 228, 215)
+		skip.Text = "Skip"
+		skip.ZIndex = 11
+		skip.Parent = bottom
+		skip.Activated:Connect(function()
+			skipped = true
+		end)
+	end
+
 	-- The camera: first over the player's shoulder toward the boss, then in close on its face.
 	local camera = workspace.CurrentCamera
 	local before = camera.CameraType
@@ -107,7 +128,16 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 		CFrame = CFrame.lookAt(shoulder + toBoss * 6, face()),
 	}):Play()
 	task.delay(duration * 0.3, function()
-		if not gui.Parent then
+		if not gui.Parent or skipped then
+			return
+		end
+		if ending then
+			-- (down beside her: the clip has laid her on the floor, so a boss's close-up would be under it)
+			local near = face() - toBoss * 8 + Vector3.new(0, 3.5, 0) + toBoss:Cross(Vector3.yAxis) * 2
+			camera.CFrame = CFrame.lookAt(near, face())
+			TweenService:Create(camera, TweenInfo.new(duration * 0.6, Enum.EasingStyle.Sine), {
+				CFrame = CFrame.lookAt(near + toBoss * 2, face()),
+			}):Play()
 			return
 		end
 		local look = bossRoot.CFrame.LookVector
@@ -125,11 +155,14 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 		TweenService:Create(speaker, TweenInfo.new(0.4), { TextTransparency = 0 }):Play()
 		local perLine = (duration * 0.72) / math.max(#lines, 1)
 		for _, line in lines do
-			if not gui.Parent then
+			if not gui.Parent or skipped then
 				return
 			end
 			local started = os.clock()
 			for i = 1, #line do
+				if skipped then
+					return
+				end
 				words.Text = line:sub(1, i)
 				task.wait(0.028)
 			end
@@ -139,7 +172,7 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 
 	-- Its name, big, just before the fight.
 	task.delay(duration - 2.6, function()
-		if not gui.Parent then
+		if not gui.Parent or ending then
 			return
 		end
 		local name = label(gui, Fonts.Title, 64, Color3.fromRGB(240, 210, 160))
@@ -164,7 +197,22 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 		TweenService:Create(sub, show, { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
 	end)
 
-	task.wait(duration)
+	local began = os.clock()
+	while os.clock() - began < duration - (if ending then 1 else 0) and not skipped do
+		task.wait(0.05)
+	end
+	local dark: Frame? = nil
+	if ending then
+		local black = Instance.new("Frame")
+		black.Size = UDim2.fromScale(1, 1)
+		black.BackgroundColor3 = Color3.new(0, 0, 0)
+		black.BackgroundTransparency = 1
+		black.ZIndex = 12
+		black.Parent = gui
+		TweenService:Create(black, TweenInfo.new(0.7), { BackgroundTransparency = 0 }):Play()
+		task.wait(0.9)
+		dark = black
+	end
 	TweenService:Create(top, slide, { Position = UDim2.fromScale(0, 0) }):Play()
 	TweenService:Create(bottom, slide, { Position = UDim2.fromScale(0, 1) }):Play()
 	words.Text = ""
@@ -177,6 +225,9 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 		other.Enabled = true
 	end
 	pcall(StarterGui.SetCoreGuiEnabled, StarterGui, Enum.CoreGuiType.All, true)
+	if dark then
+		TweenService:Create(dark, TweenInfo.new(0.7), { BackgroundTransparency = 1 }):Play()
+	end
 	task.wait(0.7)
 	gui:Destroy()
 end

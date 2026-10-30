@@ -962,13 +962,15 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 					death:AdjustSpeed(0)
 				end
 			end)
-			task.delay(duration + 0.6, function()
-				for _, part in enemy.Model:GetDescendants() do
-					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
-						TweenService:Create(part, TweenInfo.new(1), { Transparency = 1 }):Play()
+			if not enemy.Def.Survives then
+				task.delay(duration + 0.6, function()
+					for _, part in enemy.Model:GetDescendants() do
+						if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+							TweenService:Create(part, TweenInfo.new(1), { Transparency = 1 }):Play()
+						end
 					end
-				end
-			end)
+				end)
+			end
 		end
 	else
 		-- The bones fall apart and scatter on the floor.
@@ -1014,7 +1016,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		task.spawn(options.OnDied, enemy)
 	end
 
-	task.delay(if enemy.Custom then 5.5 else 4, function()
+	task.delay(if enemy.Def.Survives then 300 elseif enemy.Custom then 5.5 else 4, function()
 		enemy.Model:Destroy()
 	end)
 	if Config.TestMode and spawnPart and spawnPart.Parent then

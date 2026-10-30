@@ -100,6 +100,7 @@ type CombatRoom = {
 	RewardChest: string?, -- a chest of this tier appears in the middle once the room is cleared (events)
 	Hoard: boolean?, -- this floor's event: once cleared, a free Gold hoard appears... and opening it wakes the dead
 	Guardians: boolean?, -- the Guardians' hall: waves of monsters, then a Skeleton Captain
+	Fallen: Model?, -- a hall's leader who fell and lives (Enemies Survives): the body, until its scene
 	Wave: number?,
 	Boss: string?, -- a boss's lair: just the boss, and its reward when it falls
 	IntroShown: boolean?,
@@ -128,6 +129,7 @@ local landingRemote = Remotes.Event("Landing")
 local setAir: (boolean) -> ()
 local REVIVE_WINDOW = 90 -- a Revive bought this long after falling still brings you back there
 local BOSS_INTRO_SECONDS = 11
+local MIRA_SCENE_SECONDS = 20
 
 local function keysOf(player: Player): Keys
 	local k = keys[player]
@@ -391,6 +393,9 @@ local function spawnWave(room: CombatRoom, floor: number, wave: number)
 				Title = if captain then hall.Title else nil,
 				ExtraScale = if captain then hall.Scale else nil,
 				OnDied = function(dead)
+					if dead.Def.Survives then
+						room.Fallen = dead.Model
+					end
 					onEnemyDied(room, dead)
 				end,
 			})
@@ -604,6 +609,10 @@ local function resetRoom(room: CombatRoom)
 	room.EmptySince = nil
 	if room.Guardians then
 		room.Wave = 0
+		if room.Fallen then
+			room.Fallen:Destroy()
+			room.Fallen = nil
+		end
 	end
 	if room.RewardChest == "Bronze" and room.EventKind == "Ambush" then
 		room.Ambush = true
@@ -1507,7 +1516,7 @@ guardiansDefeated = function(room: CombatRoom)
 			end
 		end
 	end
-	notifyRemote:FireAllClients("The guardians have fallen! A Gold Chest waits in the hall.")
+	local chestAfter = 2.5
 	if Floors.IsRotwood(currentFloor) then
 		-- Mira Fell wakes from the rot for a moment, and everyone here saw it: she goes home to Emberhold
 		for _, player in Players:GetPlayers() do
@@ -1516,19 +1525,30 @@ guardiansDefeated = function(room: CombatRoom)
 				data.MiraSaved = true
 			end
 		end
-		task.spawn(function()
-			for _, line in {
-				"Mira Fell: ...you wear the Guild's Brand. Then the Guild still stands.",
-				"Mira Fell: The rot has let go of me, for now. Six years... I don't remember most of them.",
-				"Mira Fell: I tore one page out of my journal and hid it, further down. Find it. Read what Aldric did.",
-				"Mira Fell: I'll find my own way up. Go. It's still growing below.",
-			} do
-				task.wait(3.2)
-				notifyRemote:FireAllClients(line)
+		-- The rot falls away from her where she lies, she speaks, and as the screen goes dark she is gone.
+		local mira = room.Fallen
+		room.Fallen = nil
+		if mira and mira.Parent then
+			chestAfter = MIRA_SCENE_SECONDS + 0.5
+			for _, piece in mira:GetDescendants() do
+				if piece.Name == "Fungus" or piece.Name == "Spores" or piece:IsA("PointLight") then
+					piece:Destroy()
+				end
 			end
-		end)
+			CollectionService:AddTag(mira, "BossIntro")
+			bossIntroRemote:FireAllClients(mira, "Mira Fell", "", {
+				"...you wear the Guild's Brand. Then the Guild still stands.",
+				"The rot has let go of me, for now. Six years... I don't remember most of them.",
+				"I tore one page out of my journal and hid it, further down. Find it. Read what Aldric did.",
+				"I'll find my own way up. Go. It's still growing below.",
+			}, MIRA_SCENE_SECONDS)
+			task.delay(MIRA_SCENE_SECONDS - 0.4, function()
+				mira:Destroy()
+			end)
+		end
 	end
-	task.delay(2.5, function()
+	task.delay(chestAfter, function()
+		notifyRemote:FireAllClients("The guardians have fallen! A Gold Chest waits in the hall.")
 		if room.Built.Model.Parent then
 			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")
 		end
