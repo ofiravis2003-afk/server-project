@@ -498,9 +498,14 @@ Enemies.MiraFell = infected("Skeleton", {
 	Sink = 0.9, -- her guard stance bends the knees
 	ModelYaw = 0,
 	FungusScale = 0.45, -- a person, not a mushroom: the rot is only starting on her
+	-- (her hand bones turn differently from the skeleton's: her own copies of its props, with the grips turned to match)
+	HeldProps = {
+		{ Prop = "MiraSword", Bone = "mixamorig:RightHand" },
+		{ Prop = "MiraShield", Bone = "mixamorig:LeftForeArm" },
+	},
 	Animations = {
 		Idle = "rbxassetid://117963004734144",
-		Walk = "rbxassetid://70915522281239",
+		Walk = "rbxassetid://133826376522292",
 		Hit = "rbxassetid://84000419721523",
 		Death = "rbxassetid://98765433512240",
 	},
