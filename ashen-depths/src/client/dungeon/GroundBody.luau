@@ -15,7 +15,8 @@ type Body = { Root: BasePart, Humanoid: Humanoid, Motor: Motor6D, Left: Bone, Ri
 
 local bodies: { [Model]: Body } = {}
 
-local function add(model: Instance)
+local add: (Instance) -> ()
+function add(model: Instance)
 	if not model:IsA("Model") then
 		return
 	end
@@ -26,6 +27,8 @@ local function add(model: Instance)
 	local right = model:FindFirstChild("mixamorig:RightToeBase", true) :: Bone?
 	if root and humanoid and motor and left and right then
 		bodies[model] = { Root = root, Humanoid = humanoid, Motor = motor, Left = left, Right = right, Drop = 0 }
+	elseif model.Parent then
+		task.delay(0.5, add, model) -- (its bones are still arriving)
 	end
 end
 
