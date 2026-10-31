@@ -258,8 +258,10 @@ local function buildRoom(
 	openings: { { Dir: Vector2, SecretHere: boolean } },
 	theme: string,
 	rng: Random,
-	overgrown: boolean?
+	overgrown: boolean?,
+	height: number?
 ): BuiltRoom
+	local wallHeight = height or WALL_HEIGHT -- (a lair may be built taller)
 	local model = Instance.new("Model")
 	model.Name = `{plan.Type}_{plan.Key}`
 	model:SetAttribute("Theme", theme)
@@ -313,7 +315,7 @@ local function buildRoom(
 	else
 		block(model, "Floor", Vector3.new(outer, 2, outer), CFrame.new(center + Vector3.new(0, -1, 0)), FLOOR_COLOR, Enum.Material.Slate)
 	end
-	block(model, "Ceiling", Vector3.new(outer, 2, outer), CFrame.new(center + Vector3.new(0, WALL_HEIGHT + 1, 0)), CEILING_COLOR, Enum.Material.Slate)
+	block(model, "Ceiling", Vector3.new(outer, 2, outer), CFrame.new(center + Vector3.new(0, wallHeight + 1, 0)), CEILING_COLOR, Enum.Material.Slate)
 
 	-- Walls, doorways, gates and torches, side by side
 	local openSides: { [string]: { Dir: Vector2, SecretHere: boolean } } = {}
@@ -327,7 +329,7 @@ local function buildRoom(
 		local opening = openSides[sideKey(dir)]
 		local inward = -flat(dir)
 		if not opening then
-			block(model, "Wall", Vector3.new(outer, WALL_HEIGHT, WALL), frame * CFrame.new(0, WALL_HEIGHT / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
+			block(model, "Wall", Vector3.new(outer, wallHeight, WALL), frame * CFrame.new(0, wallHeight / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
 			-- Small rooms get one torch per wall, big rooms two.
 			for _, x in if S >= 40 then { -S / 4, S / 4 } else { 0 } do
 				FloorBuilder.Torch(model, (frame * CFrame.new(x, 9, -S / 2)).Position, inward, true)
@@ -336,9 +338,9 @@ local function buildRoom(
 		else
 			local segment = (S - DOOR_WIDTH) / 2 + WALL
 			for _, sign in { -1, 1 } do
-				block(model, "Wall", Vector3.new(segment, WALL_HEIGHT, WALL), frame * CFrame.new(sign * (DOOR_WIDTH / 2 + segment / 2), WALL_HEIGHT / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
+				block(model, "Wall", Vector3.new(segment, wallHeight, WALL), frame * CFrame.new(sign * (DOOR_WIDTH / 2 + segment / 2), wallHeight / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
 			end
-			block(model, "Lintel", Vector3.new(DOOR_WIDTH, WALL_HEIGHT - DOOR_HEIGHT, WALL), frame * CFrame.new(0, DOOR_HEIGHT + (WALL_HEIGHT - DOOR_HEIGHT) / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
+			block(model, "Lintel", Vector3.new(DOOR_WIDTH, wallHeight - DOOR_HEIGHT, WALL), frame * CFrame.new(0, DOOR_HEIGHT + (wallHeight - DOOR_HEIGHT) / 2, wallZ), WALL_COLOR, Enum.Material.Cobblestone)
 			table.insert(built.Doorways, (frame * CFrame.new(0, 0, -S / 2)).Position)
 			FloorBuilder.Torch(model, (frame * CFrame.new(DOOR_WIDTH / 2 + 3, 9, -S / 2)).Position, inward, true)
 
@@ -370,7 +372,7 @@ local function buildRoom(
 		for _, sx in { -1, 1 } do
 			for _, sz in { -1, 1 } do
 				local p = center + Vector3.new(sx * (S / 2 - 3), 0, sz * (S / 2 - 3))
-				block(model, "Pillar", Vector3.new(3, WALL_HEIGHT, 3), CFrame.new(p + Vector3.new(0, WALL_HEIGHT / 2, 0)), WALL_COLOR, Enum.Material.Cobblestone)
+				block(model, "Pillar", Vector3.new(3, wallHeight, 3), CFrame.new(p + Vector3.new(0, wallHeight / 2, 0)), WALL_COLOR, Enum.Material.Cobblestone)
 				block(model, "PillarBase", Vector3.new(4, 1.2, 4), CFrame.new(p + Vector3.new(0, 0.6, 0)), Color3.fromRGB(50, 50, 52), Enum.Material.Slate)
 			end
 		end
@@ -380,7 +382,7 @@ local function buildRoom(
 		Model = model,
 		Center = center,
 		Size = S,
-		Height = WALL_HEIGHT,
+		Height = wallHeight,
 		PlainWalls = plainWalls,
 		Doorways = built.Doorways,
 		Rng = rng,
@@ -462,7 +464,8 @@ function FloorBuilder.Build(layout: FloorLayout.Layout, origin: Vector3, rng: Ra
 	local rooms: { [string]: BuiltRoom } = {}
 	for key, plan in layout.Rooms do
 		local theme = themeOf[key] or (if plan.Type == "Boss" then Floors.BossThemes[layout.Floor] else nil) or FIXED_THEMES[plan.Type] or "Plain"
-		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], theme, rng, Floors.IsRotwood(layout.Floor))
+		local height = if plan.Type == "Boss" then Floors.LairHeights[layout.Floor] else nil
+		rooms[key] = buildRoom(floorModel, plan, centerOf(plan), openings[key], theme, rng, Floors.IsRotwood(layout.Floor), height)
 	end
 
 	local corridors = {}

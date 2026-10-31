@@ -138,6 +138,9 @@ if CHAPTER_II then
 	Floors.BossThemes[20] = "Plain" -- (bare cave: no tomb or throne; the rot grows over it as over every room here)
 end
 
+-- Lairs built taller than a room's usual 18 studs (the Rotgut Toad leaps high).
+Floors.LairHeights = { [20] = 32 } :: { [number]: number }
+
 -- How much stronger a boss is on this floor than on its own (1 in chapter I): it keeps up with the floor.
 function Floors.BossScale(floor: number, boss: string): (number, number)
 	local home = BOSS_HOME[boss] or floor
