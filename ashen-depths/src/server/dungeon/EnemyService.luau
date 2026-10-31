@@ -80,6 +80,9 @@ export type Enemy = {
 	Boss: BossState?,
 	Options: SpawnOptions,
 	Burrowed: boolean?, -- (Rot Crawler) under the floor: no blow reaches it
+	Shielded: boolean?, -- (Mother Spore) her heart is closed: no blow hurts her
+	LastShieldNote: number?, -- when "Her heart is closed" last showed
+	Heart: BasePart?, -- (Mother Spore) the glow in her chest
 	LastSprout: number?, -- (Mycelid) when it last sprouted mushrooms
 	GroundY: number?, -- (Rot Crawler) the root's height when it stands up out of the floor
 	FloorY: number?, -- (Rot Crawler) the floor's height, where its circles and dust show
@@ -1201,8 +1204,8 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 			return track
 		end
 		bossState = {
-			Slam = load(def.Boss.Slam.Id),
-			Kick = load(def.Boss.Kick.Id),
+			Slam = if def.Boss.Slam then load(def.Boss.Slam.Id) else nil,
+			Kick = if def.Boss.Kick then load(def.Boss.Kick.Id) else nil,
 			Summon = if def.Boss.Summon then load(def.Boss.Summon.Id) else nil,
 			NextSlam = os.clock() + 5,
 			NextKick = 0,
@@ -1240,6 +1243,37 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		Boss = bossState,
 		Options = opts,
 	}
+	if def.Boss and def.Boss.Heart then
+		enemy.Shielded = true
+		-- a ball of light held to her chest bone; it shows only while her heart is open
+		local chest = model:FindFirstChild("mixamorig:Spine2", true) :: Bone?
+		if chest then
+			local heart = Instance.new("Part")
+			heart.Name = "Heart"
+			heart.Shape = Enum.PartType.Ball
+			heart.Size = Vector3.new(5, 5, 5)
+			heart.Material = Enum.Material.Neon
+			heart.Color = Color3.fromRGB(150, 255, 150)
+			heart.Transparency = 1
+			heart.CanCollide = false
+			heart.CanQuery = false
+			heart.Massless = true
+			heart.CFrame = chest.WorldCFrame
+			local glow = Instance.new("PointLight")
+			glow.Color = heart.Color
+			glow.Range = 45
+			glow.Brightness = 0
+			glow.Parent = heart
+			local grip = Instance.new("Attachment")
+			grip.Parent = heart
+			local hold = Instance.new("RigidConstraint")
+			hold.Attachment0 = chest
+			hold.Attachment1 = grip
+			hold.Parent = heart
+			heart.Parent = model
+			enemy.Heart = heart
+		end
+	end
 	if def.Hover then
 		humanoid.HipHeight += def.Hover
 	end
@@ -1591,7 +1625,7 @@ end
 -- Leaps at a player: a red circle marks where it will land; everyone still inside when it lands is hit.
 local function bossSlam(enemy: Enemy, targetRoot: BasePart)
 	local boss = enemy.Boss :: BossState
-	local move = boss.SlamMove or (enemy.Def.Boss :: Enemies.BossDef).Slam
+	local move = boss.SlamMove or (enemy.Def.Boss :: any).Slam
 	enemy.Attacking = true
 	boss.NextSlam = os.clock() + move.Cooldown * boss.Pace
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
@@ -1627,7 +1661,7 @@ end
 -- Shoves away whoever crowds it.
 local function bossKick(enemy: Enemy, targetRoot: BasePart)
 	local boss = enemy.Boss :: BossState
-	local move = (enemy.Def.Boss :: Enemies.BossDef).Kick
+	local move = (enemy.Def.Boss :: any).Kick
 	enemy.Attacking = true
 	boss.NextKick = os.clock() + move.Cooldown * boss.Pace
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
@@ -1733,6 +1767,29 @@ local function bossTongue(enemy: Enemy, targetRoot: BasePart)
 	enemy.Attacking = false
 end
 
+-- Blows falling from the dark: red circles round each player in the lair, then the hit.
+local function rainDown(enemy: Enemy, rain: any)
+	local floorY = enemy.Root.Position.Y - enemy.Humanoid.HipHeight - enemy.Root.Size.Y / 2
+	for _, target in playersNear(enemy.Root.Position, 90) do
+		for _ = 1, rain.Count do
+			local offset = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 10
+			local spot = Vector3.new(target.Root.Position.X + offset.X, floorY, target.Root.Position.Z + offset.Z)
+			effectRemote:FireAllClients("Telegraph", spot, rain.Radius, rain.Delay)
+			task.delay(rain.Delay, function()
+				if enemy.Dead then
+					return
+				end
+				effectRemote:FireAllClients("Quake", spot, rain.Radius)
+				for _, hit in playersNear(spot, rain.Radius) do
+					hurt(hit.Humanoid, hit.Root, enemy.Damage * rain.DamageScale)
+					spore(hit.Humanoid, rain.Blight)
+				end
+			end)
+			task.wait(0.15)
+		end
+	end
+end
+
 -- Calls skeletons up out of the floor around it.
 local function bossSummon(enemy: Enemy)
 	local boss = enemy.Boss :: BossState
@@ -1751,37 +1808,88 @@ local function bossSummon(enemy: Enemy)
 			effectRemote:FireAllClients("Rise", spot)
 			local ok, minion = pcall(EnemyService.Spawn, move.Minion, CFrame.lookAt(spot, Vector3.new(enemy.Root.Position.X, floorY, enemy.Root.Position.Z)), {
 				HealthMultiplier = strength,
-				DamageMultiplier = strength,
+				DamageMultiplier = move.MinionDamage or strength,
 			})
 			if ok and minion then
 				table.insert(boss.Minions, minion)
 			end
 		end
 	end
-	-- arrows rain round every player in the lair: red circles first, then they strike
-	local rain = move.Rain
-	if rain and not enemy.Dead then
-		local floorY = enemy.Root.Position.Y - enemy.Humanoid.HipHeight - enemy.Root.Size.Y / 2
-		for _, target in playersNear(enemy.Root.Position, 90) do
-			for _ = 1, rain.Count do
-				local offset = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 10
-				local spot = Vector3.new(target.Root.Position.X + offset.X, floorY, target.Root.Position.Z + offset.Z)
-				effectRemote:FireAllClients("Telegraph", spot, rain.Radius, rain.Delay)
-				task.delay(rain.Delay, function()
-					if enemy.Dead then
-						return
-					end
-					effectRemote:FireAllClients("Quake", spot, rain.Radius)
-					for _, hit in playersNear(spot, rain.Radius) do
-						hurt(hit.Humanoid, hit.Root, enemy.Damage * rain.DamageScale)
-					end
-				end)
-				task.wait(0.15)
-			end
-		end
+	-- arrows rain round every player in the lair (a boss with its own rain does that apart: bossHeart)
+	if move.Rain and not enemy.Def.Boss.Heart and not enemy.Dead then
+		rainDown(enemy, move.Rain)
 	end
 	task.wait(math.max(move.Length - move.RiseAt - 0.6, 0.3))
 	enemy.Attacking = false
+end
+
+-- Her heart shows, and for that long blows can hurt her.
+local function openHeart(enemy: Enemy, open: boolean)
+	enemy.Shielded = not open
+	local heart = enemy.Heart
+	if heart then
+		local info = TweenInfo.new(0.6)
+		TweenService:Create(heart, info, { Transparency = if open then 0.15 else 1 }):Play()
+		local glow = heart:FindFirstChildOfClass("PointLight")
+		if glow then
+			TweenService:Create(glow, info, { Brightness = if open then 5 else 0 }):Play()
+		end
+	end
+end
+
+-- Mother Spore's round: her husks, then her spores, then her heart; and again until she falls.
+local function bossHeart(enemy: Enemy)
+	local boss = enemy.Boss :: BossState
+	local def = enemy.Def.Boss :: any
+	local move = def.Heart
+	local animator = enemy.Humanoid:FindFirstChildOfClass("Animator") :: Animator
+	local animation = Instance.new("Animation")
+	animation.AnimationId = move.RainId
+	local rainClip = animator:LoadAnimation(animation)
+	rainClip.Looped = false
+	rainClip.Priority = Enum.AnimationPriority.Action
+	while not enemy.Dead do
+		enemy.Attacking = true
+		bossSummon(enemy)
+		enemy.Attacking = true
+		local giveUp = os.clock() + move.MinionWait
+		while os.clock() < giveUp and not enemy.Dead do
+			local standing = false
+			for _, minion in boss.Minions do
+				standing = standing or not minion.Dead
+			end
+			if not standing then
+				break
+			end
+			task.wait(0.25)
+		end
+		boss.Minions = {}
+		for _ = 1, move.Volleys do
+			if enemy.Dead then
+				return
+			end
+			rainClip:Play(0.15)
+			effectRemote:FireAllClients("Summon", enemy.Root.Position)
+			task.wait(1)
+			rainDown(enemy, def.Summon.Rain)
+			task.wait(2.2)
+		end
+		if enemy.Dead then
+			return
+		end
+		openHeart(enemy, true)
+		if enemy.Tracks.Hit then
+			enemy.Tracks.Hit:Play(0.1)
+		end
+		notifyRemote:FireAllClients("Her heart opens! Strike now!")
+		task.wait(move.Open)
+		if enemy.Dead then
+			return
+		end
+		openHeart(enemy, false)
+		notifyRemote:FireAllClients("Her heart closes.")
+		task.wait(1)
+	end
 end
 
 -- Under its rage threshold: it roars, then fights faster: runs, lunges, and attacks more often.
@@ -1873,7 +1981,11 @@ end
 
 local function bossThink(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Humanoid, distance: number, now: number)
 	local boss = enemy.Boss :: BossState
-	local def = enemy.Def.Boss :: Enemies.BossDef
+	local def = enemy.Def.Boss :: any
+	if def.Heart then
+		task.spawn(bossHeart, enemy)
+		return
+	end
 	local ratio = enemy.Humanoid.Health / enemy.Humanoid.MaxHealth
 	local nextSummon = def.Summon and def.Summon.At[boss.SummonsDone + 1]
 	if def.Rage and not boss.Raged and ratio <= def.Rage.At then
@@ -1958,6 +2070,14 @@ end
 -- Deals damage from a player. `kind` is "Hit", "Crit" or "Poison" (picks the number's look).
 function EnemyService.Damage(enemy: Enemy, amount: number, player: Player, kind: string)
 	if enemy.Dead or enemy.Burrowed then
+		return
+	end
+	if enemy.Shielded then
+		local now = os.clock()
+		if now - (enemy.LastShieldNote or 0) >= 1 then
+			enemy.LastShieldNote = now
+			damageNumberRemote:FireClient(player, enemy.Root.Position + Vector3.new(0, 4, 0), "Her heart is closed", "Hit")
+		end
 		return
 	end
 	local rounded = math.max(1, math.floor(amount + 0.5))

@@ -125,6 +125,7 @@ Floors.Bosses = setmetatable({ [5] = "Gravekeeper", [15] = "BoneWarden" }, {
 }) :: any
 if CHAPTER_II then
 	Floors.Bosses[20] = "RotgutToad"
+	Floors.Bosses[30] = "MotherSpore"
 end
 
 -- How each boss's lair is dressed (RoomDecor themes).
@@ -136,10 +137,11 @@ Floors.BossThemes = setmetatable({ [5] = "Graveyard", [15] = "ThroneRoom" }, {
 }) :: any
 if CHAPTER_II then
 	Floors.BossThemes[20] = "Plain" -- (bare cave: no tomb or throne; the rot grows over it as over every room here)
+	Floors.BossThemes[30] = "Plain"
 end
 
--- Lairs built taller than a room's usual 18 studs (the Rotgut Toad leaps high).
-Floors.LairHeights = { [20] = 32 } :: { [number]: number }
+-- Lairs built taller than a room's usual 18 studs (the Rotgut Toad leaps high; Mother Spore stands 20 tall).
+Floors.LairHeights = { [20] = 32, [30] = 32 } :: { [number]: number }
 
 -- How much stronger a boss is on this floor than on its own (1 in chapter I): it keeps up with the floor.
 function Floors.BossScale(floor: number, boss: string): (number, number)

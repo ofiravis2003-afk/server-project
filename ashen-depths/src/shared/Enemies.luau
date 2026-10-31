@@ -46,13 +46,17 @@
 --         Farewell: what it says as it falls, one line after another.
 --         Tongue: a red strip on the floor shows where it will lash (Windup seconds); the first player still on the
 --         strip is pulled in and swallowed for Hold seconds, unless the toad takes FreeAt of its health before that.
+--         Heart: a rooted boss no blow can hurt except while its heart is open. Round and round: it calls its Summon
+--         (and waits for them to fall, MinionWait seconds at most), rains Rain down on every player Volleys times,
+--         then its heart opens for Open seconds.
 
 export type HeldProp = { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }
 
 export type BossDef = {
 	Title: string,
-	Slam: { Id: string?, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number },
-	Kick: { Id: string?, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number },
+	Slam: { Id: string?, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number }?,
+	Kick: { Id: string?, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number }?,
+	Heart: { RainId: string, MinionWait: number, Volleys: number, Open: number }?,
 	Tongue: { Windup: number, Range: number, Width: number, Cooldown: number, Hold: number, FreeAt: number, DamageScale: number, Blight: number }?,
 	Summon: {
 		Id: string?,
@@ -62,7 +66,8 @@ export type BossDef = {
 		RiseAt: number,
 		Length: number,
 		-- arrows falling from the dark: red circles round each player, then the hit
-		Rain: { Count: number, Radius: number, Delay: number, DamageScale: number }?,
+		Rain: { Count: number, Radius: number, Delay: number, DamageScale: number, Blight: number? }?,
+		MinionDamage: number?, -- how hard its minions hit, in floors' worth (default: as tough as they are)
 	}?,
 	Intro: { Subtitle: string, Lines: { string }, Pose: string? }, -- Pose: the clip it plays as it speaks
 	Farewell: { string }?,
@@ -434,6 +439,57 @@ Enemies.RotgutToad = {
 			},
 		},
 		Rage = { At = 0.33, Length = 2.2, SpeedScale = 1.4, CooldownScale = 0.65 },
+	},
+}
+
+-- Mother Spore (floor 30): the heart of the rot, rooted to the spot. Only her open heart can be hurt.
+Enemies.MotherSpore = {
+	DisplayName = "Mother Spore",
+	Model = "MotherSpore",
+	Health = 9000,
+	Damage = 62,
+	WalkSpeed = 0,
+	AggroRange = 100,
+	AttackRange = 12,
+	AttackCooldown = 3,
+	Windup = 1,
+	XP = 4000,
+	Gold = { 1500, 2200 },
+	Drops = { { Item = "Heartwood", Chance = 1 }, { Item = "SporeCap", Chance = 1, Count = { 10, 15 } } },
+	RespawnTime = 5,
+	Rooted = true,
+	Blight = 1,
+	Animations = {
+		Idle = "rbxassetid://88599457224504",
+		Hit = "rbxassetid://120909281377697",
+		Death = "rbxassetid://126249574076624",
+	},
+	Boss = {
+		Title = "Mother Spore",
+		Heart = { RainId = "rbxassetid://104008075596164", MinionWait = 16, Volleys = 2, Open = 12 },
+		Summon = {
+			Id = "rbxassetid://82036259118672",
+			At = {},
+			Minion = "FungalHusk",
+			Count = 3,
+			RiseAt = 2,
+			Length = 5.4,
+			Rain = { Count = 3, Radius = 7, Delay = 1.5, DamageScale = 0.7, Blight = 1 },
+			MinionDamage = 3.3,
+		},
+		Intro = {
+			Subtitle = "Heart of the Rot",
+			Pose = "rbxassetid://82036259118672",
+			Lines = {
+				"So small a flame, to come so far down.",
+				"The Ninth still sing inside me. Listen. You will know the voices.",
+				"Burn me, little one. It will not matter. I was only ever the door.",
+			},
+		},
+		Farewell = {
+			"Too late, little flame.",
+			"It has already gone below.",
+		},
 	},
 }
 

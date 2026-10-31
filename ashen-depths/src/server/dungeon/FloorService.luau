@@ -1435,6 +1435,15 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 				else "Chapter I complete! The gate cracks open: the stairs lead down into The Hollow, where the floors never end.")
 		end)
 	end
+	if currentFloor == 30 then
+		task.delay(after + 4, function()
+			effectRemote:FireAllClients("Summon", where)
+			notifyRemote:FireAllClients("The green ember does not go out. It sinks through the floor, and it is gone.")
+		end)
+		task.delay(after + 10, function()
+			notifyRemote:FireAllClients("Chapter II complete! Below, The Hollow is waiting. And so, somewhere deeper, is the Flame.")
+		end)
+	end
 	task.delay(2.5, function()
 		if room.Built.Model.Parent then
 			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")
