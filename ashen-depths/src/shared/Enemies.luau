@@ -505,7 +505,7 @@ Enemies.MotherSpore = {
 			"The green ember does not go out. It sinks through the floor, and it is gone.",
 		},
 		EndSeconds = 16,
-		CloseUp = { Distance = 8, Lift = 1.8 },
+		CloseUp = { Distance = 7, Lift = 0.6 },
 	},
 }
 
