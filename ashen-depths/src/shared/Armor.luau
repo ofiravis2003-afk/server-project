@@ -1,5 +1,5 @@
 --!strict
--- Armor: four sets (Heavy, Medium, Light, Robes) of four pieces worn on the body (Head, Chest, Hands, Legs),
+-- Armor: five sets (Heavy, Medium, Light, Robes, and the Rotwood of chapter II) of four pieces worn on the body (Head, Chest, Hands, Legs),
 -- and rings (not seen on the body). Each set's totals are split over its pieces (the chest carries the most);
 -- a piece's numbers grow with rarity (Rarity Power) and upgrades (+10% each), like weapons.
 --   Defense: incoming damage is multiplied by 100 / (100 + Defense)
@@ -23,6 +23,7 @@ export type SetInfo = {
 	Totals: Stats,
 	Pieces: { [string]: string },
 	Bonus: { [number]: Bonus }, -- [pieces worn] = what that adds
+	Chapter: number?, -- found only in that chapter's floors
 }
 
 local Armor = {}
@@ -68,6 +69,16 @@ Armor.Sets = {
 		Pieces = { Head = "Ashwoven Cowl", Chest = "Ashwoven Robe", Hands = "Ashwoven Wraps", Legs = "Ashwoven Shoes" },
 		Bonus = { [2] = { SpellPower = 0.08 }, [4] = { SpellPower = 0.2, Health = 25 } }, -- the fire answers
 	},
+	{
+		Name = "Rotwood",
+		Title = "Rotwood",
+		Kind = "Overgrown plate",
+		Color = Color3.fromRGB(58, 66, 52),
+		Totals = { Defense = 46, Health = 60, Speed = -0.02, SpellPower = 0 },
+		Pieces = { Head = "Rotwood Helm", Chest = "Rotwood Cuirass", Hands = "Rotwood Grips", Legs = "Rotwood Greaves" },
+		Bonus = { [2] = { Defense = 10 }, [4] = { Defense = 22, Health = 60 } }, -- what grew over it holds
+		Chapter = 2,
+	},
 } :: { SetInfo }
 
 -- Rings: no look on the body, just numbers. Chapter 2's are found only in the Rotwood Caverns; the Sporeward
@@ -101,6 +112,7 @@ for _, set in Armor.Sets do
 				Speed = set.Totals.Speed * share,
 				SpellPower = set.Totals.SpellPower * share,
 			},
+			Chapter = set.Chapter,
 		}
 		Armor.Pieces[piece.Name] = piece
 		table.insert(Armor.List, piece)

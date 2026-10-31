@@ -746,9 +746,11 @@ local function giveLoot(player: Player, tier: string, position: Vector3)
 			else Items.ArmorPieces[rng:NextInteger(1, #Items.ArmorPieces)]
 		local rarity = rollRarity(rng, loot.Rarities)
 		if Floors.IsRotwood(currentFloor) and rng:NextNumber() < ROTWOOD_GEAR_CHANCE then
-			itemName = if RARITY_RANK[rarity] >= RARITY_RANK.Epic
-				then Items.ChapterIIWeapons[rng:NextInteger(1, #Items.ChapterIIWeapons)]
-				else Items.ChapterIIRings[rng:NextInteger(1, #Items.ChapterIIRings)]
+			local gear = if RARITY_RANK[rarity] < RARITY_RANK.Epic
+				then Items.ChapterIIRings
+				elseif rng:NextNumber() < 0.5 then Items.ChapterIIArmor
+				else Items.ChapterIIWeapons
+			itemName = gear[rng:NextInteger(1, #gear)]
 		end
 		InventoryService.GiveItem(player, itemName, rarity)
 		text ..= `   {rarity} {Items.NameFor(itemName, rarity)}!`

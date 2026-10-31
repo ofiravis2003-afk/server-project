@@ -84,7 +84,7 @@ Items.Defs = {
 		Slot = "Weapon",
 		WeaponType = "Sword",
 		Damage = 17,
-		Look = "Sword",
+		Look = "MycelEdge",
 		Aura = ROT_GLOW,
 		Chapter = 2,
 		Names = { Epic = "Mycel Edge", Legendary = "Rotbloom Blade", Mythic = "Thorn of the Green Ember" },
@@ -94,7 +94,7 @@ Items.Defs = {
 		Slot = "Weapon",
 		WeaponType = "Axe",
 		Damage = 25,
-		Look = "Axe",
+		Look = "RotwoodCleaver",
 		Aura = ROT_GLOW,
 		Chapter = 2,
 		Names = { Epic = "Rotwood Cleaver", Legendary = "Sporefall Axe", Mythic = "The Mother's Bite" },
@@ -104,7 +104,7 @@ Items.Defs = {
 		Slot = "Weapon",
 		WeaponType = "Staff",
 		Damage = 17,
-		Look = "Staff",
+		Look = "SporecallerStaff",
 		Aura = ROT_GLOW,
 		Chapter = 2,
 		Names = { Epic = "Sporecaller Staff", Legendary = "Glowcap Scepter", Mythic = "Staff of the Green Ember" },
@@ -115,7 +115,7 @@ Items.Defs = {
 		WeaponType = "Tome",
 		Damage = 8,
 		Heal = 15,
-		Look = "Tome",
+		Look = "CodexOfTheDeep",
 		Aura = ROT_GLOW,
 		Chapter = 2,
 		Names = { Epic = "Codex of the Deep", Legendary = "Mycelial Codex", Mythic = "Book of the Green Ember" },
@@ -153,9 +153,10 @@ end
 -- What chests hand out: the gear of chapter I everywhere, and in the caverns their own as well.
 Items.ArmorPieces = {} :: { string }
 Items.ChapterIIRings = {} :: { string }
+Items.ChapterIIArmor = {} :: { string }
 for _, piece in Armor.List do
 	if piece.Chapter == 2 then
-		table.insert(Items.ChapterIIRings, piece.Name)
+		table.insert(if piece.Slot == "Ring" then Items.ChapterIIRings else Items.ChapterIIArmor, piece.Name)
 	else
 		table.insert(Items.ArmorPieces, piece.Name)
 	end

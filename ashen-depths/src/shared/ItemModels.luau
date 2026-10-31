@@ -126,7 +126,7 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 		end
 		local set = Armor.SetByName[piece.Set]
 		local color = if set then set.Color else Color3.fromRGB(214, 170, 64)
-		local material = if piece.Set == "Heavy" or piece.Set == "Medium" then Enum.Material.Metal elseif piece.Set == "Light" then Enum.Material.Leather else Enum.Material.Fabric
+		local material = if piece.Set == "Heavy" or piece.Set == "Medium" or piece.Set == "Rotwood" then Enum.Material.Metal elseif piece.Set == "Light" then Enum.Material.Leather else Enum.Material.Fabric
 		if piece.Slot == "Ring" then
 			local band = part(model, Vector3.new(0.3, 1.4, 1.4), CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(214, 170, 64), Enum.Material.Metal, Enum.PartType.Cylinder)
 			band.Size = Vector3.new(0.3, 1.4, 1.4)

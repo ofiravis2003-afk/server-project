@@ -18,7 +18,7 @@ local WeaponBuilder = {}
 
 -- Weapons carried in the left hand: the Tool's Handle (always in the right hand) is an invisible point the
 -- spell leaves from, and the model itself is an "OffHand" part the server welds to the left hand on equip.
-WeaponBuilder.LeftHanded = { Tome = true }
+WeaponBuilder.LeftHanded = { Tome = true, CodexOfTheDeep = true }
 
 local TIER_LOOKS: { [string]: { string } } = {
 	Common = { "Common", "Rare", "Legendary" },
