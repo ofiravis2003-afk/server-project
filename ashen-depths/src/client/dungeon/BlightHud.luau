@@ -21,7 +21,7 @@ function BlightHud.Start()
 
 	local line = Instance.new("TextLabel")
 	line.AnchorPoint = Vector2.new(0.5, 0)
-	line.Position = UDim2.new(0.5, 0, 0, 52)
+	line.Position = UDim2.new(0.5, 0, 0, 112) -- (under a boss's bar)
 	line.Size = UDim2.fromOffset(360, 26)
 	line.BackgroundColor3 = Color3.fromRGB(20, 34, 22)
 	line.BackgroundTransparency = 0.25
