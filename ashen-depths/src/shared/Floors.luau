@@ -123,6 +123,9 @@ Floors.Bosses = setmetatable({ [5] = "Gravekeeper", [15] = "BoneWarden" }, {
 		return hollowBoss(floor)
 	end,
 }) :: any
+if CHAPTER_II then
+	Floors.Bosses[20] = "RotgutToad"
+end
 
 -- How each boss's lair is dressed (RoomDecor themes).
 Floors.BossThemes = setmetatable({ [5] = "Graveyard", [15] = "ThroneRoom" }, {
@@ -131,6 +134,9 @@ Floors.BossThemes = setmetatable({ [5] = "Graveyard", [15] = "ThroneRoom" }, {
 		return boss and THEMES[boss]
 	end,
 }) :: any
+if CHAPTER_II then
+	Floors.BossThemes[20] = "Plain" -- (bare cave: no tomb or throne; the rot grows over it as over every room here)
+end
 
 -- How much stronger a boss is on this floor than on its own (1 in chapter I): it keeps up with the floor.
 function Floors.BossScale(floor: number, boss: string): (number, number)

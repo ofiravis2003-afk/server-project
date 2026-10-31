@@ -116,17 +116,59 @@ local handlers: { [string]: (...any) -> () } = {
 		fly(bolt, from, to, duration)
 	end,
 	-- A thin red line from an archer to where it aims; it brightens until the arrow flies.
-	AimLine = function(from: Vector3, to: Vector3, duration: number)
+	-- (With a width: a strip, the toad's tongue's path along the floor.)
+	AimLine = function(from: Vector3, to: Vector3, duration: number, width: number?)
 		local length = (to - from).Magnitude
-		local line = basePart(Vector3.new(0.08, 0.08, length), Color3.fromRGB(255, 50, 40), Enum.Material.Neon)
+		local line = basePart(Vector3.new(width or 0.08, 0.08, length), Color3.fromRGB(255, 50, 40), Enum.Material.Neon)
 		line.CFrame = CFrame.lookAt((from + to) / 2, to)
 		line.Transparency = 0.8
 		line.Parent = workspace
 		TweenService:Create(line, TweenInfo.new(duration, Enum.EasingStyle.Linear), {
 			Transparency = 0.15,
-			Size = Vector3.new(0.16, 0.16, length),
+			Size = Vector3.new(width or 0.16, 0.16, length),
 		}):Play()
 		Debris:AddItem(line, duration)
+	end,
+	-- The toad's tongue: out from its mouth, and back in.
+	Tongue = function(from: Vector3, to: Vector3, outTime: number, backTime: number)
+		local length = (to - from).Magnitude
+		local face = CFrame.lookAt(from, to)
+		local tongue = basePart(Vector3.new(1.3, 0.5, 0.2), Color3.fromRGB(176, 74, 92), Enum.Material.SmoothPlastic)
+		tongue.CFrame = face
+		tongue.Parent = workspace
+		local stretched = { Size = Vector3.new(1.1, 0.45, length), CFrame = face * CFrame.new(0, 0, -length / 2) }
+		TweenService:Create(tongue, TweenInfo.new(outTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), stretched):Play()
+		task.delay(outTime, function()
+			TweenService:Create(tongue, TweenInfo.new(backTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Size = Vector3.new(1.3, 0.5, 0.2),
+				CFrame = face,
+			}):Play()
+		end)
+		Debris:AddItem(tongue, outTime + backTime + 0.05)
+	end,
+	-- Inside the toad: the screen goes dark green, and pulses, until it spits you out (duration 0).
+	Swallowed = function(duration: number)
+		local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+		local old = playerGui:FindFirstChild("Swallowed")
+		if old then
+			old:Destroy()
+		end
+		if duration <= 0 then
+			return
+		end
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "Swallowed"
+		gui.IgnoreGuiInset = true
+		gui.DisplayOrder = 5
+		local shade = Instance.new("Frame")
+		shade.Size = UDim2.fromScale(1, 1)
+		shade.BorderSizePixel = 0
+		shade.BackgroundColor3 = Color3.fromRGB(26, 46, 20)
+		shade.BackgroundTransparency = 0.45
+		shade.Parent = gui
+		gui.Parent = playerGui
+		TweenService:Create(shade, TweenInfo.new(0.45, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { BackgroundTransparency = 0.22 }):Play()
+		Debris:AddItem(gui, duration + 1)
 	end,
 	-- A boss's warning: a red circle on the floor that fills in until the blow lands.
 	Telegraph = function(center: Vector3, radius: number, duration: number)

@@ -85,11 +85,13 @@ export type Enemy = {
 }
 
 export type BossState = {
-	Slam: AnimationTrack,
-	Kick: AnimationTrack,
-	Summon: AnimationTrack,
+	-- (a boss moved by code has no clips)
+	Slam: AnimationTrack?,
+	Kick: AnimationTrack?,
+	Summon: AnimationTrack?,
 	NextSlam: number,
 	NextKick: number,
+	NextTongue: number,
 	SummonsDone: number,
 	Minions: { Enemy },
 	Pose: AnimationTrack?, -- the intro clip (else Summon)
@@ -113,6 +115,7 @@ local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring toget
 local VIP_BONUS = 1.2 -- and 20% more for a VIP
 local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
+local notifyRemote = Remotes.Event("Notify")
 local soundRemote = Remotes.Event("Sound")
 
 local function weld(part0: BasePart, part1: BasePart)
@@ -1166,7 +1169,10 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	if def.Boss then
 		-- A boss's health is the big bar at the top of the screen, not a little one over its head.
 		barGui.Enabled = false
-		local function load(id: string): AnimationTrack
+		local function load(id: string?): AnimationTrack?
+			if not id then
+				return nil
+			end
 			local animation = Instance.new("Animation")
 			animation.AnimationId = id
 			local track = animator:LoadAnimation(animation)
@@ -1177,9 +1183,10 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		bossState = {
 			Slam = load(def.Boss.Slam.Id),
 			Kick = load(def.Boss.Kick.Id),
-			Summon = load(def.Boss.Summon.Id),
+			Summon = if def.Boss.Summon then load(def.Boss.Summon.Id) else nil,
 			NextSlam = os.clock() + 5,
 			NextKick = 0,
+			NextTongue = os.clock() + 9,
 			SummonsDone = 0,
 			Minions = {},
 			Pose = if def.Boss.Intro.Pose then load(def.Boss.Intro.Pose) else nil,
@@ -1238,6 +1245,8 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	end
 	if def.Procedural == "Scurry" then
 		CollectionService:AddTag(model, "Scurry")
+	elseif def.Procedural == "Toad" then
+		CollectionService:AddTag(model, "Toad")
 	end
 
 	humanoid.Running:Connect(function(speed)
@@ -1547,6 +1556,18 @@ local function burrowStrike(enemy: Enemy, targetRoot: BasePart)
 	enemy.Attacking = false
 end
 
+-- Starts one of a boss's moves: its clip, or (a boss moved by code) tells the players' screens to draw it.
+local function bossMove(enemy: Enemy, track: AnimationTrack?, move: string, seconds: number, fade: number?, speed: number?)
+	if track then
+		track:Play(fade or 0.1, 1, speed or 1)
+	end
+	if enemy.Def.Procedural then
+		enemy.Model:SetAttribute("BodyMove", move)
+		enemy.Model:SetAttribute("BodyMoveTime", seconds)
+		enemy.Model:SetAttribute("BodyMoveCount", (enemy.Model:GetAttribute("BodyMoveCount") or 0) + 1)
+	end
+end
+
 -- Leaps at a player: a red circle marks where it will land; everyone still inside when it lands is hit.
 local function bossSlam(enemy: Enemy, targetRoot: BasePart)
 	local boss = enemy.Boss :: BossState
@@ -1560,7 +1581,7 @@ local function bossSlam(enemy: Enemy, targetRoot: BasePart)
 	local landing = Vector3.new(targetRoot.Position.X, floorY, targetRoot.Position.Z)
 	effectRemote:FireAllClients("Telegraph", landing, move.Radius, move.HitAt)
 	setEyes(enemy, true)
-	boss.Slam:Play(0.1)
+	bossMove(enemy, boss.Slam, "Leap", move.HitAt)
 	-- The body travels to just short of the circle's middle while it is in the air.
 	local toward = Vector3.new(landing.X - start.Position.X, 0, landing.Z - start.Position.Z)
 	local travel = math.max(toward.Magnitude - move.Radius * 0.35, 0)
@@ -1591,7 +1612,7 @@ local function bossKick(enemy: Enemy, targetRoot: BasePart)
 	boss.NextKick = os.clock() + move.Cooldown * boss.Pace
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
 	face(enemy, targetRoot.Position)
-	boss.Kick:Play(0.1)
+	bossMove(enemy, boss.Kick, "Shove", move.HitAt + 0.3)
 	task.wait(move.HitAt)
 	if not enemy.Dead then
 		local look = enemy.Root.CFrame.LookVector
@@ -1610,13 +1631,95 @@ local function bossKick(enemy: Enemy, targetRoot: BasePart)
 	enemy.Attacking = false
 end
 
+-- The Rotgut Toad's tongue: a red strip on the floor from its mouth, fixed where it aimed. Stepping off in time
+-- dodges it; the first player still on it is hauled in and swallowed. Inside, they take a few bites and Blight
+-- until the Hold is over or the party (or they themselves) have hurt it enough, and then it spits them out.
+local function bossTongue(enemy: Enemy, targetRoot: BasePart)
+	local boss = enemy.Boss :: BossState
+	local move = (enemy.Def.Boss :: any).Tongue
+	enemy.Attacking = true
+	boss.NextTongue = os.clock() + move.Cooldown * boss.Pace
+	enemy.Humanoid:MoveTo(enemy.Root.Position)
+	face(enemy, targetRoot.Position)
+	local look = enemy.Root.CFrame.LookVector
+	local floorY = enemy.Root.Position.Y - enemy.Humanoid.HipHeight - enemy.Root.Size.Y / 2
+	local base = Vector3.new(enemy.Root.Position.X, floorY + 0.12, enemy.Root.Position.Z)
+	effectRemote:FireAllClients("AimLine", base + look * 3, base + look * move.Range, move.Windup, move.Width)
+	setEyes(enemy, true)
+	bossMove(enemy, nil, "Tongue", move.Windup)
+	task.wait(move.Windup)
+	if enemy.Dead then
+		return
+	end
+	setEyes(enemy, false)
+	local mouth = enemy.Root.Position + Vector3.new(0, 1.5, 0) + look * 4
+	local caught, nearest = nil, math.huge
+	for _, entry in playersNear(enemy.Root.Position, move.Range + 2) do
+		local offset = entry.Root.Position - enemy.Root.Position
+		local along = offset:Dot(look)
+		local aside = (Vector3.new(offset.X, 0, offset.Z) - look * along).Magnitude
+		if along > 0 and along <= move.Range and aside <= move.Width / 2 + 1 and along < nearest then
+			caught, nearest = entry, along
+		end
+	end
+	if not caught then
+		effectRemote:FireAllClients("Tongue", mouth, base + look * move.Range + Vector3.new(0, 1, 0), 0.18, 0.3)
+		task.wait(0.8)
+		enemy.Attacking = false
+		return
+	end
+	-- Reeled in: the server holds the character until it's let go (its death or the toad's lets go too).
+	local root = caught.Root
+	local humanoid = caught.Humanoid
+	local player = caught.Player
+	effectRemote:FireAllClients("Tongue", mouth, root.Position, 0.14, 0.35)
+	task.wait(0.14)
+	root.Anchored = true
+	TweenService:Create(root, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = enemy.Root.CFrame }):Play()
+	task.wait(0.35)
+	local stillHeld = root.Parent ~= nil and humanoid.Health > 0 and not enemy.Dead
+	if stillHeld then
+		bossMove(enemy, nil, "Gulp", move.Hold)
+		effectRemote:FireClient(player, "Swallowed", move.Hold)
+		notifyRemote:FireAllClients(`{player.DisplayName} has been swallowed! Hit the Toad!`)
+		local startHealth = enemy.Humanoid.Health
+		local freeBelow = startHealth - enemy.Humanoid.MaxHealth * move.FreeAt
+		local untilTime = os.clock() + move.Hold
+		local nextBite = os.clock() + 1
+		while os.clock() < untilTime and not enemy.Dead and root.Parent and humanoid.Health > 0 and enemy.Humanoid.Health > freeBelow do
+			task.wait(0.1)
+			if os.clock() >= nextBite and humanoid.Health > 0 then
+				nextBite += 1
+				hurt(humanoid, root, enemy.Damage * move.DamageScale)
+				spore(humanoid, move.Blight)
+			end
+		end
+		effectRemote:FireClient(player, "Swallowed", 0)
+	end
+	if root.Parent then
+		root.Anchored = false
+		if humanoid.Health > 0 then
+			local out = enemy.Root.CFrame.LookVector
+			root.CFrame = CFrame.new(enemy.Root.Position + out * 7 + Vector3.new(0, 1, 0))
+			effectRemote:FireClient(player, "Knockback", out * 55 + Vector3.new(0, 25, 0))
+		end
+	end
+	if enemy.Dead then
+		return
+	end
+	bossMove(enemy, nil, "Shove", 0.6)
+	-- winded: the time to hit it
+	task.wait(1.6)
+	enemy.Attacking = false
+end
+
 -- Calls skeletons up out of the floor around it.
 local function bossSummon(enemy: Enemy)
 	local boss = enemy.Boss :: BossState
-	local move = (enemy.Def.Boss :: Enemies.BossDef).Summon
+	local move = (enemy.Def.Boss :: any).Summon
 	enemy.Attacking = true
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
-	boss.Summon:Play(0.15)
+	bossMove(enemy, boss.Summon, "Croak", move.Length, 0.15)
 	effectRemote:FireAllClients("Summon", enemy.Root.Position)
 	task.wait(move.RiseAt)
 	if not enemy.Dead then
@@ -1671,9 +1774,7 @@ local function bossRage(enemy: Enemy)
 	enemy.Attacking = true
 	enemy.Humanoid:MoveTo(enemy.Root.Position)
 	setEyes(enemy, true)
-	if boss.Rage then
-		boss.Rage:Play(0.15)
-	end
+	bossMove(enemy, boss.Rage, "Croak", rage.Length, 0.15)
 	effectRemote:FireAllClients("Quake", enemy.Root.Position - Vector3.new(0, enemy.Humanoid.HipHeight, 0), 16)
 	task.wait(rage.Length)
 	if enemy.Dead then
@@ -1738,12 +1839,13 @@ function EnemyService.PlayIntro(enemy: Enemy, duration: number, stepOut: Vector3
 			if boss.Pose then
 				boss.Pose:Play(0.2, 1, 0.6)
 			else
-				boss.Summon:Play(0.2, 1, 0.8)
+				bossMove(enemy, boss.Summon, "Croak", duration * 0.6, 0.2, 0.8)
 			end
 		end
 	end)
 	task.delay(duration, function()
 		boss.NextSlam = os.clock() + 4
+		boss.NextTongue = os.clock() + 8
 		enemy.LastAttack = os.clock()
 		enemy.Attacking = false
 	end)
@@ -1753,7 +1855,7 @@ local function bossThink(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Hum
 	local boss = enemy.Boss :: BossState
 	local def = enemy.Def.Boss :: Enemies.BossDef
 	local ratio = enemy.Humanoid.Health / enemy.Humanoid.MaxHealth
-	local nextSummon = def.Summon.At[boss.SummonsDone + 1]
+	local nextSummon = def.Summon and def.Summon.At[boss.SummonsDone + 1]
 	if def.Rage and not boss.Raged and ratio <= def.Rage.At then
 		boss.Raged = true
 		task.spawn(bossRage, enemy)
@@ -1762,6 +1864,8 @@ local function bossThink(enemy: Enemy, targetRoot: BasePart, targetHumanoid: Hum
 		task.spawn(bossSummon, enemy)
 	elseif distance <= def.Kick.Range and now >= boss.NextKick then
 		task.spawn(bossKick, enemy, targetRoot)
+	elseif def.Tongue and distance > def.Kick.Range and distance <= def.Tongue.Range and now >= boss.NextTongue then
+		task.spawn(bossTongue, enemy, targetRoot)
 	elseif distance > def.Kick.Range + 2 and distance <= (boss.SlamMove or def.Slam).Range and now >= boss.NextSlam then
 		task.spawn(bossSlam, enemy, targetRoot)
 	elseif distance <= enemy.Def.AttackRange then

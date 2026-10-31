@@ -35,6 +35,7 @@
 --   SplitInto: on death, this many of that enemy pop out where it died (slimes split in two).
 --   Squishy: wobbles as it moves (drawn by the players' screens).
 --   Procedural: "Scurry" = no animation clips; the body is moved by code (bouncing run, lunging bite).
+--               "Toad" = the same for a big hopping boss (client/dungeon/ToadBody); its Boss moves need no clip Ids.
 --   Pack: comes in a group of this many (min, max) in one spawn.
 --   Boss: a boss fight: its name on the big bar at the top of the screen, and its special moves on top of its
 --         ordinary blows. Slam: leaps at a player; a red circle on the floor shows where it lands (HitAt seconds
@@ -43,15 +44,18 @@
 --         Intro: the scene when the lair locks: the camera turns to the boss, it speaks its Lines, and its name
 --         comes up with Subtitle. It doesn't fight until the scene is over.
 --         Farewell: what it says as it falls, one line after another.
+--         Tongue: a red strip on the floor shows where it will lash (Windup seconds); the first player still on the
+--         strip is pulled in and swallowed for Hold seconds, unless the toad takes FreeAt of its health before that.
 
 export type HeldProp = { Prop: string, Bone: string, GripAngles: { number }?, GripOffset: { number }?, Scale: number? }
 
 export type BossDef = {
 	Title: string,
-	Slam: { Id: string, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number },
-	Kick: { Id: string, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number },
+	Slam: { Id: string?, HitAt: number, Radius: number, Range: number, DamageScale: number, Cooldown: number },
+	Kick: { Id: string?, HitAt: number, Range: number, Push: number, DamageScale: number, Cooldown: number },
+	Tongue: { Windup: number, Range: number, Width: number, Cooldown: number, Hold: number, FreeAt: number, DamageScale: number, Blight: number }?,
 	Summon: {
-		Id: string,
+		Id: string?,
 		At: { number },
 		Minion: string,
 		Count: number,
@@ -59,13 +63,13 @@ export type BossDef = {
 		Length: number,
 		-- arrows falling from the dark: red circles round each player, then the hit
 		Rain: { Count: number, Radius: number, Delay: number, DamageScale: number }?,
-	},
+	}?,
 	Intro: { Subtitle: string, Lines: { string }, Pose: string? }, -- Pose: the clip it plays as it speaks
 	Farewell: { string }?,
 	-- Below At of its health it roars (Id) and fights faster: moves SpeedScale quicker, attacks every
 	-- CooldownScale as often, runs (Run) and lunges (Lunge, used in place of its Slam).
 	Rage: {
-		Id: string,
+		Id: string?,
 		At: number,
 		Length: number,
 		SpeedScale: number,
@@ -395,6 +399,43 @@ local function infected(base: string, changes: { [string]: any }): EnemyDef
 	end
 	return def
 end
+
+-- The Rotgut Toad (floor 20): a Tripo model with no rig, so everything it does is drawn by client/dungeon/ToadBody.
+-- It hops after the nearest player, leaps at the far ones, shoves whoever crowds it and swallows whoever stands on
+-- its tongue's line. Under a third of its health it croaks and comes on faster.
+Enemies.RotgutToad = {
+	DisplayName = "The Rotgut Toad",
+	Model = "RotgutToad",
+	Health = 10000,
+	Damage = 50,
+	WalkSpeed = 10,
+	AggroRange = 100,
+	AttackRange = 10,
+	AttackCooldown = 2.4,
+	Windup = 0.7,
+	XP = 2000,
+	Gold = { 900, 1300 },
+	Drops = { { Item = "ToadHide", Chance = 1 }, { Item = "SporeCap", Chance = 1, Count = { 6, 10 } } },
+	RespawnTime = 5,
+	Procedural = "Toad",
+	DeathStyle = "Flip",
+	Blight = 1,
+	Boss = {
+		Title = "The Rotgut Toad",
+		Slam = { HitAt = 1.5, Radius = 13, Range = 40, DamageScale = 1.7, Cooldown = 9 },
+		Kick = { HitAt = 0.5, Range = 10, Push = 60, DamageScale = 0.8, Cooldown = 6 },
+		Tongue = { Windup = 1.1, Range = 30, Width = 4, Cooldown = 14, Hold = 3, FreeAt = 0.04, DamageScale = 0.2, Blight = 2 },
+		Intro = {
+			Subtitle = "It Ate the Ninth Patrol",
+			Lines = {
+				"The floor here is wet, and it is breathing.",
+				"Torn strips of Guild blue hang from something the size of a house.",
+				"Two yellow eyes open in the dark. It is still hungry.",
+			},
+		},
+		Rage = { At = 0.33, Length = 2.2, SpeedScale = 1.4, CooldownScale = 0.65 },
+	},
+}
 
 -- Chapter II's own monsters (Tripo models in EnemyModels once they're made; plain stand-ins until then).
 Enemies.SporeWisp = {
