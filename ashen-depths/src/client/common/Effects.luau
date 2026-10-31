@@ -8,6 +8,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local Fonts = require(ReplicatedStorage.Shared.Fonts)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 
 local FIRE = Color3.fromRGB(255, 120, 40)
@@ -145,6 +146,32 @@ local handlers: { [string]: (...any) -> () } = {
 			}):Play()
 		end)
 		Debris:AddItem(tongue, outTime + backTime + 0.05)
+	end,
+	-- A boss is dead: its name across the screen.
+	BossFallen = function(title: string)
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "BossFallen"
+		gui.IgnoreGuiInset = true
+		gui.DisplayOrder = 6
+		local line = Instance.new("TextLabel")
+		line.AnchorPoint = Vector2.new(0.5, 0.5)
+		line.Position = UDim2.fromScale(0.5, 0.3)
+		line.Size = UDim2.new(0.9, 0, 0, 70)
+		line.BackgroundTransparency = 1
+		line.FontFace = Fonts.Title
+		line.TextScaled = true
+		line.TextColor3 = Color3.fromRGB(240, 205, 130)
+		line.TextStrokeColor3 = Color3.new(0, 0, 0)
+		line.TextStrokeTransparency = 1
+		line.TextTransparency = 1
+		line.Text = `{title} has fallen`
+		line.Parent = gui
+		gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+		TweenService:Create(line, TweenInfo.new(0.5), { TextTransparency = 0, TextStrokeTransparency = 0.3 }):Play()
+		task.delay(3.5, function()
+			TweenService:Create(line, TweenInfo.new(1), { TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+		end)
+		Debris:AddItem(gui, 5)
 	end,
 	-- Inside the toad: the screen goes dark green, and pulses, until it spits you out (duration 0).
 	Swallowed = function(duration: number)

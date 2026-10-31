@@ -31,7 +31,7 @@
 --              at full draw), GripOffset moves it along the hand bone (which sits at the wrist) into the palm,
 --              and Scale resizes it.
 --   EliteHeldProps: what the elite version holds instead (a heavier weapon, so it stands out).
---   DeathStyle: "Splat" bursts into goo instead of falling over.
+--   DeathStyle: "Splat" bursts into goo instead of falling over. "Slump" (moved by code) sags flat and fades.
 --   SplitInto: on death, this many of that enemy pop out where it died (slimes split in two).
 --   Squishy: wobbles as it moves (drawn by the players' screens).
 --   Procedural: "Scurry" = no animation clips; the body is moved by code (bouncing run, lunging bite).
@@ -418,7 +418,7 @@ Enemies.RotgutToad = {
 	Drops = { { Item = "ToadHide", Chance = 1 }, { Item = "SporeCap", Chance = 1, Count = { 6, 10 } } },
 	RespawnTime = 5,
 	Procedural = "Toad",
-	DeathStyle = "Flip",
+	DeathStyle = "Slump",
 	Blight = 1,
 	Boss = {
 		Title = "The Rotgut Toad",

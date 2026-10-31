@@ -152,6 +152,12 @@ local function step(model: Model, toad: Toad, dt: number, now: number)
 		tall -= 0.14 * s
 		wide += 0.08 * s
 		roll += math.sin(since * 40) * 0.015 * s
+	elseif move == "Die" then
+		-- the air goes out of it: it sags flat and stays there
+		local k = 1 - (1 - math.min(s, 1)) ^ 2
+		tall -= 0.52 * k
+		wide += 0.3 * k
+		pitch -= 0.12 * k
 	elseif move == "Gulp" and s < 1 then
 		-- something is fighting in its belly
 		wide += 0.14 + math.sin(since * 13) * 0.06

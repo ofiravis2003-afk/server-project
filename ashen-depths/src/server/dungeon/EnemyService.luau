@@ -74,6 +74,7 @@ export type Enemy = {
 	Custom: boolean, -- built from a real 3D model (not the plain avatar body)
 	Damagers: { [Player]: number },
 	LastAttack: number,
+	LastFlash: number?,
 	Attacking: boolean,
 	Dead: boolean,
 	Boss: BossState?,
@@ -113,6 +114,7 @@ local infect: (Model, number?) -> ()
 local sink: (any) -> ()
 local PARTY_BONUS = 1.1 -- kills pay 10% more XP and gold when adventuring together
 local VIP_BONUS = 1.2 -- and 20% more for a VIP
+local FLASH_GAP = 0.3 -- seconds between white flashes (quick blows would keep a body white and hide its colors)
 local damageNumberRemote = Remotes.Event("DamageNumber")
 local effectRemote = Remotes.Event("Effect")
 local notifyRemote = Remotes.Event("Notify")
@@ -778,6 +780,22 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 					end
 				end
 			end)
+		elseif enemy.Def.DeathStyle == "Slump" then
+			-- Sags flat where it stands (drawn on players' screens), then fades.
+			enemy.Model:SetAttribute("BodyMove", "Die")
+			enemy.Model:SetAttribute("BodyMoveTime", 1.2)
+			enemy.Model:SetAttribute("BodyMoveCount", (enemy.Model:GetAttribute("BodyMoveCount") or 0) + 1)
+			local ground = enemy.Root.Position - Vector3.new(0, enemy.Humanoid.HipHeight + enemy.Root.Size.Y / 2, 0)
+			task.delay(1, function()
+				effectRemote:FireAllClients("Quake", ground, 14)
+			end)
+			task.delay(3.2, function()
+				for _, part in enemy.Model:GetDescendants() do
+					if part:IsA("BasePart") and part ~= enemy.Root and part.Name ~= "Head" then
+						TweenService:Create(part, TweenInfo.new(1.5), { Transparency = 1 }):Play()
+					end
+				end
+			end)
 		elseif enemy.Def.DeathStyle == "Splat" then
 			local burst = enemy.Def.BurstSpores
 			if burst then
@@ -1169,6 +1187,8 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	if def.Boss then
 		-- A boss's health is the big bar at the top of the screen, not a little one over its head.
 		barGui.Enabled = false
+		local bossFlash = model:FindFirstChild("HitFlash") :: Highlight
+		bossFlash.FillTransparency = 0.75 -- (a big body: a softer flash)
 		local function load(id: string?): AnimationTrack?
 			if not id then
 				return nil
@@ -1951,10 +1971,14 @@ function EnemyService.Damage(enemy: Enemy, amount: number, player: Player, kind:
 		if enemy.Def.Procedural and enemy.Humanoid.Health > rounded then
 			enemy.Model:SetAttribute("FlinchCount", (enemy.Model:GetAttribute("FlinchCount") or 0) + 1)
 		end
-		enemy.Flash.Enabled = true
-		task.delay(0.08, function()
-			enemy.Flash.Enabled = false
-		end)
+		local now = os.clock()
+		if now - (enemy.LastFlash or 0) >= FLASH_GAP then
+			enemy.LastFlash = now
+			enemy.Flash.Enabled = true
+			task.delay(0.08, function()
+				enemy.Flash.Enabled = false
+			end)
+		end
 	end
 	enemy.Humanoid.Health = math.max(0, enemy.Humanoid.Health - rounded)
 end

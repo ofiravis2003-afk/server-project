@@ -1421,6 +1421,7 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 	end
 	local after = said * 3.5
 	task.delay(after, function()
+		effectRemote:FireAllClients("BossFallen", title)
 		notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
 	end)
 	if currentFloor == 15 then
