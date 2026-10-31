@@ -140,8 +140,9 @@ if CHAPTER_II then
 	Floors.BossThemes[30] = "Plain"
 end
 
--- Lairs built taller than a room's usual 18 studs (the Rotgut Toad leaps high; Mother Spore stands 20 tall).
-Floors.LairHeights = { [20] = 32, [30] = 32 } :: { [number]: number }
+-- Lairs built taller than a room's usual 18 studs (the Rotgut Toad leaps high) or wider than the usual 56.
+Floors.LairHeights = { [20] = 32, [30] = 26 } :: { [number]: number }
+Floors.LairSizes = { [30] = 80 } :: { [number]: number } -- (rooms stand 76 apart: 80 still leaves a short corridor)
 
 -- How much stronger a boss is on this floor than on its own (1 in chapter I): it keeps up with the floor.
 function Floors.BossScale(floor: number, boss: string): (number, number)

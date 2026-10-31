@@ -77,7 +77,7 @@ local function tryGenerate(floor: number, rng: Random): Layout?
 			current.X + d.X,
 			current.Z + d.Y,
 			if isStairs then "Stairs" elseif isBoss then "Boss" elseif isGuardians then "Guardians" else "Combat",
-			if isStairs then 32 elseif isBoss or isGuardians then BOSS_SIZE else COMBAT_SIZES[rng:NextInteger(1, #COMBAT_SIZES)]
+			if isStairs then 32 elseif isBoss then Floors.LairSizes[floor] or BOSS_SIZE elseif isGuardians then BOSS_SIZE else COMBAT_SIZES[rng:NextInteger(1, #COMBAT_SIZES)]
 		)
 		table.insert(links, { A = current.Key, B = nextRoom.Key, Secret = false })
 		table.insert(path, nextRoom.Key)

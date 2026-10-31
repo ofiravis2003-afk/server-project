@@ -1251,7 +1251,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 			local heart = Instance.new("Part")
 			heart.Name = "Heart"
 			heart.Shape = Enum.PartType.Ball
-			heart.Size = Vector3.new(5, 5, 5)
+			heart.Size = Vector3.new(2.4, 2.4, 2.4)
 			heart.Material = Enum.Material.Neon
 			heart.Color = Color3.fromRGB(150, 255, 150)
 			heart.Transparency = 1
@@ -1261,7 +1261,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 			heart.CFrame = chest.WorldCFrame
 			local glow = Instance.new("PointLight")
 			glow.Color = heart.Color
-			glow.Range = 45
+			glow.Range = 20
 			glow.Brightness = 0
 			glow.Parent = heart
 			local grip = Instance.new("Attachment")
@@ -1829,10 +1829,10 @@ local function openHeart(enemy: Enemy, open: boolean)
 	local heart = enemy.Heart
 	if heart then
 		local info = TweenInfo.new(0.6)
-		TweenService:Create(heart, info, { Transparency = if open then 0.15 else 1 }):Play()
+		TweenService:Create(heart, info, { Transparency = if open then 0.35 else 1 }):Play()
 		local glow = heart:FindFirstChildOfClass("PointLight")
 		if glow then
-			TweenService:Create(glow, info, { Brightness = if open then 5 else 0 }):Play()
+			TweenService:Create(glow, info, { Brightness = if open then 1.5 else 0 }):Play()
 		end
 	end
 end
@@ -1869,7 +1869,6 @@ local function bossHeart(enemy: Enemy)
 				return
 			end
 			rainClip:Play(0.15)
-			effectRemote:FireAllClients("Summon", enemy.Root.Position)
 			task.wait(1)
 			rainDown(enemy, def.Summon.Rain)
 			task.wait(2.2)
