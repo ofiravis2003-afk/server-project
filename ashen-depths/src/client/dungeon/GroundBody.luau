@@ -51,8 +51,8 @@ function GroundBody.Start()
 			if body.Humanoid.Health > 0 then
 				local floorY = body.Root.Position.Y - body.Humanoid.HipHeight - body.Root.Size.Y / 2
 				local foot = math.min(body.Left.TransformedWorldCFrame.Position.Y, body.Right.TransformedWorldCFrame.Position.Y)
-				-- (the foot as it stands now already carries the current drop)
-				wanted = math.max(foot + body.Drop - floorY - FOOT_HEIGHT, 0)
+				-- (a bone's world position doesn't count the motor's Transform, so this is the height before the drop)
+				wanted = math.max(foot - floorY - FOOT_HEIGHT, 0)
 			end
 			body.Drop += (wanted - body.Drop) * math.min(dt * SPEED, 1)
 			body.Motor.Transform = CFrame.new(0, -body.Drop, 0)
