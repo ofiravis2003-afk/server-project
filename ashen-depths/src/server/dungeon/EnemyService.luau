@@ -1243,6 +1243,10 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		Boss = bossState,
 		Options = opts,
 	}
+	if def.Boss and def.Boss.CloseUp then
+		model:SetAttribute("CloseUp", def.Boss.CloseUp.Distance)
+		model:SetAttribute("FaceLift", def.Boss.CloseUp.Lift)
+	end
 	if def.Boss and def.Boss.Heart then
 		enemy.Shielded = true
 		-- a ball of light held to her chest bone; it shows only while her heart is open

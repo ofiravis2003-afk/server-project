@@ -47,6 +47,8 @@
 --         comes up with Subtitle. It doesn't fight until the scene is over.
 --         Farewell: what it says as it falls, one line after another.
 --         EndScene: instead of a Farewell, the camera turns to its fallen body for these lines, for EndSeconds.
+--         CloseUp: in its scenes the camera stays on its face from the front, following it, Distance studs away;
+--         Lift = studs from the head bone up to the middle of the face.
 --         (With Survives, so the body waits for the scene.)
 --         Tongue: a red strip on the floor shows where it will lash (Windup seconds); the first player still on the
 --         strip is pulled in and swallowed for Hold seconds, unless the toad takes FreeAt of its health before that.
@@ -77,6 +79,7 @@ export type BossDef = {
 	Farewell: { string }?,
 	EndScene: { string }?,
 	EndSeconds: number?,
+	CloseUp: { Distance: number, Lift: number }?,
 	-- Below At of its health it roars (Id) and fights faster: moves SpeedScale quicker, attacks every
 	-- CooldownScale as often, runs (Run) and lunges (Lunge, used in place of its Slam).
 	Rage: {
@@ -502,6 +505,7 @@ Enemies.MotherSpore = {
 			"The green ember does not go out. It sinks through the floor, and it is gone.",
 		},
 		EndSeconds = 16,
+		CloseUp = { Distance = 8, Lift = 1.8 },
 	},
 }
 

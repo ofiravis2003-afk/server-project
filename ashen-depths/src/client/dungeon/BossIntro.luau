@@ -3,11 +3,13 @@
 -- the boss, it speaks its lines (typed out at the bottom), and its name comes up big before the fight begins.
 -- With an empty subtitle it's an ending instead (Captain Mira Fell's words as she lies in her hall): the camera
 -- stays on the player's side, no big name, a Skip button, and the screen goes dark at the end.
+-- A boss with a CloseUp attribute gets the camera on its face instead, following it, in both scenes.
 -- The player can't move or attack while it plays (attribute "Cutscene" on the player).
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
 
@@ -117,8 +119,11 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 	local camera = workspace.CurrentCamera
 	local before = camera.CameraType
 	camera.CameraType = Enum.CameraType.Scriptable
+	local faceLift = (model:GetAttribute("FaceLift") :: number?) or 0
+	local closeUp = model:GetAttribute("CloseUp") :: number?
+	local following: RBXScriptConnection? = nil
 	local function face(): Vector3
-		return if head then head.TransformedWorldCFrame.Position else bossRoot.Position + Vector3.new(0, 4, 0)
+		return if head then head.TransformedWorldCFrame.Position + Vector3.new(0, faceLift, 0) else bossRoot.Position + Vector3.new(0, 4, 0)
 	end
 	local toBoss = (bossRoot.Position - root.Position) * Vector3.new(1, 0, 1)
 	toBoss = if toBoss.Magnitude > 0.1 then toBoss.Unit else root.CFrame.LookVector
@@ -127,8 +132,23 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 	TweenService:Create(camera, TweenInfo.new(duration * 0.3, Enum.EasingStyle.Sine), {
 		CFrame = CFrame.lookAt(shoulder + toBoss * 6, face()),
 	}):Play()
-	task.delay(duration * 0.3, function()
+	task.delay(if closeUp then 1.2 else duration * 0.3, function()
 		if not gui.Parent or skipped then
+			return
+		end
+		if closeUp then
+			-- from in front of it, a little below its eyes, easing in and following its head as it moves
+			local look = bossRoot.CFrame.LookVector
+			local floorY = bossRoot.Position.Y - 3
+			local target = face()
+			local began = os.clock()
+			following = RunService.RenderStepped:Connect(function(dt)
+				target = target:Lerp(face(), math.min(dt * 4, 1))
+				local closing = math.min((os.clock() - began) / (duration * 0.6), 1)
+				local from = target + look * (closeUp + 3 * (1 - closing)) - Vector3.new(0, 0.6, 0)
+				from = Vector3.new(from.X, math.max(from.Y, floorY), from.Z)
+				camera.CFrame = CFrame.lookAt(from, target)
+			end)
 			return
 		end
 		if ending then
@@ -212,6 +232,9 @@ local function play(model: Model, title: string, subtitle: string, lines: { stri
 		TweenService:Create(black, TweenInfo.new(0.7), { BackgroundTransparency = 0 }):Play()
 		task.wait(0.9)
 		dark = black
+	end
+	if following then
+		following:Disconnect()
 	end
 	TweenService:Create(top, slide, { Position = UDim2.fromScale(0, 0) }):Play()
 	TweenService:Create(bottom, slide, { Position = UDim2.fromScale(0, 1) }):Play()

@@ -1,7 +1,8 @@
 --!strict
 -- Keeps a body's feet on the floor through clips that lift them (Mixamo's Mutant clips were made to hop and sway
 -- above the ground they land on): every frame the lower foot is found, and the whole body is lowered through its
--- "BodyMotor" until that foot touches the floor. Drawn on players' screens only.
+-- "BodyMotor" until that foot touches the floor. Drawn on players' screens only. (Through the motor's C0: its
+-- Animator overwrites Transform.)
 
 local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
@@ -11,7 +12,7 @@ local SPEED = 18 -- how fast the body follows (higher = stiffer)
 
 local GroundBody = {}
 
-type Body = { Root: BasePart, Humanoid: Humanoid, Motor: Motor6D, Left: Bone, Right: Bone, Drop: number }
+type Body = { Root: BasePart, Humanoid: Humanoid, Motor: Motor6D, Rest: CFrame, Left: Bone, Right: Bone, Drop: number }
 
 local bodies: { [Model]: Body } = {}
 
@@ -26,7 +27,7 @@ function add(model: Instance)
 	local left = model:FindFirstChild("mixamorig:LeftToeBase", true) :: Bone?
 	local right = model:FindFirstChild("mixamorig:RightToeBase", true) :: Bone?
 	if root and humanoid and motor and left and right then
-		bodies[model] = { Root = root, Humanoid = humanoid, Motor = motor, Left = left, Right = right, Drop = 0 }
+		bodies[model] = { Root = root, Humanoid = humanoid, Motor = motor, Rest = motor.C0, Left = left, Right = right, Drop = 0 }
 	elseif model.Parent then
 		task.delay(0.5, add, model) -- (its bones are still arriving)
 	end
@@ -51,11 +52,11 @@ function GroundBody.Start()
 			if body.Humanoid.Health > 0 then
 				local floorY = body.Root.Position.Y - body.Humanoid.HipHeight - body.Root.Size.Y / 2
 				local foot = math.min(body.Left.TransformedWorldCFrame.Position.Y, body.Right.TransformedWorldCFrame.Position.Y)
-				-- (a bone's world position doesn't count the motor's Transform, so this is the height before the drop)
-				wanted = math.max(foot - floorY - FOOT_HEIGHT, 0)
+				-- (the foot as it stands now already carries the current drop)
+				wanted = math.max(foot + body.Drop - floorY - FOOT_HEIGHT, 0)
 			end
 			body.Drop += (wanted - body.Drop) * math.min(dt * SPEED, 1)
-			body.Motor.Transform = CFrame.new(0, -body.Drop, 0)
+			body.Motor.C0 = body.Rest - Vector3.new(0, body.Drop, 0)
 		end
 	end)
 end
