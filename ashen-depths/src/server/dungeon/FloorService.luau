@@ -1420,6 +1420,17 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 		end)
 	end
 	local after = said * 3.5
+	local scene = (boss.Def.Boss :: any).EndScene :: { string }?
+	if scene then
+		-- the camera turns to the fallen body, and as the screen goes dark it is gone
+		local seconds = (boss.Def.Boss :: any).EndSeconds
+		after = seconds
+		CollectionService:AddTag(boss.Model, "BossIntro")
+		bossIntroRemote:FireAllClients(boss.Model, title, "", scene, seconds)
+		task.delay(seconds - 0.4, function()
+			boss.Model:Destroy()
+		end)
+	end
 	task.delay(after, function()
 		effectRemote:FireAllClients("BossFallen", title)
 		notifyRemote:FireAllClients(`{title} has fallen! A Gold Chest waits in the lair.`)
@@ -1436,15 +1447,11 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 		end)
 	end
 	if currentFloor == 30 then
-		task.delay(after + 4, function()
-			effectRemote:FireAllClients("Summon", where)
-			notifyRemote:FireAllClients("The green ember does not go out. It sinks through the floor, and it is gone.")
-		end)
-		task.delay(after + 10, function()
+		task.delay(after + 5, function()
 			notifyRemote:FireAllClients("Chapter II complete! Below, The Hollow is waiting. And so, somewhere deeper, is the Flame.")
 		end)
 	end
-	task.delay(2.5, function()
+	task.delay(if scene then after + 0.5 else 2.5, function()
 		if room.Built.Model.Parent then
 			placeChest(room.Built.Model, CFrame.new(room.Built.Center), "Gold")
 		end

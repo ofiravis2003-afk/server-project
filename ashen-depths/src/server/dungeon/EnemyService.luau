@@ -1301,6 +1301,8 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 		CollectionService:AddTag(model, "Scurry")
 	elseif def.Procedural == "Toad" then
 		CollectionService:AddTag(model, "Toad")
+	elseif def.Procedural == "Grounded" then
+		CollectionService:AddTag(model, "Grounded")
 	end
 
 	humanoid.Running:Connect(function(speed)

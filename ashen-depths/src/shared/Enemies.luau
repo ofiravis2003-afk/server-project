@@ -36,6 +36,8 @@
 --   Squishy: wobbles as it moves (drawn by the players' screens).
 --   Procedural: "Scurry" = no animation clips; the body is moved by code (bouncing run, lunging bite).
 --               "Toad" = the same for a big hopping boss (client/dungeon/ToadBody); its Boss moves need no clip Ids.
+--               "Grounded" = has clips, but clips that leave the floor (Mixamo's Mutant ones) are held down on it
+--               by players' screens (client/dungeon/GroundBody).
 --   Pack: comes in a group of this many (min, max) in one spawn.
 --   Boss: a boss fight: its name on the big bar at the top of the screen, and its special moves on top of its
 --         ordinary blows. Slam: leaps at a player; a red circle on the floor shows where it lands (HitAt seconds
@@ -44,6 +46,8 @@
 --         Intro: the scene when the lair locks: the camera turns to the boss, it speaks its Lines, and its name
 --         comes up with Subtitle. It doesn't fight until the scene is over.
 --         Farewell: what it says as it falls, one line after another.
+--         EndScene: instead of a Farewell, the camera turns to its fallen body for these lines, for EndSeconds.
+--         (With Survives, so the body waits for the scene.)
 --         Tongue: a red strip on the floor shows where it will lash (Windup seconds); the first player still on the
 --         strip is pulled in and swallowed for Hold seconds, unless the toad takes FreeAt of its health before that.
 --         Heart: a rooted boss no blow can hurt except while its heart is open. Round and round: it calls its Summon
@@ -71,6 +75,8 @@ export type BossDef = {
 	}?,
 	Intro: { Subtitle: string, Lines: { string }, Pose: string? }, -- Pose: the clip it plays as it speaks
 	Farewell: { string }?,
+	EndScene: { string }?,
+	EndSeconds: number?,
 	-- Below At of its health it roars (Id) and fights faster: moves SpeedScale quicker, attacks every
 	-- CooldownScale as often, runs (Run) and lunges (Lunge, used in place of its Slam).
 	Rage: {
@@ -460,6 +466,8 @@ Enemies.MotherSpore = {
 	Drops = { { Item = "Heartwood", Chance = 1 }, { Item = "SporeCap", Chance = 1, Count = { 10, 15 } } },
 	RespawnTime = 5,
 	Rooted = true,
+	Procedural = "Grounded",
+	Survives = true,
 	Blight = 1,
 	Animations = {
 		Idle = "rbxassetid://88599457224504",
@@ -488,10 +496,12 @@ Enemies.MotherSpore = {
 				"Burn me, little one. It will not matter. I was only ever the door.",
 			},
 		},
-		Farewell = {
+		EndScene = {
 			"Too late, little flame.",
 			"It has already gone below.",
+			"The green ember does not go out. It sinks through the floor, and it is gone.",
 		},
+		EndSeconds = 16,
 	},
 }
 
