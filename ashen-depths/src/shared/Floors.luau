@@ -52,9 +52,8 @@ function Floors.EnemyHealthMultiplier(floor: number): number
 	return 1 + 0.2 * (floor - 1)
 end
 
--- (the caverns hit 15% softer: their monsters and Blight were a jump from floor 15, 2026-11-01)
 function Floors.EnemyDamageMultiplier(floor: number): number
-	return (1 + 0.08 * (floor - 1)) * (if Floors.IsRotwood(floor) then 0.85 else 1)
+	return 1 + 0.08 * (floor - 1)
 end
 
 -- Which monsters a floor's combat rooms are filled with, and how often (weights).
