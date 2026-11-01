@@ -53,9 +53,16 @@ function Floors.EnemyHealthMultiplier(floor: number): number
 end
 
 -- (floors 8-15 hit harder, step by step up to +20%: the end of chapter I was too easy, 2026-11-01)
+local function harderBy(floor: number): number
+	return if floor >= 8 and floor <= 15 then 1 + 0.2 * (floor - 7) / 8 else 1
+end
+
+local function plainDamage(floor: number): number
+	return 1 + 0.08 * (floor - 1)
+end
+
 function Floors.EnemyDamageMultiplier(floor: number): number
-	local harder = if floor >= 8 and floor <= 15 then 1 + 0.2 * (floor - 7) / 8 else 1
-	return (1 + 0.08 * (floor - 1)) * harder
+	return plainDamage(floor) * harderBy(floor)
 end
 
 -- Which monsters a floor's combat rooms are filled with, and how often (weights).
@@ -146,14 +153,14 @@ end
 Floors.LairHeights = { [20] = 32, [30] = 26 } :: { [number]: number }
 Floors.LairSizes = { [30] = 80 } :: { [number]: number } -- (rooms stand 76 apart: 80 still leaves a short corridor)
 
--- How much stronger a boss is on this floor than on its own (1 in chapter I): it keeps up with the floor.
+-- How much stronger a boss is on this floor than on its own: it keeps up with the floor. At home only the end
+-- of chapter I's extra damage counts (the Bone Warden hits as much harder as floor 15 does).
 function Floors.BossScale(floor: number, boss: string): (number, number)
 	local home = BOSS_HOME[boss] or floor
 	if floor <= home then
-		return 1, 1
+		return 1, harderBy(floor)
 	end
-	return Floors.EnemyHealthMultiplier(floor) / Floors.EnemyHealthMultiplier(home),
-		Floors.EnemyDamageMultiplier(floor) / Floors.EnemyDamageMultiplier(home)
+	return Floors.EnemyHealthMultiplier(floor) / Floors.EnemyHealthMultiplier(home), plainDamage(floor) / plainDamage(home)
 end
 
 -- Guardians' floors: the last room before the stairs is a locked hall where three waves of the floor's
