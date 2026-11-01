@@ -43,6 +43,9 @@ local NEWS: { { Text: string, Until: number? } } = {
 	{ Text = "- The Training Yard: test your weapons on the dummies" },
 	{ Text = "- Halloween: find the lost Jack-o'-Lanterns (until Nov 2)", Until = DateTime.fromUniversalTime(2026, 11, 2).UnixTimestamp },
 }
+if Config.ChapterII then
+	table.insert(NEWS, 1, { Text = "- Chapter II: The Rotwood Caverns, floors 16-30. New foes, bosses and gear" })
+end
 local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 
 -- The townsfolk's standing animations (published from ServerStorage.TownClips).
