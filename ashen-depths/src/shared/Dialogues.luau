@@ -118,6 +118,11 @@ if Config.ChapterII then
 		table.insert(after.Lines, 1, line)
 		Dialogues[key .. "_Mira"] = after
 	end
+	-- Seraphine, to someone who has beaten Mother Spore (data.MotherSlain)
+	local ember = table.clone(Dialogues.Seraphine)
+	ember.Lines = table.clone(ember.Lines)
+	table.insert(ember.Lines, 1, "It sank? Through the floor? Ilvane wrote that the ember can't be killed, only moved. Oh, this is bad. This is very interesting, and very bad.")
+	Dialogues.Seraphine_Ember = ember
 end
 
 return Dialogues

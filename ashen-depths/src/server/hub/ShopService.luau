@@ -173,14 +173,19 @@ function ShopService.Start()
 			talk.Triggered:Connect(function(player)
 				-- (someone who brought Mira Fell home hears the town talking about it)
 				local data = DataService.GetData(player)
-				local after = `{key}_Mira`
-				dialogueRemote:FireClient(player, person, if data and data.MiraSaved and Dialogues[after] then after else nil)
+				local after = nil
+				if data and data.MotherSlain and Dialogues[`{key}_Ember`] then
+					after = `{key}_Ember`
+				elseif data and data.MiraSaved and Dialogues[`{key}_Mira`] then
+					after = `{key}_Mira`
+				end
+				dialogueRemote:FireClient(player, person, after)
 			end)
 		end
 	end
 	Remotes.Event("DialogueAction").OnServerEvent:Connect(function(player, key: any, action: any)
 		if type(key) == "string" then
-			key = (string.gsub(key, "_Mira$", ""))
+			key = (string.gsub(string.gsub(key, "_Mira$", ""), "_Ember$", ""))
 		end
 		local person = type(key) == "string" and town.Model:FindFirstChild(if key == "AldricIntro" then "Aldric" else key, true)
 		local character = player.Character

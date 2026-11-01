@@ -1411,6 +1411,9 @@ bossDefeated = function(room: CombatRoom, boss: EnemyService.Enemy)
 			if data and currentFloor + 1 > (data.Checkpoint or 0) then
 				data.Checkpoint = currentFloor + 1
 			end
+			if data and boss.Name == "MotherSpore" then
+				data.MotherSlain = true
+			end
 		end
 	end
 	local farewell = (boss.Def.Boss :: any).Farewell :: { string }?

@@ -35,6 +35,7 @@ return {
 	AskedLike = nil :: boolean?, -- was asked once to like the game (ShopService)
 	FirstChestOpened = nil :: boolean?, -- has had the first chest's guaranteed new weapon, or was past it (FloorService)
 	MiraSaved = nil :: boolean?, -- beat Captain Mira Fell on floor 25: she's home in Emberhold, and the town talks
+	MotherSlain = nil :: boolean?, -- beat Mother Spore on floor 30: Seraphine has something to say about it
 	FirstJoinTime = 0,
 	LastJoinTime = 0,
 }
