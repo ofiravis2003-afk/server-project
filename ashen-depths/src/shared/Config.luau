@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.4.0",
+	Version = "0.5.0",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
@@ -20,9 +20,9 @@ return {
 	-- Play in Studio loads the real save but never writes it back (no lock, no saving), so tests can't change it.
 	StudioSaves = false,
 
-	-- Chapter II (the Rotwood Caverns, floors 16-30), being built: off, so the live game stays as it is
-	-- (The Hollow from floor 16). On, chapter II takes floors 16-30 and The Hollow starts at 31.
-	ChapterII = false,
+	-- Chapter II (the Rotwood Caverns, floors 16-30), released 2026-11-01: it takes floors 16-30 and The Hollow
+	-- starts at 31. (Off: The Hollow from floor 16, as it was.)
+	ChapterII = true,
 
 	-- Robux purchases (created in the Creator Hub, 2026-10-24). Passes are bought once; products again and again.
 	Passes = {
