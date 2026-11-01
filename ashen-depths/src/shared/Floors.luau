@@ -52,8 +52,10 @@ function Floors.EnemyHealthMultiplier(floor: number): number
 	return 1 + 0.2 * (floor - 1)
 end
 
+-- (floors 8-15 hit harder, step by step up to +20%: the end of chapter I was too easy, 2026-11-01)
 function Floors.EnemyDamageMultiplier(floor: number): number
-	return 1 + 0.08 * (floor - 1)
+	local harder = if floor >= 8 and floor <= 15 then 1 + 0.2 * (floor - 7) / 8 else 1
+	return (1 + 0.08 * (floor - 1)) * harder
 end
 
 -- Which monsters a floor's combat rooms are filled with, and how often (weights).
