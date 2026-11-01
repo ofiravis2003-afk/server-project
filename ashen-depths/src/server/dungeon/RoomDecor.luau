@@ -840,8 +840,15 @@ end
 -- floor, giant glowing mushrooms in corners, clusters of small ones along the walls with a teal glow, and
 -- spores drifting in the air. (`roomType` keeps the stairs and the entrance's middle clear.)
 local TEAL_GLOW = Color3.fromRGB(80, 230, 190)
+-- What belongs to the catacombs above and not down here
+local NOT_IN_THE_CAVERNS = { Banner = true, BannerRod = true, BannerEmblem = true, BannerTail = true, BannerLight = true, Pew = true, PewBack = true }
 
 function RoomDecor.Overgrow(ctx: Context, roomType: string)
+	for _, child in ctx.Model:GetChildren() do
+		if NOT_IN_THE_CAVERNS[child.Name] then
+			child:Destroy()
+		end
+	end
 	tint(ctx, Color3.fromRGB(58, 62, 50), Color3.fromRGB(46, 56, 38), Enum.Material.Ground)
 	local rng = ctx.Rng
 	-- giant mushrooms in the corners (not in the stairs room: its pit is in the way)

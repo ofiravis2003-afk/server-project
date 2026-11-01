@@ -79,6 +79,32 @@ local builders: { [string]: (Model) -> () } = {
 		end
 		part(m, Vector3.new(0.3, 0.3, 0.3), CFrame.new(0.6, 0.15, 0.2), Color3.fromRGB(110, 230, 150), Enum.Material.Neon, Enum.PartType.Ball)
 	end,
+	SporeCap = function(m)
+		local tilt = CFrame.Angles(0, 0, math.rad(-10))
+		part(m, Vector3.new(1.7, 0.55, 0.55), tilt * CFrame.new(0, -0.45, 0) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(196, 190, 160), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+		part(m, Vector3.new(2.3, 1.1, 2.3), tilt * CFrame.new(0, 0.5, 0), Color3.fromRGB(40, 150, 135), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		for _, spot in { Vector3.new(-0.5, 0.95, -0.55), Vector3.new(0.45, 1, -0.4), Vector3.new(0, 0.85, -0.85), Vector3.new(0.75, 0.75, -0.65) } do
+			part(m, Vector3.new(0.32, 0.2, 0.32), tilt * CFrame.new(spot), Color3.fromRGB(170, 245, 215), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+		end
+	end,
+	ToadHide = function(m)
+		for i = 0, 2 do
+			part(m, Vector3.new(2.2 - i * 0.25, 0.16, 1.7 - i * 0.2), CFrame.new(i * 0.06, i * 0.16, i * -0.04) * CFrame.Angles(math.rad(-30 + i * 3), math.rad(i * 7), math.rad(i * 3)), Color3.fromRGB(78 + i * 8, 92 + i * 8, 48), Enum.Material.Leather)
+		end
+		local top = CFrame.new(0.12, 0.34, -0.08) * CFrame.Angles(math.rad(-24), math.rad(14), math.rad(6))
+		for _, spot in { Vector3.new(-0.5, 0.08, 0.2), Vector3.new(0.3, 0.08, -0.3), Vector3.new(0.45, 0.08, 0.35), Vector3.new(-0.2, 0.08, -0.45) } do
+			part(m, Vector3.new(0.34, 0.12, 0.34), top * CFrame.new(spot), Color3.fromRGB(150, 130, 62), Enum.Material.Leather, Enum.PartType.Ball)
+		end
+	end,
+	Heartwood = function(m)
+		local tilt = CFrame.Angles(math.rad(14), math.rad(25), math.rad(-14))
+		part(m, Vector3.new(1.3, 2.2, 1.3), tilt, Color3.fromRGB(70, 46, 32), Enum.Material.Wood)
+		part(m, Vector3.new(1.45, 0.3, 1.45), tilt * CFrame.new(0, 0.55, 0), Color3.fromRGB(48, 32, 24), Enum.Material.Wood)
+		part(m, Vector3.new(1.45, 0.3, 1.45), tilt * CFrame.new(0, -0.6, 0), Color3.fromRGB(48, 32, 24), Enum.Material.Wood)
+		-- the living heart showing through
+		part(m, Vector3.new(0.55, 1.5, 0.12), tilt * CFrame.new(0, 0, -0.65), Color3.fromRGB(110, 235, 170), Enum.Material.SmoothPlastic)
+		part(m, Vector3.new(0.12, 1, 0.5), tilt * CFrame.new(-0.65, 0.1, 0), Color3.fromRGB(110, 235, 170), Enum.Material.SmoothPlastic)
+	end,
 	HealthPotion = function(m)
 		-- (no Glass or Neon: pictures in the bag draw them flat and pale)
 		part(m, Vector3.new(1.4, 1.4, 1.4), CFrame.new(), Color3.fromRGB(200, 30, 40), Enum.Material.SmoothPlastic, Enum.PartType.Ball)
@@ -131,7 +157,7 @@ function ItemModels.Build(itemName: string, rarity: string): Model
 			local band = part(model, Vector3.new(0.3, 1.4, 1.4), CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(214, 170, 64), Enum.Material.Metal, Enum.PartType.Cylinder)
 			band.Size = Vector3.new(0.3, 1.4, 1.4)
 			part(model, Vector3.new(0.32, 1, 1), CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(30, 26, 22), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
-			part(model, Vector3.new(0.45, 0.45, 0.45), CFrame.new(0, 0.75, 0), if piece.Name == "EmberBand" then Color3.fromRGB(255, 120, 40) else Color3.fromRGB(150, 30, 40), Enum.Material.Neon, Enum.PartType.Ball)
+			part(model, Vector3.new(0.45, 0.45, 0.45), CFrame.new(0, 0.75, 0), if piece.Name == "EmberBand" then Color3.fromRGB(255, 120, 40) elseif piece.Chapter == 2 then Color3.fromRGB(70, 200, 150) else Color3.fromRGB(150, 30, 40), Enum.Material.Neon, Enum.PartType.Ball)
 		elseif piece.Slot == "Head" then
 			part(model, Vector3.new(1.4, 1.35, 1.4), CFrame.new(), color, material)
 		elseif piece.Slot == "Chest" then
