@@ -31,4 +31,16 @@ function Onboarding.Step(player: Player, name: string)
 	end)
 end
 
+-- Where on floor 1 a newcomer stops: a custom event (Creator Hub > Analytics > Custom events) whose value is
+-- how many of the floor's rooms were cleared by then. "Floor1Death" when they fall, "Floor1Left" when they quit.
+function Onboarding.Floor1(player: Player, name: string, roomsCleared: number)
+	local data = DataService.GetData(player)
+	if not data or (data.DeepestFloor or 0) >= 2 then
+		return
+	end
+	pcall(function()
+		AnalyticsService:LogCustomEvent(player, name, roomsCleared)
+	end)
+end
+
 return Onboarding

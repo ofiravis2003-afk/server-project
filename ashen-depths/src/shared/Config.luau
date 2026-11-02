@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.5.1",
+	Version = "0.5.2",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
@@ -37,6 +37,9 @@ return {
 		BoneWarden = 929651792145795, -- the Bone Warden defeated (floor 15)
 		Hollow = 1481544442634936, -- reached The Hollow (the first floor past the last chapter)
 		Party = 3082723086033753, -- went down with a full party of four
+		RotgutToad = 0, -- Toad Slayer: the Rotgut Toad defeated (floor 20)
+		MotherSpore = 0, -- Heart of the Rot: Mother Spore defeated (floor 30)
+		NinthPatrol = 0, -- The Ninth Patrol: every page of the patrol's journal found
 	},
 	Products = {
 		GoldSmall = { Id = 3721731265, Gold = 500 }, -- Small Gold Pouch

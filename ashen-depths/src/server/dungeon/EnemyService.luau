@@ -53,6 +53,8 @@ export type SpawnOptions = {
 	-- big bar at the top of the screen like a boss.
 	Title: string?,
 	ExtraScale: number?,
+	-- The room it fights in (centre and half its width): one that backs away stays inside it.
+	Area: { Center: Vector3, Half: number }?,
 	OnDied: ((Enemy) -> ())?,
 }
 
@@ -60,6 +62,7 @@ export type Enemy = {
 	Name: string,
 	Def: Enemies.EnemyDef,
 	Damage: number,
+	Area: { Center: Vector3, Half: number }?,
 	Elite: boolean,
 	EyeColor: Color3,
 	Model: Model,
@@ -1223,6 +1226,7 @@ function EnemyService.Spawn(name: string, cframe: CFrame, options: SpawnOptions?
 	local enemy: Enemy = {
 		Name = name,
 		Def = def,
+		Area = opts.Area,
 		Damage = def.Damage * (opts.DamageMultiplier or 1) * (if elite then ELITE.Damage else 1) * floorModifier.Damage,
 		Elite = elite,
 		EyeColor = eyeColor,
@@ -2047,10 +2051,24 @@ local function think()
 		elseif enemy.Boss then
 			bossThink(enemy, targetRoot, targetHumanoid, distance, now)
 		elseif ranged then
+			local backTo: Vector3? = nil
 			if distance < ranged.KeepAway then
-				-- Too close: back away from the player.
+				-- Too close: back away from the player, but not out through a doorway (it walked out of its room,
+				-- was put back and walked out again); backed against a wall, it stands and shoots.
 				local away = Vector3.new(-offset.X, 0, -offset.Z).Unit
-				enemy.Humanoid:MoveTo(enemy.Root.Position + away * 8)
+				local goal = enemy.Root.Position + away * 8
+				local area = enemy.Area
+				if area then
+					local half = area.Half - 4
+					local from = goal - area.Center
+					goal = area.Center + Vector3.new(math.clamp(from.X, -half, half), from.Y, math.clamp(from.Z, -half, half))
+				end
+				if (goal - enemy.Root.Position).Magnitude > 2 then
+					backTo = goal
+				end
+			end
+			if backTo then
+				enemy.Humanoid:MoveTo(backTo)
 			elseif distance > enemy.Def.AttackRange then
 				enemy.Humanoid:MoveTo(targetRoot.Position)
 			elseif now - enemy.LastAttack >= enemy.Def.AttackCooldown then

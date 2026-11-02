@@ -256,6 +256,17 @@ end
 ------------------------------------------------------------------------------------------------
 -- Combat rooms
 
+-- How many of this floor's combat rooms are cleared (for the newcomers' floor-1 events).
+local function roomsCleared(): number
+	local count = 0
+	for _, room in combatRooms do
+		if room.Cleared then
+			count += 1
+		end
+	end
+	return count
+end
+
 local function clearRoom(room: CombatRoom)
 	room.Active = false
 	room.Cleared = true
@@ -286,6 +297,7 @@ local function onEnemyDied(room: CombatRoom, enemy: EnemyService.Enemy)
 			local ok, child = pcall(EnemyService.Spawn, split.Name, CFrame.new(at - Vector3.new(0, 2, 0)), {
 				HealthMultiplier = Floors.EnemyHealthMultiplier(currentFloor),
 				DamageMultiplier = Floors.EnemyDamageMultiplier(currentFloor),
+				Area = { Center = room.Built.Center, Half = room.Built.Size / 2 },
 				OnDied = function(dead)
 					onEnemyDied(room, dead)
 				end,
@@ -389,6 +401,7 @@ local function spawnWave(room: CombatRoom, floor: number, wave: number)
 			local ok, enemy = pcall(EnemyService.Spawn, if captain then hall.Leader else name, CFrame.lookAt(spot, room.Built.Center), {
 				HealthMultiplier = Floors.EnemyHealthMultiplier(floor) * (if captain then 3 * (1 + 0.6 * extra) else 1),
 				DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
+				Area = { Center = room.Built.Center, Half = room.Built.Size / 2 },
 				Elite = captain,
 				Title = if captain then hall.Title else nil,
 				ExtraScale = if captain then hall.Scale else nil,
@@ -425,6 +438,7 @@ local function riseEnemies(room: CombatRoom, floor: number, count: number)
 		local ok, enemy = pcall(EnemyService.Spawn, Floors.PickEnemy(floor, rng), CFrame.lookAt(spot, room.Built.Center), {
 			HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
 			DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
+			Area = { Center = room.Built.Center, Half = room.Built.Size / 2 },
 			OnDied = function(dead)
 				onEnemyDied(room, dead)
 			end,
@@ -584,6 +598,7 @@ local function activateRoom(room: CombatRoom, floor: number)
 			local ok, enemy = pcall(EnemyService.Spawn, name, CFrame.lookAt(at, room.Built.Center), {
 				HealthMultiplier = Floors.EnemyHealthMultiplier(floor),
 				DamageMultiplier = Floors.EnemyDamageMultiplier(floor),
+				Area = { Center = room.Built.Center, Half = room.Built.Size / 2 },
 				Elite = i == eliteIndex and member == 1,
 				OnDied = function(dead)
 					onEnemyDied(room, dead)
@@ -655,7 +670,7 @@ local function watchRooms()
 					if enemy.Dead or not enemy.Model.Parent then
 						room.Enemies[enemy] = nil
 					elseif not enemy.Burrowed and not isInside(room.Built, enemy.Root.Position, 0.5) then -- (a Rot Crawler under the floor is where it should be)
-						warn(`[FloorService] An enemy left room {room.Built.Plan.Key}; bringing it back`)
+						warn(`[FloorService] {enemy.Name} left room {room.Built.Plan.Key}; bringing it back`)
 						enemy.Root.CFrame = CFrame.new(freeSpot(room.Built, Random.new(), 4) + Vector3.new(0, enemy.Humanoid.HipHeight + 2, 0))
 					end
 				end
@@ -1012,6 +1027,9 @@ local function placeLorePage(parent: Instance, position: Vector3, page: Lore.Pag
 					else `A page of Ilvane's journal ({found}/{total}). Seraphine will want to hear of this.`
 			)
 			QuestService.OnPage(player, page.Set)
+			if page.Set == "Patrol" and found >= total then
+				BadgeAwards.Give(player, "NinthPatrol")
+			end
 		end
 	end)
 end
@@ -2338,6 +2356,9 @@ function FloorService.Start()
 			if humanoid then
 				humanoid.Died:Connect(function()
 					fell[player] = true
+					if currentFloor == 1 then
+						Onboarding.Floor1(player, "Floor1Death", roomsCleared())
+					end
 					task.delay(7, TipService.Show, player, "Death")
 					local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 					if root then
@@ -2375,6 +2396,9 @@ function FloorService.Start()
 		onPlayer(player)
 	end
 	Players.PlayerRemoving:Connect(function(player)
+		if currentFloor == 1 then
+			Onboarding.Floor1(player, "Floor1Left", roomsCleared())
+		end
 		keys[player] = nil
 		fell[player] = nil
 		fellAt[player] = nil
