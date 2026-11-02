@@ -193,6 +193,11 @@ function ShopService.Start()
 		if not person or not person:IsA("Model") or not root or (root.Position - person:GetPivot().Position).Magnitude > SHOP_RANGE then
 			return
 		end
+		-- Mira stands in town for everyone's server, but only those who saved her can see her (MiraInTown)
+		local data = DataService.GetData(player)
+		if key == "MiraFell" and not (data and data.MiraSaved) then
+			return
+		end
 		if key == "AldricIntro" and action == "Take the Brand" then
 			IntroService.TakeBrand(player)
 		elseif key == "Brakka" and action == "Trade" then
