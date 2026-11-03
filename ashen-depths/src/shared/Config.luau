@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.5.5",
+	Version = "0.5.6",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
@@ -28,7 +28,7 @@ return {
 	-- visits). Each is a notification string's asset id, "" = not made yet (not sent). The Open Cloud key that sends
 	-- them is the game's secret named Secret (Configure > Secrets); Emberhold needs Allow HTTP Requests on.
 	Notifications = {
-		FriendDescending = "", -- "A friend of yours is going down the Great Well. Grab your weapon and join them!"
+		FriendDescending = "d9603153-b00c-0742-802a-09e874a869e5", -- "A friend of yours is going down the Great Well. Grab your weapon and join them!"
 		Secret = "NotificationsKey",
 	},
 
