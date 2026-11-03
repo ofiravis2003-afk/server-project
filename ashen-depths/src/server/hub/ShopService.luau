@@ -24,6 +24,7 @@ local PartyService = require(Common.PartyService)
 local TipService = require(Common.TipService)
 local Halloween = require(Common.Halloween)
 local Onboarding = require(Common.Onboarding)
+local NotifyService = require(script.Parent.NotifyService)
 local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
@@ -340,6 +341,7 @@ function ShopService.Start()
 	local leaving: { [Player]: boolean } = {}
 	descend.Triggered:Connect(function(player)
 		Onboarding.Step(player, "Descended")
+		NotifyService.FriendDescending(player)
 		if RunService:IsStudio() then
 			notifyRemote:FireClient(player, "The way down only opens in the published game (Studio can't teleport). Test the Depths in its own place.")
 			return

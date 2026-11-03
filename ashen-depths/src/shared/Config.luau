@@ -3,7 +3,7 @@
 
 return {
 	-- Bump this on any change: both places print it on start, so you can see they run the same code.
-	Version = "0.5.4",
+	Version = "0.5.5",
 
 	-- Place ids, filled in after the places are created on the Roblox website (step 0.1).
 	PlaceIds = {
@@ -23,6 +23,14 @@ return {
 	-- Chapter II (the Rotwood Caverns, floors 16-30), released 2026-11-01: it takes floors 16-30 and The Hollow
 	-- starts at 31. (Off: The Hollow from floor 16, as it was.)
 	ChapterII = true,
+
+	-- Roblox notifications (Creator Hub > Engagement > Notifications; Roblox sends them only once the game has 100
+	-- visits). Each is a notification string's asset id, "" = not made yet (not sent). The Open Cloud key that sends
+	-- them is the game's secret named Secret (Configure > Secrets); Emberhold needs Allow HTTP Requests on.
+	Notifications = {
+		FriendDescending = "", -- "A friend of yours is going down the Great Well. Grab your weapon and join them!"
+		Secret = "NotificationsKey",
+	},
 
 	-- Robux purchases (created in the Creator Hub, 2026-10-24). Passes are bought once; products again and again.
 	Passes = {
