@@ -18,14 +18,28 @@ Daily.Rewards = {
 	{ Text = "An Epic armor piece!", EpicArmor = true },
 } :: { Reward }
 
-export type Task = { Id: string, Text: string, Kind: "Kill" | "Boss" | "Chest" | "Floor", Target: string?, Count: number, Gold: number, XP: number }
+export type Task = {
+	Id: string,
+	Text: string,
+	Kind: "Kill" | "Boss" | "Chest" | "Floor",
+	Target: string?,
+	Count: number,
+	Gold: number,
+	XP: number,
+	-- Only for players fighting there: "Catacombs" (chapter I and The Hollow, where the skeletons are) or
+	-- "Caverns" (chapter II, where the infected are). Twin: the same task in the other place.
+	Where: ("Catacombs" | "Caverns")?,
+	Twin: string?,
+}
 
 -- Kill: slay Count monsters (of Target, or any); Boss: defeat Count bosses; Chest: open Count chests;
 -- Floor: go down Count floors.
 Daily.Tasks = {
 	{ Id = "Slay", Text = "Slay 40 monsters", Kind = "Kill", Count = 40, Gold = 200, XP = 150 },
-	{ Id = "Skeletons", Text = "Put 15 skeletons to rest", Kind = "Kill", Target = "Skeleton", Count = 15, Gold = 180, XP = 140 },
-	{ Id = "Archers", Text = "Silence 8 skeleton archers", Kind = "Kill", Target = "SkeletonArcher", Count = 8, Gold = 220, XP = 160 },
+	{ Id = "Skeletons", Text = "Put 15 skeletons to rest", Kind = "Kill", Target = "Skeleton", Count = 15, Gold = 180, XP = 140, Where = "Catacombs", Twin = "Husks" },
+	{ Id = "Archers", Text = "Silence 8 skeleton archers", Kind = "Kill", Target = "SkeletonArcher", Count = 8, Gold = 220, XP = 160, Where = "Catacombs", Twin = "HuskArchers" },
+	{ Id = "Husks", Text = "Burn 15 Fungal Husks", Kind = "Kill", Target = "FungalHusk", Count = 15, Gold = 220, XP = 180, Where = "Caverns", Twin = "Skeletons" },
+	{ Id = "HuskArchers", Text = "Silence 8 Husk Archers", Kind = "Kill", Target = "HuskArcher", Count = 8, Gold = 260, XP = 200, Where = "Caverns", Twin = "Archers" },
 	{ Id = "Chests", Text = "Open 3 chests", Kind = "Chest", Count = 3, Gold = 250, XP = 150 },
 	{ Id = "Descend", Text = "Go down 5 floors", Kind = "Floor", Count = 5, Gold = 300, XP = 250 },
 	{ Id = "Boss", Text = "Defeat a boss", Kind = "Boss", Count = 1, Gold = 600, XP = 500 },

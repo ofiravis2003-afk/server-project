@@ -170,8 +170,12 @@ if CHAPTER_II then
 	Floors.Guardians[25] = true -- the infected hall, led by Captain Mira Fell of the Ninth Patrol
 end
 
--- How many combat rooms stand between the entrance and the stairs.
+-- How many combat rooms stand between the entrance and the stairs. Floor 1 has only two, so a newcomer
+-- reaches floor 2 (rats, the Stairs Key, the floor's events) in a few minutes: most left on floor 1 (2026-11-03).
 function Floors.CombatRooms(floor: number): number
+	if floor == 1 then
+		return 2
+	end
 	return math.min(4 + math.floor((floor - 1) / 2), 8)
 end
 

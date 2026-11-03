@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Daily = require(ReplicatedStorage.Shared.Daily)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
+local Floors = require(ReplicatedStorage.Shared.Floors)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local DataService = require(script.Parent.DataService)
@@ -46,10 +47,23 @@ local function giveReward(player: Player, reward: Daily.Reward)
 	end
 end
 
--- Three different tasks for this player today (the same three if asked again the same day).
-local function dealTasks(player: Player, today: number): { { Id: string, Progress: number, Done: boolean } }
+-- Where this player fights now: the caverns once their deepest floor is one of chapter II's (a hunt for
+-- skeletons there would never end), the catacombs before and after.
+local function whereOf(data: { [string]: any }): string
+	return if Floors.IsRotwood(data.DeepestFloor or 0) then "Caverns" else "Catacombs"
+end
+
+-- Three different tasks for this player today (the same three if asked again the same day), only ones that
+-- can be done where they fight.
+local function dealTasks(player: Player, data: { [string]: any }, today: number): { { Id: string, Progress: number, Done: boolean } }
 	local rng = Random.new(today * 7919 + player.UserId)
-	local pool = table.clone(Daily.Tasks)
+	local where = whereOf(data)
+	local pool = {}
+	for _, task in Daily.Tasks do
+		if task.Where == nil or task.Where == where then
+			table.insert(pool, task)
+		end
+	end
 	local tasks = {}
 	for _ = 1, math.min(Daily.TasksPerDay, #pool) do
 		local pick = table.remove(pool, rng:NextInteger(1, #pool)) :: Daily.Task
@@ -66,7 +80,7 @@ local function newDay(player: Player, data: { [string]: any }): number?
 	local streak = if data.DailyDay == today - 1 then (data.DailyStreak or 0) + 1 else 1
 	data.DailyDay = today
 	data.DailyStreak = streak
-	data.DailyTasks = dealTasks(player, today)
+	data.DailyTasks = dealTasks(player, data, today)
 	local step = (streak - 1) % #Daily.Rewards + 1
 	giveReward(player, Daily.Rewards[step])
 	return step
@@ -113,9 +127,23 @@ function DailyService.OnFloor(player: Player)
 	advance(player, "Floor", nil, 1)
 end
 
+-- A task dealt for the other place (dealt before the player moved on, or before this rule) is swapped for its
+-- twin, as long as it isn't done.
+local function fitTasks(data: { [string]: any })
+	local where = whereOf(data)
+	for _, saved in data.DailyTasks or {} do
+		local task = Daily.ById[saved.Id]
+		if task and task.Where and task.Where ~= where and task.Twin and Daily.ById[task.Twin] and not saved.Done then
+			saved.Id = task.Twin
+			saved.Progress = 0
+		end
+	end
+end
+
 function DailyService.Start()
 	DataService.OnLoaded(function(player, data)
 		local gift = newDay(player, data)
+		fitTasks(data)
 		task.delay(if gift then 4 else 1, function() -- (after the opening screen)
 			push(player, gift)
 		end)
