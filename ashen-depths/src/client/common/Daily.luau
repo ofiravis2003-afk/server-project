@@ -59,19 +59,32 @@ function DailyUi.Start()
 	gui.DisplayOrder = 4
 	gui.Parent = player:WaitForChild("PlayerGui")
 
+	-- the right column: the next goal (client/common/GoalLine) and under it today's tasks
+	local column = Instance.new("Frame")
+	column.Name = "Column"
+	column.AnchorPoint = Vector2.new(1, 0)
+	column.Position = UDim2.new(1, -12, 0, if Device.Touch() then 64 else 12)
+	column.Size = UDim2.fromOffset(250, 0)
+	column.AutomaticSize = Enum.AutomaticSize.Y
+	column.BackgroundTransparency = 1
+	column.Parent = gui
+	local columnStack = Instance.new("UIListLayout")
+	columnStack.SortOrder = Enum.SortOrder.LayoutOrder
+	columnStack.Padding = UDim.new(0, 6)
+	columnStack.Parent = column
+
 	-- the tracker: today's tasks, on the right
 	local tracker = Instance.new("TextButton")
 	tracker.Name = "Tasks"
+	tracker.LayoutOrder = 2
 	tracker.AutoButtonColor = false
 	tracker.Text = ""
-	tracker.AnchorPoint = Vector2.new(1, 0)
-	tracker.Position = UDim2.new(1, -12, 0, if Device.Touch() then 64 else 12)
 	tracker.Size = UDim2.fromOffset(250, 0)
 	tracker.AutomaticSize = Enum.AutomaticSize.Y
 	tracker.BackgroundColor3 = PANEL
 	tracker.BackgroundTransparency = 0.25
 	tracker.Visible = false
-	tracker.Parent = gui
+	tracker.Parent = column
 	corner(tracker, 8)
 	local pad = Instance.new("UIPadding")
 	pad.PaddingTop = UDim.new(0, 6)
