@@ -15,7 +15,7 @@ local TweenService = game:GetService("TweenService")
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
 local ArmorService = require(script.Parent.Parent.Common.ArmorService)
 local BlightService = require(script.Parent.Parent.Common.BlightService)
-local Props = require(script.Parent.Props)
+local Props = require(script.Parent.Parent.Common.Props)
 
 local ACTIVE_RANGE = 70
 local IRON = Color3.fromRGB(40, 38, 38)

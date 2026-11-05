@@ -26,7 +26,7 @@ export type Context = {
 	Rng: Random,
 }
 
-local Props = require(script.Parent.Props)
+local Props = require(script.Parent.Parent.Common.Props)
 
 local RoomDecor = {}
 

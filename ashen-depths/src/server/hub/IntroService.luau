@@ -2,7 +2,9 @@
 -- A new adventurer's first minute in Emberhold (data.IntroDone not yet set):
 --   1. they arrive at the south gate and the camera flies over the town and the Great Well (client/hub/Intro)
 --   2. Aldric greets them (the AldricIntro dialogue) and they take the Guild Brand: a burning mark on the hand
---   3. the way down is marked: "Descend the Great Well", a beam of light over it and arrows on the ground, until
+--   3. the first fight (TownFight): the Well breathes ash and three skeletons come up the road; Aldric shouts to
+--      use the Brand, and when they're down he sends the player below (the AldricAfterFight dialogue)
+--   4. the way down is marked: "Descend the Great Well", a beam of light over it and arrows on the ground, until
 --      they go (and again on every visit until they have been down once)
 -- Players who have been here before (JoinCount > 1 when this was added) skip it.
 
@@ -14,6 +16,7 @@ local DataService = require(script.Parent.Parent.Common.DataService)
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local Onboarding = require(script.Parent.Parent.Common.Onboarding)
+local TownFight = require(script.Parent.TownFight)
 
 local IntroService = {}
 
@@ -65,6 +68,7 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 	local dialogueRemote = Remotes.Event("DialogueOpen")
 	local objectiveRemote = Remotes.Event("Objective")
 	local notifyRemote = Remotes.Event("Notify")
+	TownFight.Start(town)
 
 	DataService.OnLoaded(function(player, data)
 		if data.IntroDone == nil then
@@ -141,7 +145,14 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 		ProgressService.AddGold(player, WELCOME_GOLD)
 		InventoryService.GiveItem(player, "HealthPotion", "Common", WELCOME_POTIONS)
 		notifyRemote:FireClient(player, `A gift from the Guild: {WELCOME_GOLD} gold and a Health Potion.`)
-		objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position)
+		-- the first fight: the dead come up out of the Well (TownFight); then Aldric sends them down it
+		task.spawn(TownFight.Begin, player, town, function()
+			local aldric = town.Model:FindFirstChild("Aldric", true)
+			if aldric and aldric:IsA("Model") then
+				dialogueRemote:FireClient(player, aldric, "AldricAfterFight")
+			end
+			objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position)
+		end)
 	end
 end
 

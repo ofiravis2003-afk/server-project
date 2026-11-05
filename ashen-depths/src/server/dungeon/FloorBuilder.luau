@@ -6,7 +6,7 @@
 
 local Floors = require(game:GetService("ReplicatedStorage").Shared.Floors)
 local FloorLayout = require(script.Parent.FloorLayout)
-local Props = require(script.Parent.Props)
+local Props = require(script.Parent.Parent.Common.Props)
 local RoomDecor = require(script.Parent.RoomDecor)
 
 local PITCH = 76 -- distance between room centers

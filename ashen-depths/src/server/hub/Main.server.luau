@@ -20,6 +20,7 @@ local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
 local TitleService = require(Common.TitleService)
 local CombatService = require(Common.CombatService)
+local EnemyService = require(Common.EnemyService)
 local FounderService = require(script.Parent.FounderService)
 local ReferralService = require(script.Parent.ReferralService)
 local NotifyService = require(script.Parent.NotifyService)
@@ -36,9 +37,26 @@ Travel.Start()
 ProgressService.Start()
 QuestService.Start()
 TitleService.Start()
+EnemyService.Start() -- (the first fight's skeletons, TownFight)
 ShopService.Start()
 NotifyService.Start()
-CombatService.Start(TrainingService)
+-- what a blow in town can hit: the Training Yard's dummies and the first fight's skeletons
+CombatService.Start({
+	GetAlive = function()
+		local all = table.clone(TrainingService.GetAlive()) :: { any }
+		for _, enemy in EnemyService.GetAlive() do
+			table.insert(all, enemy)
+		end
+		return all
+	end,
+	Damage = function(target: any, amount: number, player: Player, kind: string)
+		if target.Def then
+			EnemyService.Damage(target, amount, player, kind)
+		else
+			TrainingService.Damage(target, amount, player, kind)
+		end
+	end,
+})
 ReferralService.Start()
 FounderService.Start()
 

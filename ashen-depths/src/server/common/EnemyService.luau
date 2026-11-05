@@ -17,15 +17,15 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Enemies = require(ReplicatedStorage.Shared.Enemies)
 local Remotes = require(ReplicatedStorage.Shared.Remotes)
-local ArmorService = require(script.Parent.Parent.Common.ArmorService)
-local BlightService = require(script.Parent.Parent.Common.BlightService)
-local InventoryService = require(script.Parent.Parent.Common.InventoryService)
-local QuestService = require(script.Parent.Parent.Common.QuestService)
-local DailyService = require(script.Parent.Parent.Common.DailyService)
-local TitleService = require(script.Parent.Parent.Common.TitleService)
+local ArmorService = require(script.Parent.ArmorService)
+local BlightService = require(script.Parent.BlightService)
+local InventoryService = require(script.Parent.InventoryService)
+local QuestService = require(script.Parent.QuestService)
+local DailyService = require(script.Parent.DailyService)
+local TitleService = require(script.Parent.TitleService)
 local Items = require(ReplicatedStorage.Shared.Items)
 local Events = require(ReplicatedStorage.Shared.Events)
-local ProgressService = require(script.Parent.Parent.Common.ProgressService)
+local ProgressService = require(script.Parent.ProgressService)
 local Props = require(script.Parent.Props)
 
 local SPAWN_TAG = "EnemySpawn"
@@ -57,6 +57,8 @@ export type SpawnOptions = {
 	-- The room it fights in (centre and half its width): one that backs away stays inside it.
 	Area: { Center: Vector3, Half: number }?,
 	OnDied: ((Enemy) -> ())?,
+	-- Goes only for this player, from any distance (Emberhold's first fight: other people in town are left alone).
+	Only: Player?,
 }
 
 export type Enemy = {
@@ -1369,6 +1371,17 @@ local function nearestTarget(position: Vector3, range: number): (BasePart?, Huma
 	return best, bestHumanoid
 end
 
+-- The one player an enemy spawned with Only goes for, while they're alive and here.
+local function onlyTarget(player: Player): (BasePart?, Humanoid?)
+	local character = player.Parent and player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if root and humanoid and humanoid.Health > 0 then
+		return root, humanoid
+	end
+	return nil, nil
+end
+
 local function face(enemy: Enemy, point: Vector3)
 	local from = enemy.Root.Position
 	local flat = Vector3.new(point.X, from.Y, point.Z)
@@ -2028,7 +2041,13 @@ local function think()
 		if enemy.Dead or enemy.Attacking then
 			continue
 		end
-		local targetRoot, targetHumanoid = nearestTarget(enemy.Root.Position, enemy.Def.AggroRange)
+		local only = enemy.Options.Only
+		local targetRoot, targetHumanoid
+		if only then
+			targetRoot, targetHumanoid = onlyTarget(only)
+		else
+			targetRoot, targetHumanoid = nearestTarget(enemy.Root.Position, enemy.Def.AggroRange)
+		end
 		if not targetRoot or not targetHumanoid then
 			enemy.Humanoid:MoveTo(enemy.Root.Position)
 			continue

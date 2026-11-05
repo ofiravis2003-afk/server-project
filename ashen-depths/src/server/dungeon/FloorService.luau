@@ -36,11 +36,11 @@ local MonetizationService = require(script.Parent.Parent.Common.MonetizationServ
 local InventoryService = require(script.Parent.Parent.Common.InventoryService)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local QuestService = require(script.Parent.Parent.Common.QuestService)
-local EnemyService = require(script.Parent.EnemyService)
+local EnemyService = require(script.Parent.Parent.Common.EnemyService)
 local FloorBuilder = require(script.Parent.FloorBuilder)
 local FloorLayout = require(script.Parent.FloorLayout)
 local Materials = require(script.Parent.Materials)
-local Props = require(script.Parent.Props)
+local Props = require(script.Parent.Parent.Common.Props)
 local TrapService = require(script.Parent.TrapService)
 
 local ORIGIN = Vector3.new(2000, 0, 0) -- far from the test room

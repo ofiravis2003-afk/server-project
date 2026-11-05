@@ -21,7 +21,7 @@ local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
 local TitleService = require(Common.TitleService)
 local CombatService = require(Common.CombatService)
-local EnemyService = require(script.Parent.EnemyService)
+local EnemyService = require(script.Parent.Parent.Common.EnemyService)
 local FloorService = require(script.Parent.FloorService)
 
 ArmorService.Start()
