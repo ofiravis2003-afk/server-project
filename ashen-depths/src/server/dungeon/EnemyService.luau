@@ -24,6 +24,7 @@ local QuestService = require(script.Parent.Parent.Common.QuestService)
 local DailyService = require(script.Parent.Parent.Common.DailyService)
 local TitleService = require(script.Parent.Parent.Common.TitleService)
 local Items = require(ReplicatedStorage.Shared.Items)
+local Events = require(ReplicatedStorage.Shared.Events)
 local ProgressService = require(script.Parent.Parent.Common.ProgressService)
 local Props = require(script.Parent.Props)
 
@@ -1016,7 +1017,7 @@ local function onDied(enemy: Enemy, options: SpawnOptions, spawnPart: BasePart?)
 		if player.Parent and dealt > 0 then
 			local vip = if player:GetAttribute("VIP") then VIP_BONUS else 1 -- (the VIP pass, MonetizationService)
 			local xp = math.ceil(enemy.Def.XP * rewards * together * vip)
-			local gold = math.ceil(math.random(enemy.Def.Gold[1], enemy.Def.Gold[2]) * rewards * together * vip)
+			local gold = math.ceil(math.random(enemy.Def.Gold[1], enemy.Def.Gold[2]) * rewards * together * vip * Events.GoldMultiplier())
 			ProgressService.AddXP(player, xp)
 			ProgressService.AddGold(player, gold)
 			local text = `+{xp} XP   +{gold} Gold`

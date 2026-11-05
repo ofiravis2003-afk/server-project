@@ -25,6 +25,7 @@ local TipService = require(Common.TipService)
 local Halloween = require(Common.Halloween)
 local Onboarding = require(Common.Onboarding)
 local NotifyService = require(script.Parent.NotifyService)
+local Events = require(ReplicatedStorage.Shared.Events)
 local Travel = require(Common.Travel)
 local ProgressService = require(Common.ProgressService)
 local QuestService = require(Common.QuestService)
@@ -139,6 +140,14 @@ function ShopService.Start()
 			task.delay(20, TipService.Show, player, "Party")
 		end
 		player:SetAttribute("MiraSaved", data.MiraSaved == true)
+		local event = Events.Current()
+		if event then
+			task.delay(10, function()
+				if player.Parent then
+					Remotes.Event("Notify"):FireClient(player, event.Text)
+				end
+			end)
+		end
 		-- back in town after reaching floor 3 (they like it enough to keep going): ask once for a like and friends
 		if (data.DeepestFloor or 0) >= 3 and not data.AskedLike then
 			data.AskedLike = true

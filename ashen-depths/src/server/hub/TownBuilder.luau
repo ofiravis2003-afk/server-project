@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Events = require(ReplicatedStorage.Shared.Events)
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
 
 local TownBuilder = {}
@@ -45,6 +46,12 @@ local NEWS: { { Text: string, Until: number? } } = {
 }
 if Config.ChapterII then
 	table.insert(NEWS, 1, { Text = "- Chapter II: The Rotwood Caverns, floors 16-30. New foes, bosses and gear" })
+end
+do -- an event on when this server started heads the board until it ends
+	local event = Events.Current()
+	if event then
+		table.insert(NEWS, 1, { Text = `- {event.Text}`, Until = event.Ends })
+	end
 end
 local YARD_AT = Vector3.new(-68, 0, 0) -- the Training Yard's middle (as laid out)
 
