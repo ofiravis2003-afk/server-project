@@ -71,6 +71,7 @@ function DailyUi.Start()
 	local columnStack = Instance.new("UIListLayout")
 	columnStack.SortOrder = Enum.SortOrder.LayoutOrder
 	columnStack.Padding = UDim.new(0, 6)
+	columnStack.HorizontalAlignment = Enum.HorizontalAlignment.Right -- (the goal panel is smaller on a phone)
 	columnStack.Parent = column
 
 	-- the tracker: today's tasks, on the right

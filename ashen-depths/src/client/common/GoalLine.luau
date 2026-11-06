@@ -7,6 +7,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Fonts = require(ReplicatedStorage.Shared.Fonts)
+local Device = require(ReplicatedStorage.Shared.Device)
+
+local PHONE_SCALE = 0.65 -- (a phone's screen is crowded: the panel a size down, against the right edge)
 
 local PANEL = Color3.fromRGB(22, 18, 20)
 local GOLD = Color3.fromRGB(240, 190, 90)
@@ -78,6 +81,11 @@ function GoalLine.Start()
 	line.TextWrapped = true
 	line.RichText = true
 
+	if Device.Touch() then
+		local scale = Instance.new("UIScale")
+		scale.Scale = PHONE_SCALE
+		scale.Parent = panel
+	end
 	panel.Parent = column
 
 	local shown: string? = nil
