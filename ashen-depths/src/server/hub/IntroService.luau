@@ -3,7 +3,7 @@
 --   1. they arrive at the south gate and the camera flies over the town and the Great Well (client/hub/Intro)
 --   2. Aldric greets them (the AldricIntro dialogue) and they take the Guild Brand: a burning mark on the hand
 --   3. the first fight (TownFight): the Well breathes ash and three skeletons come up the road; Aldric shouts to
---      use the Brand, and when they're down he sends the player below (the AldricAfterFight dialogue)
+--      use the Brand, and when they're down he sends the player below (a line on screen; they keep moving)
 --   4. the way down is marked: "Descend the Great Well", a beam of light over it and arrows on the ground, until
 --      they go (and again on every visit until they have been down once)
 -- Players who have been here before (JoinCount > 1 when this was added) skip it.
@@ -25,6 +25,9 @@ local inIntro: { [Player]: boolean } = {}
 -- What the Guild gives a new adventurer with the Brand.
 local WELCOME_GOLD = 50
 local WELCOME_POTIONS = 1
+-- Aldric when the first fight is won, and what the guide says at the Well ("{hold}": the client's key or button)
+local AFTER_FIGHT = "Not bad for your first day! The first Wardstone has gone dark. Go down the Well and light it again."
+local WELL_ARRIVED = "{hold} at the Well to descend"
 
 -- The Brand: a small ember on the back of the right hand that never goes out.
 local function brand(character: Model)
@@ -83,7 +86,7 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 			if (data.DeepestFloor or 0) == 0 then
 				task.delay(3, function()
 					if player.Parent then
-						objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position)
+						objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position, WELL_ARRIVED)
 					end
 				end)
 			end
@@ -146,12 +149,10 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 		InventoryService.GiveItem(player, "HealthPotion", "Common", WELCOME_POTIONS)
 		notifyRemote:FireClient(player, `A gift from the Guild: {WELCOME_GOLD} gold and a Health Potion.`)
 		-- the first fight: the dead come up out of the Well (TownFight); then Aldric sends them down it
+		-- (his words as a line on screen, not a talk window: the player keeps moving, straight to the Well)
 		task.spawn(TownFight.Begin, player, town, function()
-			local aldric = town.Model:FindFirstChild("Aldric", true)
-			if aldric and aldric:IsA("Model") then
-				dialogueRemote:FireClient(player, aldric, "AldricAfterFight")
-			end
-			objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position)
+			TownFight.Say(player, AFTER_FIGHT, 9)
+			objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position, WELL_ARRIVED)
 		end)
 	end
 end

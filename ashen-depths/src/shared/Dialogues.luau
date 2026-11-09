@@ -49,15 +49,6 @@ local Dialogues: { [string]: Dialogue } = {
 		Action = "Take the Brand",
 		Required = true, -- read to the end; the Brand is the only way out
 	},
-	-- after the first fight in the square (TownFight): the dead came up out of the Well
-	AldricAfterFight = {
-		Name = "Aldric Vane",
-		Title = "Master of the Adventurers' Guild",
-		Lines = {
-			"Not bad for your first day. Now you see why the Guild needs you.",
-			"The first Wardstone has gone dark. Go down the Well and light it again, before more of them find the way up.",
-		},
-	},
 	Brakka = {
 		Name = "Brakka",
 		Title = "Blacksmith",

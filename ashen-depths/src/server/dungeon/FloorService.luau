@@ -127,6 +127,7 @@ local bossIntroRemote = Remotes.Event("BossIntro")
 local loreRemote = Remotes.Event("LoreShow")
 local soundRemote = Remotes.Event("Sound")
 local landingRemote = Remotes.Event("Landing")
+local objectiveRemote = Remotes.Event("Objective")
 local setAir: (boolean) -> ()
 local REVIVE_WINDOW = 90 -- a Revive bought this long after falling still brings you back there
 local BOSS_INTRO_SECONDS = 11
@@ -145,6 +146,12 @@ end
 -- the combat rooms carries it, or it waits on a pedestal in the treasure room. One key opens the way for everyone.
 -- (Boss floors need none: the lair stands before the stairs.)
 local stairsKey: { Needed: boolean, Found: boolean, Where: string } = { Needed = false, Found = false, Where = "" }
+-- A newcomer's first floors: once every room is cleared and the way down is open, the guide shows them the
+-- stairs (client/common/Guide). Once per floor.
+local NEWCOMER_FLOORS = 2
+local stairsPart: BasePart? = nil
+local guidedStairs = false
+local guideToStairs: () -> ()
 local floorEvent: string? = nil -- this floor's event, told to players when they arrive
 local floorCursed = false -- the Ember Altar's curse was accepted on this floor
 local forcedEvent: string? = nil -- Studio's DevFloor: the next floor's event
@@ -171,6 +178,7 @@ local function findStairsKey(player: Player, position: Vector3?)
 	for _, other in Players:GetPlayers() do
 		pushRun(other)
 	end
+	guideToStairs()
 end
 
 local function giveKey(player: Player, tier: string, position: Vector3?)
@@ -268,6 +276,23 @@ local function roomsCleared(): number
 	return count
 end
 
+guideToStairs = function()
+	local stairs = stairsPart
+	if guidedStairs or not stairs or currentFloor > NEWCOMER_FLOORS then
+		return
+	end
+	if (stairsKey.Needed and not stairsKey.Found) or roomsCleared() < #combatRooms then
+		return
+	end
+	guidedStairs = true
+	for _, player in Players:GetPlayers() do
+		local data = DataService.GetData(player)
+		if data and (data.DeepestFloor or 0) <= NEWCOMER_FLOORS then
+			objectiveRemote:FireClient(player, "The way down is open: find the stairs", stairs.Position, "{hold} at the stairs to go down")
+		end
+	end
+end
+
 local function clearRoom(room: CombatRoom)
 	room.Active = false
 	room.Cleared = true
@@ -282,6 +307,7 @@ local function clearRoom(room: CombatRoom)
 			end
 		end
 	end
+	guideToStairs()
 end
 
 local bossDefeated: (CombatRoom, EnemyService.Enemy) -> ()
@@ -1931,6 +1957,7 @@ local function setupStairs(room: FloorBuilder.BuiltRoom)
 	if not part then
 		return
 	end
+	stairsPart = part
 	local last = currentFloor >= Floors.Deepest
 	local p = prompt(part, "Descend", if last then "Sealed" else `Floor {currentFloor + 1}`, 1, 10)
 	p.Triggered:Connect(function(player)
@@ -1995,6 +2022,8 @@ startFloor = function(floor: number)
 	local previousRooms = combatRooms
 	currentFloor = floor
 	combatRooms = {}
+	stairsPart = nil
+	guidedStairs = false
 	local hasTreasure = false
 	for _, room in rooms do
 		if room.Plan.Type == "Treasure" then

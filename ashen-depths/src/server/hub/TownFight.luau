@@ -120,6 +120,11 @@ local function shout(player: Player, text: string, seconds: number)
 	end)
 end
 
+-- Aldric's words on this player's screen for a while (also his line after the fight, IntroService).
+function TownFight.Say(player: Player, text: string, seconds: number)
+	shout(player, text, seconds)
+end
+
 -- The weapon in hand, so the first click swings it.
 local function drawWeapon(player: Player, humanoid: Humanoid)
 	local character = player.Character
