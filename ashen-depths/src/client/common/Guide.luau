@@ -2,7 +2,8 @@
 -- The way to go (the "Objective" remote, from IntroService in town and FloorService in the Depths): a line at the
 -- top of the screen, a pillar of light over the place and a trail of glowing arrows on the ground leading to it.
 -- On arrival the line says what to do there (the server's arrival text, "{hold}" becoming "Hold E" or "Hold the
--- button"), then fades. A new objective replaces the old one, and a new floor clears it.
+-- button"), then fades; one sent to stay (the Wardstone) keeps its line and pillar until the next objective.
+-- A new objective replaces the old one, and a new floor clears it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,7 +27,7 @@ local function holdText(text: string): string
 	return (string.gsub(text, "{hold}", hold))
 end
 
-local function show(text: string, where: Vector3, arrived: string?)
+local function show(text: string, where: Vector3, arrived: string?, stay: boolean?)
 	if clearCurrent then
 		clearCurrent()
 	end
@@ -133,11 +134,14 @@ local function show(text: string, where: Vector3, arrived: string?)
 		if root and (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(where.X, 0, where.Z)).Magnitude < ARRIVED_RANGE then
 			conn:Disconnect()
 			respawn:Disconnect()
-			pulse:Cancel()
 			trail:Destroy()
 			if arrived then
 				line.Text = "◆  " .. holdText(arrived)
 			end
+			if stay then
+				return -- (until the next objective, or the next floor)
+			end
+			pulse:Cancel()
 			task.delay(if arrived then 8 else 2, function()
 				if clearCurrent == clear then
 					clear()
@@ -148,11 +152,11 @@ local function show(text: string, where: Vector3, arrived: string?)
 end
 
 function Guide.Start()
-	Remotes.Event("Objective").OnClientEvent:Connect(function(text: any, where: any, arrived: any)
+	Remotes.Event("Objective").OnClientEvent:Connect(function(text: any, where: any, arrived: any, stay: any)
 		if type(text) ~= "string" or typeof(where) ~= "Vector3" then
 			return
 		end
-		show(text, where, if type(arrived) == "string" then arrived else nil)
+		show(text, where, if type(arrived) == "string" then arrived else nil, stay == true)
 	end)
 	-- a new floor: whatever was pointed at is behind
 	Remotes.Event("FloorStarted").OnClientEvent:Connect(function()

@@ -152,6 +152,10 @@ local NEWCOMER_FLOORS = 2
 local stairsPart: BasePart? = nil
 local guidedStairs = false
 local guideToStairs: () -> ()
+local guideOnward: (Vector3) -> ()
+local WARD_GUIDE = "Relight the Wardstone"
+local WARD_ARRIVED = "{hold} at the Wardstone to relight it"
+local loadedAt: { [Player]: number } = {} -- when each player's save came in (for the newcomers' floor-1 events)
 local floorEvent: string? = nil -- this floor's event, told to players when they arrive
 local floorCursed = false -- the Ember Altar's curse was accepted on this floor
 local forcedEvent: string? = nil -- Studio's DevFloor: the next floor's event
@@ -276,6 +280,35 @@ local function roomsCleared(): number
 	return count
 end
 
+-- The guide, for the newcomers here (those who haven't been past their first floors).
+local function guideNewcomers(text: string, where: Vector3, arrived: string?, stay: boolean?)
+	for _, player in Players:GetPlayers() do
+		local data = DataService.GetData(player)
+		if data and (data.DeepestFloor or 0) <= NEWCOMER_FLOORS then
+			objectiveRemote:FireClient(player, text, where, arrived, stay)
+		end
+	end
+end
+
+-- On a newcomer's first floors: the way to the nearest room still to clear (from the Wardstone once it's lit,
+-- from each room as it's cleared).
+guideOnward = function(from: Vector3)
+	if currentFloor > NEWCOMER_FLOORS or guidedStairs then
+		return
+	end
+	local nearest: CombatRoom? = nil
+	local least = math.huge
+	for _, room in combatRooms do
+		local distance = (room.Built.Center - from).Magnitude
+		if not room.Cleared and not room.Active and distance < least then
+			nearest, least = room, distance
+		end
+	end
+	if nearest then
+		guideNewcomers("Clear the next room", nearest.Built.Center, nil)
+	end
+end
+
 guideToStairs = function()
 	local stairs = stairsPart
 	if guidedStairs or not stairs or currentFloor > NEWCOMER_FLOORS then
@@ -285,12 +318,7 @@ guideToStairs = function()
 		return
 	end
 	guidedStairs = true
-	for _, player in Players:GetPlayers() do
-		local data = DataService.GetData(player)
-		if data and (data.DeepestFloor or 0) <= NEWCOMER_FLOORS then
-			objectiveRemote:FireClient(player, "The way down is open: find the stairs", stairs.Position, "{hold} at the stairs to go down")
-		end
-	end
+	guideNewcomers("The way down is open: find the stairs", stairs.Position, "{hold} at the stairs to go down")
 end
 
 local function clearRoom(room: CombatRoom)
@@ -308,6 +336,7 @@ local function clearRoom(room: CombatRoom)
 		end
 	end
 	guideToStairs()
+	guideOnward(room.Built.Center)
 end
 
 local bossDefeated: (CombatRoom, EnemyService.Enemy) -> ()
@@ -1312,6 +1341,7 @@ local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
 			end
 		end
 		notifyRemote:FireAllClients(`{player.DisplayName} relights the Wardstone. The ash recedes from floor {floor}.`)
+		guideOnward(at)
 	end)
 	task.delay(6, function()
 		if currentFloor ~= floor or not stone.Parent or stone:GetAttribute("Lit") then
@@ -1325,6 +1355,9 @@ local function setupWardstone(room: FloorBuilder.BuiltRoom, floor: number)
 			notifyRemote:FireAllClients("Rot has grown over this floor's Wardstone. Burn it away with your Guild Brand.")
 		else
 			notifyRemote:FireAllClients("This floor's Wardstone has gone dark. Relight it with your Guild Brand.")
+			if floor <= NEWCOMER_FLOORS then
+				guideNewcomers(WARD_GUIDE, at, WARD_ARRIVED, true)
+			end
 		end
 	end)
 end
@@ -2350,6 +2383,19 @@ function FloorService.Start()
 			return true
 		end
 		dev.Parent = game:GetService("ServerStorage")
+		-- ServerStorage.DevNewcomer:Invoke(player) makes this player a newcomer for this Play (in memory only:
+		-- Studio never writes the save), to test what a first-timer sees. Follow it with DevFloor(1).
+		local newcomer = Instance.new("BindableFunction")
+		newcomer.Name = "DevNewcomer"
+		newcomer.OnInvoke = function(player: Player)
+			local data = DataService.GetData(player)
+			if not data or Config.StudioSaves then
+				return false
+			end
+			data.DeepestFloor, data.WardLit, data.Checkpoint = 0, 0, 0
+			return true
+		end
+		newcomer.Parent = game:GetService("ServerStorage")
 	end
 
 	local fell: { [Player]: boolean } = {}
@@ -2428,7 +2474,12 @@ function FloorService.Start()
 	Players.PlayerRemoving:Connect(function(player)
 		if currentFloor == 1 then
 			Onboarding.Floor1(player, "Floor1Left", roomsCleared())
+			-- (and how long they were here, to tell a crash on arrival from giving up mid-floor)
+			if loadedAt[player] then
+				Onboarding.Floor1(player, "Floor1LeftSeconds", math.floor(os.clock() - loadedAt[player]))
+			end
 		end
+		loadedAt[player] = nil
 		keys[player] = nil
 		fell[player] = nil
 		fellAt[player] = nil
@@ -2444,6 +2495,16 @@ function FloorService.Start()
 		-- (also here: a floor built before this player's data came in couldn't count them)
 		if currentFloor == 1 then
 			Onboarding.Step(player, "ReachedDepths")
+		end
+		loadedAt[player] = os.clock()
+		-- a newcomer whose save came in after the floor's own guide went out: the Wardstone, if it's still dark
+		if (_data.DeepestFloor or 0) <= NEWCOMER_FLOORS then
+			task.delay(7, function()
+				local stone = wardstone
+				if player.Parent and currentFloor <= NEWCOMER_FLOORS and stone and stone.Parent and not stone:GetAttribute("Lit") then
+					objectiveRemote:FireClient(player, WARD_GUIDE, stone:GetPivot().Position, WARD_ARRIVED, true)
+				end
+			end)
 		end
 		pushRun(player)
 		floorStartedRemote:FireClient(player, currentFloor, Floors.ChapterName(currentFloor))
