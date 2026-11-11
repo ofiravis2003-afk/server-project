@@ -8,6 +8,7 @@
 --      they go (and again on every visit until they have been down once)
 -- Players who have been here before (JoinCount > 1 when this was added) skip it.
 
+local AnalyticsService = game:GetService("AnalyticsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,6 +29,24 @@ local WELCOME_POTIONS = 1
 -- Aldric when the first fight is won, and what the guide says at the Well ("{hold}": the client's key or button)
 local AFTER_FIGHT = "Not bad for your first day! The first Wardstone has gone dark. Go down the Well and light it again."
 local WELL_ARRIVED = "{hold} at the Well to descend"
+
+-- How long a newcomer takes from the end of the first fight to the Great Well: the custom event "WellReached"
+-- (its value the seconds), so it shows who wins the fight and then never gets there.
+local function watchWell(player: Player, well: BasePart)
+	local started = os.clock()
+	task.spawn(function()
+		while player.Parent do
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if root and (root.Position - well.Position).Magnitude < 18 then
+				pcall(function()
+					AnalyticsService:LogCustomEvent(player, "WellReached", math.floor(os.clock() - started))
+				end)
+				return
+			end
+			task.wait(1)
+		end
+	end)
+end
 
 -- The Brand: a small ember on the back of the right hand that never goes out.
 local function brand(character: Model)
@@ -152,6 +171,7 @@ function IntroService.Start(town: { Model: Model, Spawn: CFrame, Well: BasePart 
 		-- (his words as a line on screen, not a talk window: the player keeps moving, straight to the Well)
 		task.spawn(TownFight.Begin, player, town, function()
 			TownFight.Say(player, AFTER_FIGHT, 9)
+			watchWell(player, town.Well)
 			objectiveRemote:FireClient(player, "Descend the Great Well", town.Well.Position, WELL_ARRIVED)
 		end)
 	end

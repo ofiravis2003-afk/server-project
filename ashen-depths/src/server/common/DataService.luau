@@ -18,8 +18,10 @@ local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 local STORE_NAME = "PlayerData_v1"
 local AUTOSAVE_INTERVAL = 60
 local LOCK_EXPIRE_SECONDS = 30 * 60
-local LOAD_ATTEMPTS = 6
+local LOAD_ATTEMPTS = 9
 local LOAD_RETRY_DELAY = 5
+local QUICK_RETRIES = 4 -- the first few come sooner: the place a player just left frees their save within a second or two
+local QUICK_RETRY_DELAY = 1.5
 local SAVE_ATTEMPTS = 3
 
 type Profile = {
@@ -126,7 +128,7 @@ local function loadRecord(player: Player): (boolean, { [string]: any }?, string?
 		if player.Parent == nil then
 			return false, nil, "left"
 		end
-		task.wait(LOAD_RETRY_DELAY)
+		task.wait(if attempt <= QUICK_RETRIES then QUICK_RETRY_DELAY else LOAD_RETRY_DELAY)
 	end
 
 	return false, nil, lastError

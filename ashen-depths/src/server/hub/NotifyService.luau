@@ -18,6 +18,7 @@ local DataService = require(script.Parent.Parent.Common.DataService)
 local NotifyService = {}
 
 local MAX_FRIENDS = 20 -- told about one descent
+local MAX_TRIES = 30 -- friends tried for one descent (most never said yes to notifications)
 local SENDER_COOLDOWN = 3 * 3600 -- a player's descents tell their friends at most this often
 
 local lastSent: { [number]: number } = {} -- sender's user id -> when their friends were last told
@@ -50,6 +51,10 @@ local function send(userId: number, messageId: string, category: string): boolea
 	end
 	local response = result :: any
 	if not response.Success then
+		-- (a friend who hasn't said yes to notifications from the game: expected, not worth a warning)
+		if string.find(response.Body or "", "not opted in", 1, true) then
+			return false
+		end
 		warn(`[NotifyService] {category} to {userId}: {response.StatusCode} {response.Body}`)
 		return false
 	end
@@ -74,14 +79,16 @@ function NotifyService.FriendDescending(player: Player)
 		end
 		local pages = result :: FriendPages
 		local sent = 0
-		while sent < MAX_FRIENDS do
+		local tried = 0
+		while sent < MAX_FRIENDS and tried < MAX_TRIES do
 			for _, friend in pages:GetCurrentPage() do
 				local id = (friend :: any).Id :: number
-				if sent >= MAX_FRIENDS then
+				if sent >= MAX_FRIENDS or tried >= MAX_TRIES then
 					break
 				end
 				if not Players:GetPlayerByUserId(id) and toldToday[id] ~= today() then
 					toldToday[id] = today()
+					tried += 1
 					if send(id, messageId, "FriendDescending") then
 						sent += 1
 					end

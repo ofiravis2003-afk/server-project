@@ -2441,6 +2441,10 @@ function FloorService.Start()
 			end)
 		end
 		task.delay(6, TipService.Show, player, "Attack")
+		-- (also here: a floor built before this player's data came in couldn't count them)
+		if currentFloor == 1 then
+			Onboarding.Step(player, "ReachedDepths")
+		end
 		pushRun(player)
 		floorStartedRemote:FireClient(player, currentFloor, Floors.ChapterName(currentFloor))
 	end)

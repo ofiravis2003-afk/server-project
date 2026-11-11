@@ -7,6 +7,7 @@
 --          reward (a hit on a monster, the player hurt, gold).
 -- Ids and volumes live in shared/Sounds.
 
+local ContentProvider = game:GetService("ContentProvider")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
@@ -61,6 +62,21 @@ function Audio.Play(name: string, position: Vector3?)
 end
 
 function Audio.Start(place: string)
+	-- the effects, loaded ahead in the background (a sound first asked for mid-fight could time out on a slow line)
+	task.spawn(function()
+		local ahead = {}
+		for _, def in Sounds.Effects :: { [string]: { Id: string, Volume: number } } do
+			local s = Instance.new("Sound")
+			s.SoundId = def.Id
+			table.insert(ahead, s)
+		end
+		pcall(function()
+			ContentProvider:PreloadAsync(ahead)
+		end)
+		for _, s in ahead do
+			s:Destroy()
+		end
+	end)
 	-- music: two tracks, one playing, crossfaded
 	local tracks: { [string]: Sound } = {}
 	for name, def in Sounds.Music do
